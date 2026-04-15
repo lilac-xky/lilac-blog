@@ -1,0 +1,27 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: lilac-blog
+server:
+  servlet:
+    context-path: /api
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: false
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+sa-token:
+  token-name: sa-token
+  timeout: 604800
+  active-timeout: 259200
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
