@@ -19,7 +19,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 sa-token:
-  token-name: sa-token
+  token-name: token
   timeout: 604800
   active-timeout: 259200
   is-concurrent: true

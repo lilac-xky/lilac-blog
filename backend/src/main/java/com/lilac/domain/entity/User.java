@@ -17,13 +17,13 @@ public class User implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_UUID)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
      * 用户名
      */
-    private String username;
+    private String userAccount;
 
     /**
      * 密码
@@ -33,7 +33,7 @@ public class User implements Serializable {
     /**
      * 昵称
      */
-    private String nickname;
+    private String username;
 
     /**
      * 头像
