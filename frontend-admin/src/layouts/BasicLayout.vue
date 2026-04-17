@@ -1,20 +1,20 @@
 <template>
     <div id="basicLayout">
-        <a-layout style="min-height: 100vh;">
-            <a-layout-header class="header">
-                <GlobalHeader />
-            </a-layout-header>
-            <a-layout>
-                <a-layout-sider class="sider">
-                    <GlobalSider />
-                </a-layout-sider>
+        <a-layout class="app-layout">
+            <a-layout-sider class="sider" :width="220">
+                <GlobalSider />
+            </a-layout-sider>
+            <a-layout class="main-layout">
+                <a-layout-header class="header">
+                    <GlobalHeader />
+                </a-layout-header>
                 <a-layout-content class="content">
                     <router-view />
                 </a-layout-content>
+                <a-layout-footer class="footer">
+                    created by lilac
+                </a-layout-footer>
             </a-layout>
-            <a-layout-footer class="footer">
-                created by lilac
-            </a-layout-footer>
         </a-layout>
     </div>
 </template>
@@ -25,23 +25,47 @@ import GlobalSider from '@/components/GlobalSider.vue';
 </script>
 
 <style scoped>
-#basicLayout .header {
-    background: white;
-    padding-inline: 20px;
+#basicLayout {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-layout {
+    height: 100vh;
+    background: var(--bg-page);
+}
+
+.main-layout {
+    background: var(--bg-page);
+    overflow: hidden;
 }
 
 #basicLayout .sider {
-    background: white;
+    background: var(--bg-sider);
+    padding: 20px 12px;
+    overflow: hidden;
+}
+
+#basicLayout .header {
+    background: transparent;
+    padding: 16px 28px 0 28px;
+    height: auto;
+    line-height: 1;
 }
 
 #basicLayout .content {
-    background: linear-gradient(to right, #efefef, #fff);
-    padding: 24px;
+    background: transparent;
+    padding: 16px 28px 8px 28px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
 }
 
 #basicLayout .footer {
-    background: white;
+    background: transparent;
     text-align: center;
-    color: #999;
+    color: var(--text-muted);
+    padding: 8px;
+    font-size: 12px;
 }
 </style>
