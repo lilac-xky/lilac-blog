@@ -14,6 +14,11 @@ public class UserLoginRequest {
     private String userAccount;
 
     /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
      * 密码
      */
     private String password;

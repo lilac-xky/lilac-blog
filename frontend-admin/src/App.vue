@@ -12,4 +12,21 @@ import BasicLayout from './layouts/BasicLayout.vue';
 </script>
 
 <style>
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: inherit;
+  font-size: 100%;
+  vertical-align: baseline;
+}
+
+html {
+  line-height: 1;
+}
+
+body {
+  background: white;
+  font-family: sans-serif;
+}
 </style>

@@ -3,6 +3,8 @@ declare namespace API {
     id?: number;
     /** 用户名 */
     userAccount?: string;
+    /** 邮箱 */
+    email?: string;
     /** 密码 */
     password?: string;
     /** 昵称 */
@@ -32,6 +34,8 @@ declare namespace API {
   type UserLoginRequest = {
     /** 账号 */
     userAccount?: string;
+    /** 邮箱 */
+    email?: string;
     /** 密码 */
     password?: string;
   };
@@ -39,6 +43,8 @@ declare namespace API {
   type UserRegisterRequest = {
     /** 账号 */
     userAccount?: string;
+    /** 邮箱 */
+    email?: string;
     /** 密码 */
     password?: string;
     /** 确认密码 */

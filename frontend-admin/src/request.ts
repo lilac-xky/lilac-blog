@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { message } from 'ant-design-vue';
-import router from './router';
 
 const request = axios.create({
     baseURL: 'http://localhost:9090',

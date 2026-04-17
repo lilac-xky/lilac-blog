@@ -7,6 +7,7 @@
     <resultMap id="BaseResultMap" type="com.lilac.domain.entity.User">
             <id property="id" column="id" />
             <result property="userAccount" column="userAccount" />
+            <result property="email" column="email" />
             <result property="password" column="password" />
             <result property="username" column="username" />
             <result property="avater" column="avater" />
@@ -17,4 +18,10 @@
             <result property="edittime" column="editTime" />
             <result property="isdeleted" column="isDeleted" />
     </resultMap>
+
+    <sql id="Base_Column_List">
+        id,userAccount,email,password,username,avater,
+        role,status,creatTime,updateTime,editTime,
+        isDeleted
+    </sql>
 </mapper>
