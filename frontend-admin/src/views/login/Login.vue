@@ -299,9 +299,6 @@ async function handleLogin() {
     text-decoration: underline;
 }
 
-:deep(.ant-input-affix-wrapper-lg) {
-    padding-block: 8px;
-}
 
 :deep(.ant-form-item-label > label) {
     font-weight: 500;

@@ -5,6 +5,9 @@ import cn.dev33.satoken.stp.StpUtil;
 
 /**
  * StpLogic 门面类，管理项目中所有的 StpLogic 账号体系
+ * 两套账号体系使用各自独立的请求头名称，避免 token 串用：
+ *   - ADMIN:  admin-token
+ *   - USER:   user-token
  */
 public class StpKit {
 
@@ -16,11 +19,21 @@ public class StpKit {
     /**
      * Admin 会话对象，管理 Admin 表所有账号的登录、权限认证
      */
-    public static final StpLogic ADMIN = new StpLogic("admin");
+    public static final StpLogic ADMIN = new StpLogic("admin") {
+        @Override
+        public String getTokenName() {
+            return "admin-token";
+        }
+    };
 
     /**
      * User 会话对象，管理 User 表所有账号的登录、权限认证
      */
-    public static final StpLogic USER = new StpLogic("user");
+    public static final StpLogic USER = new StpLogic("user") {
+        @Override
+        public String getTokenName() {
+            return "user-token";
+        }
+    };
 
 }

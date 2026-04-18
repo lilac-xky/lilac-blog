@@ -36,6 +36,7 @@ watch(
     }
 );
 
+// 菜单点击处理函数
 const handleMenuClick = ({ key }: { key: string }) => {
     if (key && key !== route.path) {
         router.push(key);

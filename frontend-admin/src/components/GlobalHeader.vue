@@ -14,7 +14,11 @@
             </a-badge>
             <a-dropdown placement="bottomRight">
                 <div class="user-chip">
-                    <a-avatar :size="32" :src="userStore.loginUser?.avater || defaultAvatar" />
+                    <a-avatar :size="32" :src="userStore.loginUser?.avater || undefined" class="user-avatar">
+                        <template #icon>
+                            <UserOutlined />
+                        </template>
+                    </a-avatar>
                     <span class="user-name">{{ userStore.loginUser?.username || 'Admin' }}</span>
                 </div>
                 <template #overlay>
@@ -53,8 +57,7 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
-const defaultAvatar = 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png';
-
+// 页面标题和副标题映射
 const titleMap: Record<string, { title: string; subtitle: string }> = {
     '/': { title: '仪表盘', subtitle: '欢迎回到 lilac-blog 后台管理系统' },
     '/write-blog': { title: '写 Blog', subtitle: '创作一篇新的博客文章' },
@@ -67,6 +70,7 @@ const titleMap: Record<string, { title: string; subtitle: string }> = {
 const pageTitle = computed(() => titleMap[route.path]?.title ?? '仪表盘');
 const pageSubtitle = computed(() => titleMap[route.path]?.subtitle ?? '');
 
+// 处理菜单点击事件
 async function handleMenuClick({ key }: { key: string }) {
     if (key === 'logout') {
         Modal.confirm({
@@ -75,7 +79,7 @@ async function handleMenuClick({ key }: { key: string }) {
             cancelText: '取消',
             onOk: async () => {
                 try {
-                    await logout();
+                    await logout({ silentError: true });
                 } catch {
                     // ignore, still clear local state
                 } finally {

@@ -27,6 +27,7 @@ const router = createRouter({
   ],
 })
 
+// 全局前置守卫：检查访问权限
 router.beforeEach((to, _from, next) => {
   if (to.meta?.public) return next()
   const { loginUser } = useUserStore()

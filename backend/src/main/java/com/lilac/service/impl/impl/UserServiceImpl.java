@@ -1,6 +1,5 @@
 package com.lilac.service.impl.impl;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -106,7 +105,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 登录
         StpKit.ADMIN.login(user.getId());
         LoginUserVO loginUserVO = this.getLoginUserVO(user);
-        loginUserVO.setToken(StpUtil.getTokenValue());
+        loginUserVO.setToken(StpKit.ADMIN.getTokenValue());
         StpKit.ADMIN.getSession().set(UserConstant.ADMIN_LOGIN_STATE, loginUserVO);
         return loginUserVO;
     }
@@ -141,7 +140,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 登录
         StpKit.USER.login(user.getId());
         LoginUserVO loginUserVO = this.getLoginUserVO(user);
-        loginUserVO.setToken(StpUtil.getTokenValue());
+        loginUserVO.setToken(StpKit.USER.getTokenValue());
         StpKit.USER.getSession().set(UserConstant.USER_LOGIN_STATE, loginUserVO);
         return loginUserVO;
     }

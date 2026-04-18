@@ -85,6 +85,7 @@ const userStore = useUserStore();
 const loading = ref(false);
 const remember = ref(true);
 
+// 登录表单状态
 const formState = reactive<API.UserLoginRequest>({
     userAccount: '',
     password: '',
@@ -101,6 +102,7 @@ const rules: Record<string, Rule[]> = {
     ],
 };
 
+// 登录逻辑
 async function handleLogin() {
     loading.value = true;
     try {
@@ -299,9 +301,6 @@ async function handleLogin() {
     text-decoration: underline;
 }
 
-:deep(.ant-input-affix-wrapper-lg) {
-    padding-block: 8px;
-}
 
 :deep(.ant-form-item-label > label) {
     font-weight: 500;

@@ -2,12 +2,7 @@
   <div class="home">
     <!-- 顶部：统计卡片 -->
     <div class="stat-row">
-      <div
-        v-for="item in statCards"
-        :key="item.title"
-        class="stat-card"
-        @click="item.onClick"
-      >
+      <div v-for="item in statCards" :key="item.title" class="stat-card" @click="item.onClick">
         <div class="stat-icon" :style="{ background: item.bg, color: item.color }">
           <component :is="item.icon" />
         </div>
@@ -36,13 +31,8 @@
           </div>
         </div>
         <div class="quick-grid">
-          <div
-            v-for="(q, i) in quickActions"
-            :key="i"
-            class="quick-item"
-            :style="{ '--c': q.color } as any"
-            @click="q.onClick"
-          >
+          <div v-for="(q, i) in quickActions" :key="i" class="quick-item" :style="{ '--c': q.color } as any"
+            @click="q.onClick">
             <div class="quick-icon">
               <component :is="q.icon" />
             </div>
@@ -59,25 +49,27 @@
             <div class="panel-desc">最新创建或更新的内容</div>
           </div>
           <a-button type="primary" size="small" @click="router.push('/write-blog')">
-            <template #icon><PlusOutlined /></template>
+            <template #icon>
+              <PlusOutlined />
+            </template>
             新文章
           </a-button>
         </div>
         <div class="article-list">
           <template v-if="recentArticles.length">
-            <div
-              v-for="a in recentArticles"
-              :key="a.id"
-              class="article-item"
-            >
+            <div v-for="a in recentArticles" :key="a.id" class="article-item">
               <div class="article-cover" :style="{ background: a.cover }">
                 <FileTextOutlined />
               </div>
               <div class="article-body">
                 <div class="article-title">{{ a.title }}</div>
                 <div class="article-meta">
-                  <span><ClockCircleOutlined /> {{ a.time }}</span>
-                  <span><EyeOutlined /> {{ a.views }}</span>
+                  <span>
+                    <ClockCircleOutlined /> {{ a.time }}
+                  </span>
+                  <span>
+                    <EyeOutlined /> {{ a.views }}
+                  </span>
                 </div>
               </div>
               <a-tag :color="a.statusColor" class="article-tag">{{ a.status }}</a-tag>
@@ -98,7 +90,9 @@
           <div class="greet-sub">{{ today }}，今天有 <b>{{ todos.length }}</b> 项待办等待处理</div>
         </div>
         <a-avatar :size="56" class="greet-avatar">
-          <template #icon><UserOutlined /></template>
+          <template #icon>
+            <UserOutlined />
+          </template>
         </a-avatar>
       </div>
       <div class="panel todo-panel">
@@ -201,7 +195,7 @@ const statCards = [
     color: '#722ed1',
     bg: 'rgba(114,46,209,0.1)',
     trend: 18,
-    onClick: () => {},
+    onClick: () => { },
   },
 ];
 
@@ -212,7 +206,7 @@ const quickActions = [
   { label: '标签', icon: h(TagsOutlined), color: '#faad14', onClick: () => router.push('/blog/tag') },
   { label: '留言', icon: h(MessageOutlined), color: '#eb2f96', onClick: () => router.push('/message') },
   { label: '关于', icon: h(UserOutlined), color: '#722ed1', onClick: () => router.push('/about') },
-  { label: '设置', icon: h(SettingOutlined), color: '#13c2c2', onClick: () => {} },
+  { label: '设置', icon: h(SettingOutlined), color: '#13c2c2', onClick: () => { } },
 ];
 
 // 最近文章占位
@@ -603,6 +597,7 @@ const todos = [
   .stat-row {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .middle-row,
   .bottom-row {
     grid-template-columns: 1fr;

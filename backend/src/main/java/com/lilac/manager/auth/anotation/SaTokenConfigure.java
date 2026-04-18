@@ -25,14 +25,14 @@ public class SaTokenConfigure implements WebMvcConfigurer{
         registry.addInterceptor(new SaInterceptor(handle -> {
             // 匹配所有 admin 路径，排除登录注册
             SaRouter.match("/admin/**")
-                    .notMatch("/admin/login", "/admin/register")
+                    .notMatch("/admin/login", "/admin/logout")
                     .check(r -> StpKit.ADMIN.checkLogin());
         })).addPathPatterns("/admin/**");
         // 2. 用户端拦截器：只校验 /user/**
         registry.addInterceptor(new SaInterceptor(handle -> {
             // 匹配所有 user 路径，排除登录注册
             SaRouter.match("/user/**")
-                    .notMatch("/user/login", "/user/register")
+                    .notMatch("/user/login", "/user/register", "/user/logout")
                     .check(r -> StpKit.USER.checkLogin());
         })).addPathPatterns("/user/**");
     }

@@ -116,6 +116,7 @@ const router = useRouter();
 const loading = ref(false);
 const agree = ref(false);
 
+// 表单数据
 const formState = reactive<API.UserRegisterRequest>({
     userAccount: '',
     email: '',
@@ -123,6 +124,7 @@ const formState = reactive<API.UserRegisterRequest>({
     checkPassword: '',
 });
 
+// 确认密码校验
 const validateCheckPassword = async (_rule: Rule, value: string) => {
     if (!value) {
         return Promise.reject('请再次输入密码');
@@ -133,6 +135,7 @@ const validateCheckPassword = async (_rule: Rule, value: string) => {
     return Promise.resolve();
 };
 
+// 同意协议校验
 const validateAgree = async () => {
     if (!agree.value) {
         return Promise.reject('请先阅读并同意服务协议');
@@ -140,6 +143,7 @@ const validateAgree = async () => {
     return Promise.resolve();
 };
 
+// 表单校验规则
 const rules: Record<string, Rule[]> = {
     userAccount: [
         { required: true, message: '请输入账号', trigger: 'blur' },
@@ -157,6 +161,7 @@ const rules: Record<string, Rule[]> = {
     ],
 };
 
+// 注册逻辑
 async function handleRegister() {
     loading.value = true;
     try {
@@ -334,9 +339,6 @@ async function handleRegister() {
     text-decoration: underline;
 }
 
-:deep(.ant-input-affix-wrapper-lg) {
-    padding-block: 8px;
-}
 
 :deep(.ant-form-item-label > label) {
     font-weight: 500;

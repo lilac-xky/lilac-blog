@@ -8,11 +8,12 @@ const request = axios.create({
     withCredentials: true,
 });
 
+// 请求拦截器
 request.interceptors.request.use(
     (config) => {
         const token = useUserStore().loginUser?.token;
         if (token) {
-            config.headers.set('token', token);
+            config.headers.set('user-token', token);
         }
         return config;
     },
@@ -21,18 +22,34 @@ request.interceptors.request.use(
 
 const AUTH_FAIL_CODES = new Set([401, 400001]);
 
+// 响应拦截器
 request.interceptors.response.use(
     (response) => {
-        const { data } = response;
+        const { data, config } = response;
         if (data.code !== 200) {
             if (AUTH_FAIL_CODES.has(data.code)) {
                 useUserStore().clearLoginUser();
             }
-            message.error(data.msg || '请求出错');
+            if (!(config as any)?.silentError) {
+                message.error(data.msg || '请求出错');
+            }
             return Promise.reject(data);
         }
         return response;
     },
+    (error) => {
+        const config = error.config;
+        const data = error.response?.data;
+        const code = data?.code;
+        const msg = data?.msg || error.message || '网络请求出错';
+        if (code && AUTH_FAIL_CODES.has(code)) {
+            useUserStore().clearLoginUser();
+        }
+        if (!(config as any)?.silentError) {
+            message.error(msg);
+        }
+        return Promise.reject(error);
+    }
 );
 
 export default request;

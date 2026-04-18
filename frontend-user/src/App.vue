@@ -94,4 +94,32 @@ body {
 .ant-input-affix-wrapper {
   border-radius: var(--radius-pill) !important;
 }
+
+/* 修复带 prefix / allow-clear 时光标紧贴图标：强制 flex + gap，并给 input 加左内边距 */
+.ant-input-affix-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-inline: 14px !important;
+}
+
+.ant-input-affix-wrapper.ant-input-affix-wrapper-lg {
+  padding-block: 8px !important;
+  padding-inline: 16px !important;
+}
+
+.ant-input-affix-wrapper .ant-input-prefix,
+.ant-input-affix-wrapper .ant-input-suffix {
+  margin: 0 !important;
+  flex: 0 0 auto;
+  color: #bfbfbf;
+}
+
+.ant-input-affix-wrapper input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
 </style>

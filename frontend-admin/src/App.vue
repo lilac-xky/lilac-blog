@@ -99,6 +99,33 @@ body {
   border-radius: var(--radius-pill) !important;
 }
 
+.ant-input-affix-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-inline: 14px !important;
+}
+
+.ant-input-affix-wrapper.ant-input-affix-wrapper-lg {
+  padding-block: 8px !important;
+  padding-inline: 16px !important;
+}
+
+.ant-input-affix-wrapper .ant-input-prefix,
+.ant-input-affix-wrapper .ant-input-suffix {
+  margin: 0 !important;
+  flex: 0 0 auto;
+  color: #bfbfbf;
+}
+
+.ant-input-affix-wrapper input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
 .ant-menu-light.ant-menu-inline {
   border-inline-end: none !important;
 }

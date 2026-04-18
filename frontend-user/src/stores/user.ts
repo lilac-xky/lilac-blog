@@ -3,6 +3,7 @@ import { ref } from 'vue';
 
 const STORAGE_KEY = 'lilac-blog-user';
 
+// 读取本地存储
 function readStorage(): API.LoginUserVO | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -12,6 +13,7 @@ function readStorage(): API.LoginUserVO | null {
   }
 }
 
+// 用户信息存储
 export const useUserStore = defineStore('user', () => {
   const loginUser = ref<API.LoginUserVO | null>(readStorage());
 

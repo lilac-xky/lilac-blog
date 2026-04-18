@@ -13,8 +13,13 @@
                     <template v-if="userStore.loginUser?.token">
                         <a-dropdown placement="bottomRight">
                             <div class="user-chip">
-                                <a-avatar :size="32" :src="userStore.loginUser.avater || defaultAvatar" />
-                                <span class="user-name">{{ userStore.loginUser.username || userStore.loginUser.userAccount }}</span>
+                                <a-avatar :size="32" :src="userStore.loginUser.avater || undefined">
+                                    <template #icon>
+                                        <UserOutlined />
+                                    </template>
+                                </a-avatar>
+                                <span class="user-name">{{ userStore.loginUser.username ||
+                                    userStore.loginUser.userAccount }}</span>
                             </div>
                             <template #overlay>
                                 <a-menu @click="handleMenu">
@@ -40,18 +45,17 @@
 </template>
 
 <script setup lang="ts">
-import { LogoutOutlined } from '@ant-design/icons-vue';
+import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import { logout } from '@/api/userController';
 
 const userStore = useUserStore();
-const defaultAvatar = 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png';
 
 async function handleMenu({ key }: { key: string }) {
     if (key === 'logout') {
         try {
-            await logout();
+            await logout({ silentError: true });
         } catch {
             // ignore, still clear local state
         } finally {
