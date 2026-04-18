@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import BasicLayout from '../layouts/BasicLayout.vue'
-import Home from '../views/Home.vue'
-import Login from '../views/login/Login.vue'
-import { useUserStore } from '@/stores/user'
+import BasicLayout from '@/layouts/BasicLayout.vue'
+import Home from '@/views/Home.vue'
+import Login from '@/views/login/Login.vue'
+import Register from '@/views/login/Register.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,7 +11,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login,
-      meta: { public: true },
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: Register,
     },
     {
       path: '/',
@@ -25,15 +29,6 @@ const router = createRouter({
       ],
     },
   ],
-})
-
-router.beforeEach((to, _from, next) => {
-  if (to.meta?.public) return next()
-  const { loginUser } = useUserStore()
-  if (!loginUser?.token) {
-    return next({ path: '/login', query: { redirect: to.fullPath } })
-  }
-  next()
 })
 
 export default router

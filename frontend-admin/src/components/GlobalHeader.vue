@@ -5,7 +5,6 @@
             <p class="page-subtitle">{{ pageSubtitle }}</p>
         </div>
         <div class="header-right">
-            <a-input-search placeholder="搜索..." class="header-search" />
             <a-badge :count="0" :dot="true">
                 <a-button shape="circle" class="icon-btn">
                     <template #icon>
@@ -15,19 +14,19 @@
             </a-badge>
             <a-dropdown placement="bottomRight">
                 <div class="user-chip">
-                    <a-avatar :size="32" src="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" />
-                    <span class="user-name">Admin</span>
+                    <a-avatar :size="32" :src="userStore.loginUser?.avater || defaultAvatar" />
+                    <span class="user-name">{{ userStore.loginUser?.username || 'Admin' }}</span>
                 </div>
                 <template #overlay>
-                    <a-menu>
-                        <a-menu-item key="1">
+                    <a-menu @click="handleMenuClick">
+                        <a-menu-item key="profile">
                             <UserOutlined /> 个人中心
                         </a-menu-item>
-                        <a-menu-item key="2">
+                        <a-menu-item key="settings">
                             <SettingOutlined /> 设置
                         </a-menu-item>
                         <a-menu-divider />
-                        <a-menu-item key="3">
+                        <a-menu-item key="logout">
                             <LogoutOutlined /> 退出登录
                         </a-menu-item>
                     </a-menu>
@@ -39,15 +38,22 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { message, Modal } from 'ant-design-vue';
 import {
     BellOutlined,
     UserOutlined,
     SettingOutlined,
     LogoutOutlined,
 } from '@ant-design/icons-vue';
+import { logout } from '@/api/adminController';
+import { useUserStore } from '@/stores/user';
 
 const route = useRoute();
+const router = useRouter();
+const userStore = useUserStore();
+
+const defaultAvatar = 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png';
 
 const titleMap: Record<string, { title: string; subtitle: string }> = {
     '/': { title: '仪表盘', subtitle: '欢迎回到 lilac-blog 后台管理系统' },
@@ -60,6 +66,27 @@ const titleMap: Record<string, { title: string; subtitle: string }> = {
 
 const pageTitle = computed(() => titleMap[route.path]?.title ?? '仪表盘');
 const pageSubtitle = computed(() => titleMap[route.path]?.subtitle ?? '');
+
+async function handleMenuClick({ key }: { key: string }) {
+    if (key === 'logout') {
+        Modal.confirm({
+            title: '确认退出登录？',
+            okText: '退出',
+            cancelText: '取消',
+            onOk: async () => {
+                try {
+                    await logout();
+                } catch {
+                    // ignore, still clear local state
+                } finally {
+                    userStore.clearLoginUser();
+                    message.success('已退出登录');
+                    router.push('/login');
+                }
+            },
+        });
+    }
+}
 </script>
 
 <style scoped>
@@ -96,10 +123,6 @@ const pageSubtitle = computed(() => titleMap[route.path]?.subtitle ?? '');
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.header-search {
-    width: 220px;
 }
 
 .icon-btn {

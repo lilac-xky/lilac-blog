@@ -4,17 +4,17 @@
         <div class="auth-hero">
             <div class="hero-content">
                 <div class="hero-logo">
-                    <img src="../../assets/logo.png" alt="logo" />
+                    <img src="@/assets/logo.png" alt="logo" />
                     <span>lilac-blog</span>
                 </div>
                 <h1 class="hero-title">欢迎回来</h1>
                 <p class="hero-desc">
-                    登录后台管理系统，开启你的创作之旅。<br />
+                    登录后继续你的阅读之旅。<br />
                     记录生活，分享思考，连接更多读者。
                 </p>
                 <div class="hero-badges">
-                    <div class="badge"><span class="dot" style="background:#52c41a"></span>文章管理</div>
-                    <div class="badge"><span class="dot" style="background:#1890ff"></span>分类标签</div>
+                    <div class="badge"><span class="dot" style="background:#52c41a"></span>收藏文章</div>
+                    <div class="badge"><span class="dot" style="background:#1890ff"></span>订阅作者</div>
                     <div class="badge"><span class="dot" style="background:#faad14"></span>留言互动</div>
                 </div>
             </div>
@@ -59,6 +59,11 @@
                             登 录
                         </a-button>
                     </a-form-item>
+
+                    <div class="form-footer">
+                        还没有账号？
+                        <router-link to="/register" class="link-primary">立即注册</router-link>
+                    </div>
                 </a-form>
             </div>
         </div>
@@ -71,7 +76,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import { login } from '@/api/adminController';
+import { login } from '@/api/userController';
 import { useUserStore } from '@/stores/user';
 
 const router = useRouter();
@@ -80,13 +85,11 @@ const userStore = useUserStore();
 const loading = ref(false);
 const remember = ref(true);
 
-// 登录表单状态
 const formState = reactive<API.UserLoginRequest>({
     userAccount: '',
     password: '',
 });
 
-// 表单验证规则
 const rules: Record<string, Rule[]> = {
     userAccount: [
         { required: true, message: '请输入账号', trigger: 'blur' },
@@ -98,7 +101,6 @@ const rules: Record<string, Rule[]> = {
     ],
 };
 
-// 登录逻辑
 async function handleLogin() {
     loading.value = true;
     try {
@@ -127,7 +129,6 @@ async function handleLogin() {
     background: var(--bg-page);
 }
 
-/* ===== 左侧品牌区 ===== */
 .auth-hero {
     position: relative;
     background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 60%, #3a3a3a 100%);
@@ -226,7 +227,6 @@ async function handleLogin() {
     left: -60px;
 }
 
-/* ===== 右侧表单区 ===== */
 .auth-form-wrap {
     display: flex;
     align-items: center;
@@ -308,7 +308,6 @@ async function handleLogin() {
     color: var(--text-primary);
 }
 
-/* ===== 响应式 ===== */
 @media (max-width: 900px) {
     .auth-page {
         grid-template-columns: 1fr;

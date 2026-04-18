@@ -3,7 +3,7 @@ package com.lilac.service.impl.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.BCrypt;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.UserConstant;
@@ -20,11 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 /**
-* 用户服务实现类
-*/
+ * 用户服务实现类
+ */
 @Service
 @Slf4j
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     /**
      * 用户注册
@@ -75,10 +75,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
+     * 管理员登录
+     *
+     * @param userAccount 用户名
+     * @param password    密码
+     * @return 登录结果
+     */
+    @Override
+    public LoginUserVO adminLogin(String userAccount, String password) {
+        // 参数校验
+        if (StrUtil.hasBlank(userAccount, password)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR);
+        }
+        if (userAccount.length() > 50) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户名过长");
+        }
+        if (password.length() < 6 || password.length() > 20) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
+        }
+        // 查询数据库是否存在该用户
+        User user = this.baseMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUserAccount, userAccount)
+                .eq(User::getPassword, getEncodedPassword(password)));
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户名或密码错误");
+        }
+        if(!UserConstant.ADMIN_ROLE.equals(user.getRole())){
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户权限不足");
+        }
+        // 登录
+        StpKit.ADMIN.login(user.getId());
+        LoginUserVO loginUserVO = this.getLoginUserVO(user);
+        loginUserVO.setToken(StpUtil.getTokenValue());
+        StpKit.ADMIN.getSession().set(UserConstant.ADMIN_LOGIN_STATE, loginUserVO);
+        return loginUserVO;
+    }
+
+    /**
      * 用户登录
      *
      * @param userAccount 用户名
-     * @param password 密码
+     * @param password    密码
      * @return 登录结果
      */
     @Override
@@ -93,22 +130,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (password.length() < 6 || password.length() > 20) {
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
         }
-        // 密码加密
-        String encodedPassword = getEncodedPassword(password);
         // 查询数据库是否存在该用户
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("userAccount", userAccount).eq("password", encodedPassword);
-        User user = this.baseMapper.selectOne(userQueryWrapper);
+        User user = this.baseMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUserAccount, userAccount)
+                .eq(User::getPassword, getEncodedPassword(password)));
         if (user == null) {
             log.info("数据库不存在该用户");
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户名或密码错误");
         }
-        LoginUserVO loginUserVO = this.getLoginUserVO(user);
         // 登录
         StpKit.USER.login(user.getId());
-        StpKit.USER.getSession().set(UserConstant.USER_LOGIN_STATE, user);
+        LoginUserVO loginUserVO = this.getLoginUserVO(user);
         loginUserVO.setToken(StpUtil.getTokenValue());
+        StpKit.USER.getSession().set(UserConstant.USER_LOGIN_STATE, loginUserVO);
         return loginUserVO;
+    }
+
+    /**
+     * 用户登出
+     *
+     * @return 登出结果
+     */
+    @Override
+    public boolean logout() {
+        if (StpKit.ADMIN.isLogin()) {
+            StpKit.ADMIN.logout();
+            return true;
+        }
+        if (StpKit.USER.isLogin()) {
+            StpKit.USER.logout();
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -1,7 +1,9 @@
 package com.lilac.manager.auth.anotation;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
+import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.strategy.SaAnnotationStrategy;
+import com.lilac.manager.auth.StpKit;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -19,7 +21,20 @@ public class SaTokenConfigure implements WebMvcConfigurer{
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**");
+        // 管理端拦截器：只校验 /admin/** 的路由
+        registry.addInterceptor(new SaInterceptor(handle -> {
+            // 匹配所有 admin 路径，排除登录注册
+            SaRouter.match("/admin/**")
+                    .notMatch("/admin/login", "/admin/register")
+                    .check(r -> StpKit.ADMIN.checkLogin());
+        })).addPathPatterns("/admin/**");
+        // 2. 用户端拦截器：只校验 /user/**
+        registry.addInterceptor(new SaInterceptor(handle -> {
+            // 匹配所有 user 路径，排除登录注册
+            SaRouter.match("/user/**")
+                    .notMatch("/user/login", "/user/register")
+                    .check(r -> StpKit.USER.checkLogin());
+        })).addPathPatterns("/user/**");
     }
 
     @PostConstruct

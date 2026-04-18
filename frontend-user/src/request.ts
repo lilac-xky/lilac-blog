@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
-import router from '@/router';
 
 const request = axios.create({
     baseURL: 'http://localhost:9090',
@@ -28,12 +27,6 @@ request.interceptors.response.use(
         if (data.code !== 200) {
             if (AUTH_FAIL_CODES.has(data.code)) {
                 useUserStore().clearLoginUser();
-                if (router.currentRoute.value.path !== '/login') {
-                    router.push({
-                        path: '/login',
-                        query: { redirect: router.currentRoute.value.fullPath },
-                    });
-                }
             }
             message.error(data.msg || '请求出错');
             return Promise.reject(data);

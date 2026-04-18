@@ -20,10 +20,9 @@ const themeConfig = {
 
 <style>
 :root {
-  --bg-page: #f4f6fa;
+  --bg-page: #faf9f7;
   --bg-card: #ffffff;
-  --bg-sider: #1a1a1a;
-  --bg-sider-active: #2a2a2a;
+  --bg-hero: #1a1a1a;
   --text-primary: #1a1a1a;
   --text-secondary: #8a8a8a;
   --text-muted: #b0b0b0;
@@ -47,8 +46,7 @@ const themeConfig = {
 html,
 body,
 #app {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 body {
@@ -59,7 +57,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 全局滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -74,7 +71,6 @@ body {
   background: transparent;
 }
 
-/* Ant Design 组件统一圆角 */
 .ant-card {
   border-radius: var(--radius-card) !important;
   box-shadow: var(--shadow-card);
@@ -97,9 +93,5 @@ body {
 .ant-input,
 .ant-input-affix-wrapper {
   border-radius: var(--radius-pill) !important;
-}
-
-.ant-menu-light.ant-menu-inline {
-  border-inline-end: none !important;
 }
 </style>

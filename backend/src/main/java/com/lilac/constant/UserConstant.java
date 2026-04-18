@@ -7,7 +7,11 @@ public interface UserConstant {
 
     String USER_LOGIN_STATE = "user_login";
 
+    String ADMIN_LOGIN_STATE = "admin_login";
+
     String USER_DEFAULT_NAME = "用户";
 
     String USER_DEFAULT_ROLE = "user";
+
+    String ADMIN_ROLE = "admin";
 }
