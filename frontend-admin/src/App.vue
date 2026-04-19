@@ -11,7 +11,8 @@ import zhCN from 'ant-design-vue/lib/locale/zh_CN';
 
 const themeConfig = {
   token: {
-    colorPrimary: '#1a1a1a',
+    colorPrimary: '#c4a062',
+    colorLink: '#a6874d',
     borderRadius: 10,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
   },
@@ -20,16 +21,36 @@ const themeConfig = {
 
 <style>
 :root {
-  --bg-page: #f4f6fa;
+  /* 背景层 */
+  --bg-page: #faf8f3;
   --bg-card: #ffffff;
-  --bg-sider: #1a1a1a;
-  --bg-sider-active: #2a2a2a;
-  --text-primary: #1a1a1a;
-  --text-secondary: #8a8a8a;
-  --text-muted: #b0b0b0;
-  --border-soft: #eef0f4;
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --bg-card-soft: #fbf9f4;
+  --bg-sider: #1a2332;
+  --bg-sider-light: #2a3a52;
+  --bg-sider-active: rgba(196, 160, 98, 0.14);
+  --sider-active-bar: #c4a062;
+  --sider-border: rgba(255, 255, 255, 0.06);
+
+  /* 文字 */
+  --text-primary: #1a2332;
+  --text-secondary: #4a5564;
+  --text-muted: #94a0b1;
+
+  /* 边框 */
+  --border-soft: #efe9d5;
+  --border: #e5ddc8;
+
+  /* 主色（琥珀金） */
+  --primary: #c4a062;
+  --primary-hover: #a6874d;
+  --primary-soft: #d4b679;
+  --primary-wash: #f5ecd8;
+
+  /* 阴影 */
+  --shadow-card: 0 2px 12px rgba(26, 35, 50, 0.06);
+  --shadow-hover: 0 8px 24px rgba(26, 35, 50, 0.10);
+
+  /* 圆角 */
   --radius-card: 16px;
   --radius-sm: 10px;
   --radius-pill: 999px;
@@ -66,7 +87,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
+  background: var(--border);
   border-radius: 999px;
 }
 
@@ -78,7 +99,7 @@ body {
 .ant-card {
   border-radius: var(--radius-card) !important;
   box-shadow: var(--shadow-card);
-  border: none !important;
+  border: 1px solid var(--border) !important;
 }
 
 .ant-btn {
@@ -87,16 +108,25 @@ body {
 }
 
 .ant-btn-primary {
-  background: var(--text-primary) !important;
+  background: var(--primary) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(196, 160, 98, 0.28);
 }
 
 .ant-btn-primary:hover {
-  background: #333 !important;
+  background: var(--primary-hover) !important;
+  box-shadow: 0 6px 18px rgba(196, 160, 98, 0.36);
 }
 
 .ant-input,
 .ant-input-affix-wrapper {
-  border-radius: var(--radius-pill) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.ant-input-affix-wrapper:focus-within,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-wash) !important;
 }
 
 .ant-input-affix-wrapper {
@@ -115,7 +145,7 @@ body {
 .ant-input-affix-wrapper .ant-input-suffix {
   margin: 0 !important;
   flex: 0 0 auto;
-  color: #bfbfbf;
+  color: var(--text-muted);
 }
 
 .ant-input-affix-wrapper input {

@@ -136,23 +136,36 @@ const fixedMenuItems = [
     margin-block: 4px;
     margin-inline: 0;
     width: 100%;
-    border-radius: 12px;
-    color: rgba(255, 255, 255, 0.65);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.72);
     height: 44px;
     line-height: 44px;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 :deep(.ant-menu-dark .ant-menu-item:hover),
 :deep(.ant-menu-dark .ant-menu-submenu-title:hover) {
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
     color: #fff !important;
 }
 
 :deep(.ant-menu-dark .ant-menu-item-selected) {
     background: var(--bg-sider-active) !important;
     color: #fff !important;
-    font-weight: 600;
+    font-weight: 500;
+}
+
+/* 激活态左侧 3px 琥珀金竖条 */
+:deep(.ant-menu-dark .ant-menu-item-selected)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    background: var(--sider-active-bar);
+    border-radius: 0 2px 2px 0;
 }
 
 :deep(.ant-menu-dark.ant-menu-inline .ant-menu-sub.ant-menu-inline) {

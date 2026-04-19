@@ -131,13 +131,14 @@ async function handleMenuClick({ key }: { key: string }) {
 
 .icon-btn {
     background: #fff !important;
-    border: none !important;
+    border: 1px solid var(--border) !important;
     box-shadow: var(--shadow-card);
-    color: var(--text-primary) !important;
+    color: var(--text-secondary) !important;
 }
 
 .icon-btn:hover {
-    color: var(--text-primary) !important;
+    color: var(--primary) !important;
+    border-color: var(--primary-soft) !important;
     transform: translateY(-1px);
 }
 

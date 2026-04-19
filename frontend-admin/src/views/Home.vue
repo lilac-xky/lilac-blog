@@ -7,7 +7,7 @@
           <component :is="item.icon" />
         </div>
         <div class="stat-main">
-          <div class="stat-value" :style="{ color: item.color }">
+          <div class="stat-value">
             {{ item.value }}
             <span class="stat-suffix">{{ item.suffix }}</span>
           </div>
@@ -156,14 +156,17 @@ const today = computed(() => {
 });
 
 // 统计卡片数据（占位数据，后续接入真实 API）
+// 四张卡统一使用琥珀金 wash 作图标底色，保持克制商务感
+const STAT_COLOR = 'var(--primary)';
+const STAT_BG = 'var(--primary-wash)';
 const statCards = [
   {
     title: '文章总数',
     value: 0,
     suffix: '篇',
     icon: h(ReadOutlined),
-    color: '#1890ff',
-    bg: 'rgba(24,144,255,0.1)',
+    color: STAT_COLOR,
+    bg: STAT_BG,
     trend: 12,
     onClick: () => router.push('/write-blog'),
   },
@@ -172,8 +175,8 @@ const statCards = [
     value: 0,
     suffix: '个',
     icon: h(AppstoreOutlined),
-    color: '#52c41a',
-    bg: 'rgba(82,196,26,0.1)',
+    color: STAT_COLOR,
+    bg: STAT_BG,
     trend: 5,
     onClick: () => router.push('/blog/category'),
   },
@@ -182,8 +185,8 @@ const statCards = [
     value: 0,
     suffix: '个',
     icon: h(TagOutlined),
-    color: '#faad14',
-    bg: 'rgba(250,173,20,0.1)',
+    color: STAT_COLOR,
+    bg: STAT_BG,
     trend: -2,
     onClick: () => router.push('/blog/tag'),
   },
@@ -192,8 +195,8 @@ const statCards = [
     value: 0,
     suffix: '次',
     icon: h(EyeOutlined),
-    color: '#722ed1',
-    bg: 'rgba(114,46,209,0.1)',
+    color: STAT_COLOR,
+    bg: STAT_BG,
     trend: 18,
     onClick: () => { },
   },
@@ -518,13 +521,30 @@ const todos = [
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, var(--bg-sider) 0%, var(--bg-sider-light) 100%);
   color: #fff;
   padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.greet-panel::before {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary), transparent 70%);
+  opacity: 0.22;
+  top: -60px;
+  right: -60px;
+  pointer-events: none;
 }
 
 .greet-text {
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .greet-hello {
@@ -540,12 +560,14 @@ const todos = [
 }
 
 .greet-sub b {
-  color: #ffd666;
+  color: var(--primary);
   font-weight: 700;
 }
 
 .greet-avatar {
-  background: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(196, 160, 98, 0.22) !important;
+  position: relative;
+  z-index: 1;
 }
 
 .todo-panel {
