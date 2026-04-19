@@ -27,4 +27,9 @@ public class UserRegisterRequest {
      * 确认密码
      */
     private String checkPassword;
+
+    /**
+     * 验证码
+     */
+    private String code;
 }

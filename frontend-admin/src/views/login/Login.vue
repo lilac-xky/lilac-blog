@@ -45,8 +45,8 @@
                     </div>
 
                     <a-form :model="formState" :rules="rules" layout="vertical" @finish="handleLogin">
-                        <a-form-item label="账号" name="userAccount">
-                            <a-input v-model:value="formState.userAccount" placeholder="请输入账号" size="large" allow-clear>
+                        <a-form-item label="账号" name="account">
+                            <a-input v-model:value="formState.account" placeholder="请输入账号 / 邮箱" size="large" allow-clear>
                                 <template #prefix>
                                     <UserOutlined />
                                 </template>
@@ -99,14 +99,14 @@ const remember = ref(true);
 
 // 登录表单状态
 const formState = reactive<API.UserLoginRequest>({
-    userAccount: '',
+    account: '',
     password: '',
 });
 
 // 表单验证规则
 const rules: Record<string, Rule[]> = {
-    userAccount: [
-        { required: true, message: '请输入账号', trigger: 'blur' },
+    account: [
+        { required: true, message: '请输入账号或邮箱', trigger: 'blur' },
         { max: 50, message: '账号不能超过 50 个字符', trigger: 'blur' },
     ],
     password: [

@@ -11,12 +11,7 @@ public class UserLoginRequest {
     /**
      * 账号
      */
-    private String userAccount;
-
-    /**
-     * 邮箱
-     */
-    private String email;
+    private String account;
 
     /**
      * 密码

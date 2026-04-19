@@ -37,11 +37,14 @@ declare namespace API {
     data?: number;
   };
 
+  type sendRegisterCodeParams = {
+    /** 邮箱 */
+    email: string;
+  };
+
   type UserLoginRequest = {
     /** 账号 */
-    userAccount?: string;
-    /** 邮箱 */
-    email?: string;
+    account?: string;
     /** 密码 */
     password?: string;
   };
@@ -55,5 +58,7 @@ declare namespace API {
     password?: string;
     /** 确认密码 */
     checkPassword?: string;
+    /** 验证码 */
+    code?: string;
   };
 }

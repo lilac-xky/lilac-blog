@@ -73,6 +73,21 @@
                         </a-input-password>
                     </a-form-item>
 
+                    <a-form-item label="验证码" name="code">
+                        <div class="code-row">
+                            <a-input v-model:value="formState.code" placeholder="请输入邮箱验证码" size="large" allow-clear
+                                class="code-input">
+                                <template #prefix>
+                                    <NumberOutlined />
+                                </template>
+                            </a-input>
+                            <a-button size="large" class="code-btn" :disabled="sendingCode || countdown > 0"
+                                :loading="sendingCode" @click="handleSendCode">
+                                {{ countdown > 0 ? `${countdown}s 后重试` : '发送验证码' }}
+                            </a-button>
+                        </div>
+                    </a-form-item>
+
                     <a-form-item name="agree" :rules="[{ validator: validateAgree }]">
                         <a-checkbox v-model:checked="agree">
                             我已阅读并同意
@@ -100,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { reactive, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import {
@@ -108,13 +123,17 @@ import {
     LockOutlined,
     MailOutlined,
     SafetyOutlined,
+    NumberOutlined,
 } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import { register } from '@/api/userController';
+import { register, sendRegisterCode } from '@/api/userController';
 
 const router = useRouter();
 const loading = ref(false);
 const agree = ref(false);
+const sendingCode = ref(false);
+const countdown = ref(0);
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 // 表单数据
 const formState = reactive<API.UserRegisterRequest>({
@@ -122,6 +141,7 @@ const formState = reactive<API.UserRegisterRequest>({
     email: '',
     password: '',
     checkPassword: '',
+    code: '',
 });
 
 // 确认密码校验
@@ -150,6 +170,7 @@ const rules: Record<string, Rule[]> = {
         { max: 50, message: '账号不能超过 50 个字符', trigger: 'blur' },
     ],
     email: [
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
         { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' },
     ],
     password: [
@@ -159,7 +180,53 @@ const rules: Record<string, Rule[]> = {
     checkPassword: [
         { required: true, validator: validateCheckPassword, trigger: 'blur' },
     ],
+    code: [
+        { required: true, message: '请输入邮箱验证码', trigger: 'blur' },
+        { len: 6, message: '验证码为 6 位数字', trigger: 'blur' },
+    ],
 };
+
+// 启动倒计时
+function startCountdown() {
+    countdown.value = 60;
+    countdownTimer = setInterval(() => {
+        countdown.value -= 1;
+        if (countdown.value <= 0 && countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+    }, 1000);
+}
+
+// 发送验证码
+async function handleSendCode() {
+    const email = formState.email?.trim();
+    if (!email) {
+        message.warning('请先输入邮箱');
+        return;
+    }
+    // 邮箱格式简单校验
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        message.warning('邮箱格式不正确');
+        return;
+    }
+    sendingCode.value = true;
+    try {
+        const res = await sendRegisterCode({ email });
+        if (res.data?.data) {
+            message.success('验证码已发送，请查收邮件');
+            startCountdown();
+        }
+    } catch (err) {
+        // 错误提示已由请求拦截器统一处理
+    } finally {
+        sendingCode.value = false;
+    }
+}
+
+onUnmounted(() => {
+    if (countdownTimer) clearInterval(countdownTimer);
+});
 
 // 注册逻辑
 async function handleRegister() {
@@ -347,6 +414,21 @@ async function handleRegister() {
 
 :deep(.ant-form-item) {
     margin-bottom: 18px;
+}
+
+.code-row {
+    display: flex;
+    gap: 10px;
+}
+
+.code-input {
+    flex: 1;
+}
+
+.code-btn {
+    flex-shrink: 0;
+    min-width: 120px;
+    border-radius: var(--radius-sm) !important;
 }
 
 @media (max-width: 900px) {

@@ -1,5 +1,6 @@
 package com.lilac.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.lilac.domain.dto.user.UserLoginRequest;
 import com.lilac.domain.dto.user.UserRegisterRequest;
 import com.lilac.domain.result.Result;
@@ -30,9 +31,11 @@ public class UserController {
     public Result<Long> register(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest.getUserAccount() == null, HttpsCodeEnum.PARAMS_ERROR);
         String userAccount = userRegisterRequest.getUserAccount();
+        String email = userRegisterRequest.getEmail();
         String password = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        long result = userService.userRegister(userAccount, password, checkPassword);
+        String code = userRegisterRequest.getCode();
+        long result = userService.userRegister(userAccount, email, password, checkPassword, code);
         return Result.success(result);
     }
 
@@ -44,10 +47,10 @@ public class UserController {
      */
     @PostMapping("/login")
     public Result<LoginUserVO> login(@RequestBody UserLoginRequest userLoginRequest) {
-        ThrowUtils.throwIf(userLoginRequest.getUserAccount() == null, HttpsCodeEnum.PARAMS_ERROR);
-        String userAccount = userLoginRequest.getUserAccount();
+        ThrowUtils.throwIf(userLoginRequest.getAccount() == null, HttpsCodeEnum.PARAMS_ERROR);
+        String account = userLoginRequest.getAccount();
         String password = userLoginRequest.getPassword();
-        LoginUserVO loginUserVO = userService.userLogin(userAccount, password);
+        LoginUserVO loginUserVO = userService.userLogin(account, password);
         return Result.success(loginUserVO);
     }
 
@@ -60,6 +63,19 @@ public class UserController {
     public Result<Boolean> logout() {
         boolean result = userService.logout();
         return Result.success(result);
+    }
+
+    /**
+     * 发送注册验证码
+     *
+     * @param email 邮箱
+     * @return 发送结果
+     */
+    @GetMapping("/sendCode")
+    public Result<Boolean> sendRegisterCode(@RequestParam String email) {
+        ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
+        userService.sendRegisterCode(email);
+        return Result.success(true);
     }
 
 }

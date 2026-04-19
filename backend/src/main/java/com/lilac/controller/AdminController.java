@@ -27,10 +27,10 @@ public class AdminController {
      */
     @PostMapping("/login")
     public Result<LoginUserVO> login(@RequestBody UserLoginRequest userLoginRequest) {
-        ThrowUtils.throwIf(userLoginRequest.getUserAccount() == null, HttpsCodeEnum.PARAMS_ERROR);
-        String userAccount = userLoginRequest.getUserAccount();
+        ThrowUtils.throwIf(userLoginRequest.getAccount() == null, HttpsCodeEnum.PARAMS_ERROR);
+        String account = userLoginRequest.getAccount();
         String password = userLoginRequest.getPassword();
-        LoginUserVO loginUserVO = userService.adminLogin(userAccount, password);
+        LoginUserVO loginUserVO = userService.adminLogin(account, password);
         return Result.success(loginUserVO);
     }
 

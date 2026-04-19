@@ -39,3 +39,18 @@ export async function register(
     ...(options || {}),
   });
 }
+
+/** 发送注册验证码 GET /api/user/sendCode */
+export async function sendRegisterCode(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.sendRegisterCodeParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/user/sendCode", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
