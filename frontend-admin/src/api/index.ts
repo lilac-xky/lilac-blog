@@ -4,7 +4,9 @@
 // API 唯一标识：
 import * as userController from "./userController";
 import * as adminController from "./adminController";
+import * as fileController from "./fileController";
 export default {
   userController,
   adminController,
+  fileController,
 };

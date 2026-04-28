@@ -43,7 +43,7 @@ public class User implements Serializable {
     /**
      * 头像
      */
-    private String avater;
+    private String avatar;
 
     /**
      * 角色(admin管理,user普通用户)
@@ -58,21 +58,21 @@ public class User implements Serializable {
     /**
      * 创建时间
      */
-    private Date creattime;
+    private Date creatTime;
 
     /**
      * 修改时间
      */
-    private Date updatetime;
+    private Date updateTime;
 
     /**
      * 编辑时间
      */
-    private Date edittime;
+    private Date editTime;
 
     /**
      * 0正常，1删除
      */
     @TableLogic
-    private String isdeleted;
+    private String isDeleted;
 }

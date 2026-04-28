@@ -10,17 +10,17 @@
             <result property="email" column="email" />
             <result property="password" column="password" />
             <result property="username" column="username" />
-            <result property="avater" column="avater" />
+            <result property="avatar" column="avatar" />
             <result property="role" column="role" />
             <result property="status" column="status" />
-            <result property="creattime" column="creatTime" />
-            <result property="updatetime" column="updateTime" />
-            <result property="edittime" column="editTime" />
-            <result property="isdeleted" column="isDeleted" />
+            <result property="creatTime" column="creatTime" />
+            <result property="updateTime" column="updateTime" />
+            <result property="editTime" column="editTime" />
+            <result property="isDeleted" column="isDeleted" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,userAccount,email,password,username,avater,
+        id,userAccount,email,password,username,avatar,
         role,status,creatTime,updateTime,editTime,
         isDeleted
     </sql>

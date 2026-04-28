@@ -1,12 +1,23 @@
-package com.lilac.domain.vo;
+package com.lilac.domain.dto.user;
 
+import com.lilac.common.PageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
 
 /**
- * 登录用户视图
+ * 查询用户请求
  */
 @Data
-public class LoginUserVO {
+@EqualsAndHashCode(callSuper = true)
+public class UserQueryRequest extends PageRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * id
+     */
     private Long id;
 
     /**
@@ -25,11 +36,6 @@ public class LoginUserVO {
     private String username;
 
     /**
-     * 头像
-     */
-    private String avatar;
-
-    /**
      * 角色(admin管理,user普通用户)
      */
     private String role;
@@ -38,9 +44,4 @@ public class LoginUserVO {
      * 1正常，0异常
      */
     private Integer status;
-
-    /**
-     * token
-     */
-    private String token;
 }

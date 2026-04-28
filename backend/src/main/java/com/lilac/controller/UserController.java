@@ -1,14 +1,22 @@
 package com.lilac.controller;
 
 import cn.hutool.core.util.StrUtil;
+import com.lilac.common.DeleteRequest;
+import com.lilac.constant.UserConstant;
+import com.lilac.domain.dto.user.UserEditRequest;
 import com.lilac.domain.dto.user.UserLoginRequest;
 import com.lilac.domain.dto.user.UserRegisterRequest;
+import com.lilac.domain.entity.User;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.exception.BusinessException;
+import com.lilac.manager.auth.StpKit;
+import com.lilac.manager.auth.anotation.SaUserCheckLogin;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -75,6 +83,40 @@ public class UserController {
     public Result<Boolean> sendRegisterCode(@RequestParam String email) {
         ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
         userService.sendRegisterCode(email);
+        return Result.success(true);
+    }
+
+    /**
+     * 更新用户信息
+     *
+     * @param userEditRequest 用户更新请求
+     * @return 更新结果
+     */
+    @PostMapping("/update")
+    public Result<Boolean> updateUser(@RequestBody UserEditRequest userEditRequest) {
+        ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        User user = new User();
+        BeanUtils.copyProperties(userEditRequest, user);
+        boolean result = userService.updateById(user);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        return Result.success(true);
+    }
+
+    /**
+     * 删除用户
+     *
+     * @param deleteRequest 删除请求
+     * @return 删除结果
+     */
+    @PostMapping("/delete")
+    public Result<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
+        LoginUserVO loginUser = (LoginUserVO) StpKit.USER.getSession().get(UserConstant.USER_LOGIN_STATE);
+        if(!loginUser.getId().equals(deleteRequest.getId())){
+            throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "只能删除自己");
+        }
+        boolean result = userService.removeById(deleteRequest.getId());
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }
 

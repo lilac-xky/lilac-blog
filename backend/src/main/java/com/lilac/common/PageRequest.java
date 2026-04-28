@@ -16,10 +16,6 @@ public class PageRequest {
      */
     private int pageSize = 10;
     /**
-     * 排序字段
-     */
-    private String sortField;
-    /**
      * 排序顺序（默认：升序）
      */
     private String sortOrder = "descend";

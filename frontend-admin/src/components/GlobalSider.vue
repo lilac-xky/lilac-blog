@@ -21,6 +21,7 @@ import {
     ProfileOutlined,
     UserOutlined,
     MessageOutlined,
+    TeamOutlined,
 } from '@ant-design/icons-vue';
 
 const route = useRoute();
@@ -60,6 +61,11 @@ const fixedMenuItems = [
         icon: () => h(AppstoreOutlined),
         label: '系统管理',
         children: [
+            {
+                key: '/user/manage',
+                icon: () => h(TeamOutlined),
+                label: '用户管理',
+            },
             {
                 key: '/blog/category',
                 icon: () => h(FolderOutlined),

@@ -1,12 +1,20 @@
-package com.lilac.domain.vo;
+package com.lilac.domain.dto.user;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
- * 登录用户视图
+ * 修改用户请求
  */
 @Data
-public class LoginUserVO {
+public class UserEditRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * id
+     */
     private Long id;
 
     /**
@@ -38,9 +46,4 @@ public class LoginUserVO {
      * 1正常，0异常
      */
     private Integer status;
-
-    /**
-     * token
-     */
-    private String token;
 }

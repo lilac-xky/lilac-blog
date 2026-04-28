@@ -1,5 +1,6 @@
 package com.lilac.manager.auth.anotation;
 
+import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.strategy.SaAnnotationStrategy;
@@ -23,6 +24,9 @@ public class SaTokenConfigure implements WebMvcConfigurer{
     public void addInterceptors(InterceptorRegistry registry) {
         // 管理端拦截器：只校验 /admin/** 的路由
         registry.addInterceptor(new SaInterceptor(handle -> {
+            if ("OPTIONS".equals(SaHolder.getRequest().getMethod())) {
+                return;
+            }
             // 匹配所有 admin 路径，排除登录注册
             SaRouter.match("/admin/**")
                     .notMatch("/admin/login", "/admin/logout")
@@ -30,6 +34,9 @@ public class SaTokenConfigure implements WebMvcConfigurer{
         })).addPathPatterns("/admin/**");
         // 2. 用户端拦截器：只校验 /user/**
         registry.addInterceptor(new SaInterceptor(handle -> {
+            if ("OPTIONS".equals(SaHolder.getRequest().getMethod())) {
+                return;
+            }
             // 匹配所有 user 路径，排除登录注册
             SaRouter.match("/user/**")
                     .notMatch("/user/login", "/user/register", "/user/logout", "/user/sendCode")

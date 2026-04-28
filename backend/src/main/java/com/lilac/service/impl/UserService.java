@@ -1,8 +1,11 @@
 package com.lilac.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lilac.domain.vo.LoginUserVO;
+import com.lilac.domain.vo.UserVO;
 
 /**
  * 用户服务
@@ -52,4 +55,11 @@ public interface UserService extends IService<User> {
      * @param email 邮箱
      */
     void sendRegisterCode(String email);
+
+    /**
+     * 获取当前登录用户
+     *
+     * @return 用户
+     */
+    Page<UserVO> listUserVOByPage(UserQueryRequest userQueryRequest);
 }

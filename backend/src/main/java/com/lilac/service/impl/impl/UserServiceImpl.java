@@ -2,14 +2,18 @@ package com.lilac.service.impl.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Validator;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.UserConstant;
+import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.LoginUserVO;
+import com.lilac.domain.vo.UserVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
 import com.lilac.manager.auth.StpKit;
@@ -246,6 +250,60 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
+     * 获取用户列表
+     *
+     * @param userQueryRequest 用户查询请求
+     * @return 用户列表
+     */
+    @Override
+    public Page<UserVO> listUserVOByPage(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR);
+        }
+        long current = userQueryRequest.getCurrent();
+        long size = userQueryRequest.getPageSize();
+        // 构建查询条件
+        LambdaQueryWrapper<User> queryWrapper = getQueryWrapper(userQueryRequest);
+        // 执行分页查询
+        Page<User> userPage = this.page(new Page<>(current, size), queryWrapper);
+        // 转换为 VO
+        Page<UserVO> userVOPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        userVOPage.setRecords(userPage.getRecords().stream().map(UserVO::objToVo).toList());
+        return userVOPage;
+    }
+
+    /**
+     * 获取查询条件
+     *
+     * @param userQueryRequest 用户查询请求
+     * @return 查询条件
+     */
+    private LambdaQueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        if (userQueryRequest == null) {
+            return queryWrapper;
+        }
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String email = userQueryRequest.getEmail();
+        String username = userQueryRequest.getUsername();
+        String role = userQueryRequest.getRole();
+        Integer status = userQueryRequest.getStatus();
+        String sortOrder = userQueryRequest.getSortOrder();
+        // 拼装条件
+        queryWrapper.eq(ObjUtil.isNotEmpty(id), User::getId, id);
+        queryWrapper.like(StrUtil.isNotBlank(userAccount), User::getUserAccount, userAccount);
+        queryWrapper.like(StrUtil.isNotBlank(email), User::getEmail, email);
+        queryWrapper.like(StrUtil.isNotBlank(username), User::getUsername, username);
+        queryWrapper.eq(StrUtil.isNotBlank(role), User::getRole, role);
+        queryWrapper.eq(ObjUtil.isNotEmpty(status), User::getStatus, status);
+        // 排序处理
+        boolean isDesc = "descend".equalsIgnoreCase(sortOrder);
+        queryWrapper.orderBy(true, isDesc, User::getCreatTime);
+        return queryWrapper;
+    }
+
+    /**
      * 公共登录：支持邮箱和用户名登录
      *
      * @param account 用户名
@@ -287,7 +345,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return DigestUtils.md5DigestAsHex((salt + userPassword).getBytes());
     }
 }
-
-
-
-
