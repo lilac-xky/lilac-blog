@@ -16,6 +16,12 @@ const themeConfig = {
     borderRadius: 10,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
   },
+  components: {
+    Input: {
+      paddingBlock: 4,
+      paddingInline: 8,
+    },
+  },
 };
 </script>
 
@@ -118,9 +124,13 @@ body {
   box-shadow: 0 6px 18px rgba(196, 160, 98, 0.36);
 }
 
-.ant-input,
+.ant-input:not(.ant-input-affix-wrapper .ant-input),
 .ant-input-affix-wrapper {
   border-radius: var(--radius-sm) !important;
+}
+
+.ant-input-affix-wrapper .ant-input {
+  border-radius: 0 !important;
 }
 
 .ant-input-affix-wrapper:focus-within,
@@ -132,13 +142,7 @@ body {
 .ant-input-affix-wrapper {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  padding-inline: 14px !important;
-}
-
-.ant-input-affix-wrapper.ant-input-affix-wrapper-lg {
-  padding-block: 8px !important;
-  padding-inline: 16px !important;
+  gap: 6px !important;
 }
 
 .ant-input-affix-wrapper .ant-input-prefix,
@@ -150,8 +154,9 @@ body {
 
 .ant-input-affix-wrapper input {
   flex: 1 1 auto !important;
+  align-self: stretch !important;
   min-width: 0 !important;
-  padding: 0 4px !important;
+  padding: 0 !important;
   margin: 0 !important;
   background: transparent !important;
 }

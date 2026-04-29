@@ -10,6 +10,7 @@ import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.exception.BusinessException;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -63,9 +64,7 @@ public class AdminController {
     @PostMapping("/update")
     public Result<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         ThrowUtils.throwIf(userUpdateRequest == null || userUpdateRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
-        User user = new User();
-        BeanUtils.copyProperties(userUpdateRequest, user);
-        boolean result = userService.updateById(user);
+        boolean result = userService.updateUser(userUpdateRequest);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }
@@ -79,6 +78,10 @@ public class AdminController {
     @PostMapping("/delete")
     public Result<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser();
+        if(deleteRequest.getId().equals(loginUser.getId())){
+            throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能删除自己");
+        }
         boolean result = userService.removeById(deleteRequest.getId());
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);

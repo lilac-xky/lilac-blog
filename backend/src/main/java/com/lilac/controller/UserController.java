@@ -95,10 +95,12 @@ public class UserController {
     @PostMapping("/update")
     public Result<Boolean> updateUser(@RequestBody UserEditRequest userEditRequest) {
         ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        // todo 带开发前台系统时增加修改用户名和邮箱次数限制，并且保证邮箱正确，需要验证码校验
         User user = new User();
         BeanUtils.copyProperties(userEditRequest, user);
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        userService.refreshUserSession(userEditRequest.getId());
         return Result.success(true);
     }
 
@@ -112,6 +114,7 @@ public class UserController {
     public Result<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
         LoginUserVO loginUser = (LoginUserVO) StpKit.USER.getSession().get(UserConstant.USER_LOGIN_STATE);
+        // todo 注销功能待完善
         if(!loginUser.getId().equals(deleteRequest.getId())){
             throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "只能删除自己");
         }

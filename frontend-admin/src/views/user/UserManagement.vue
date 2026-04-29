@@ -49,7 +49,7 @@
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="user-table">
+        size="middle" class="user-table" :scroll="{ x: 900 }">
         <!-- 头像列 -->
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'avatar'">
@@ -72,6 +72,11 @@
             <a-badge :status="record.status === 1 ? 'success' : 'error'" :text="record.status === 1 ? '正常' : '异常'" />
           </template>
 
+          <!-- 创建时间列 -->
+          <template v-else-if="column.key === 'creatTime'">
+            {{ record.creatTime ? record.creatTime.replace('T', ' ').split('.')[0] : '-' }}
+          </template>
+
           <!-- 操作列 -->
           <template v-else-if="column.key === 'action'">
             <a-space>
@@ -82,15 +87,12 @@
                 编辑
               </a-button>
               <a-divider type="vertical" />
-              <a-popconfirm title="确认删除该用户吗？" ok-text="确认" cancel-text="取消" ok-type="danger"
-                @confirm="handleDelete(record)">
-                <a-button type="link" size="small" danger>
-                  <template #icon>
-                    <DeleteOutlined />
-                  </template>
-                  删除
-                </a-button>
-              </a-popconfirm>
+              <a-button type="link" size="small" danger @click="confirmDelete(record)">
+                <template #icon>
+                  <DeleteOutlined />
+                </template>
+                删除
+              </a-button>
             </a-space>
           </template>
         </template>
@@ -100,7 +102,7 @@
       <div class="pagination-wrap">
         <a-pagination v-model:current="queryForm.current" v-model:page-size="queryForm.pageSize" :total="total"
           :page-size-options="['10', '20', '50']" show-quick-jumper show-size-changer
-          :show-total="(total) => `共 ${total} 条`" @change="fetchUsers" @show-size-change="fetchUsers" />
+          :show-total="(total: number) => `共 ${total} 条`" @change="fetchUsers" @show-size-change="fetchUsers" />
       </div>
     </div>
 
@@ -108,44 +110,56 @@
     <a-modal v-model:open="editVisible" title="编辑用户" :confirm-loading="editLoading" ok-text="保存" cancel-text="取消"
       :width="520" @ok="handleEditOk" @cancel="handleEditCancel">
       <a-form ref="editFormRef" :model="editForm" :rules="editRules" layout="vertical" class="edit-form">
-        <div class="edit-avatar-row">
-          <a-avatar :src="editForm.avatar" :size="56" class="edit-preview-avatar">
-            <template #icon>
-              <UserOutlined />
-            </template>
+
+        <!-- 头像区域 -->
+        <div class="edit-avatar-section">
+          <a-avatar :src="editForm.avatar" :size="72" class="edit-preview-avatar">
+            <template #icon><UserOutlined /></template>
           </a-avatar>
-          <a-form-item label="头像链接" name="avatar" style="flex: 1; margin-bottom: 0">
+          <a-form-item name="avatar" class="avatar-input-item">
             <a-input v-model:value="editForm.avatar" placeholder="请输入头像 URL" allow-clear />
           </a-form-item>
         </div>
 
-        <div class="form-row-2">
-          <a-form-item label="账号" name="userAccount">
-            <a-input v-model:value="editForm.userAccount" placeholder="账号" allow-clear />
-          </a-form-item>
-          <a-form-item label="昵称" name="username">
-            <a-input v-model:value="editForm.username" placeholder="昵称" allow-clear />
+        <a-divider class="edit-divider" />
+
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <div class="form-section-label">基本信息</div>
+          <div class="form-row-2">
+            <a-form-item label="账号" name="userAccount">
+              <a-input v-model:value="editForm.userAccount" placeholder="账号" allow-clear />
+            </a-form-item>
+            <a-form-item label="昵称" name="username">
+              <a-input v-model:value="editForm.username" placeholder="昵称" allow-clear />
+            </a-form-item>
+          </div>
+          <a-form-item label="邮箱" name="email" style="margin-bottom: 0">
+            <a-input v-model:value="editForm.email" placeholder="邮箱" allow-clear />
           </a-form-item>
         </div>
 
-        <a-form-item label="邮箱" name="email">
-          <a-input v-model:value="editForm.email" placeholder="邮箱" allow-clear />
-        </a-form-item>
+        <a-divider class="edit-divider" />
 
-        <div class="form-row-2">
-          <a-form-item label="角色" name="role">
-            <a-select v-model:value="editForm.role" style="width: 100%">
-              <a-select-option value="admin">管理员</a-select-option>
-              <a-select-option value="user">普通用户</a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="状态" name="status">
-            <a-select v-model:value="editForm.status" style="width: 100%">
-              <a-select-option :value="1">正常</a-select-option>
-              <a-select-option :value="0">异常</a-select-option>
-            </a-select>
-          </a-form-item>
+        <!-- 权限设置 -->
+        <div class="form-section">
+          <div class="form-section-label">权限设置</div>
+          <div class="form-row-2" style="margin-bottom: 0">
+            <a-form-item label="角色" name="role" style="margin-bottom: 0">
+              <a-select v-model:value="editForm.role" style="width: 100%">
+                <a-select-option value="admin">管理员</a-select-option>
+                <a-select-option value="user">普通用户</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="状态" name="status" style="margin-bottom: 0">
+              <a-select v-model:value="editForm.status" style="width: 100%">
+                <a-select-option :value="1">正常</a-select-option>
+                <a-select-option :value="0">异常</a-select-option>
+              </a-select>
+            </a-form-item>
+          </div>
         </div>
+
       </a-form>
     </a-modal>
   </div>
@@ -153,7 +167,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import {
@@ -185,8 +199,10 @@ async function fetchUsers() {
     const res = await listUserVoByPage({ ...queryForm });
     if (res.data?.data) {
       tableData.value = res.data.data.records ?? [];
-      total.value = res.data.data.total ?? 0;
+      total.value = Number(res.data.data.total ?? 0);
     }
+  } catch {
+    // 错误由 request 拦截器统一弹出提示
   } finally {
     loading.value = false;
   }
@@ -208,16 +224,24 @@ function handleReset() {
 }
 
 // ---------- 删除 ----------
-async function handleDelete(record: API.UserVO) {
-  try {
-    const res = await deleteUser({ id: record.id });
-    if (res.data?.data) {
-      message.success('删除成功');
-      fetchUsers();
-    }
-  } catch (_) {
-    // 错误由拦截器统一处理
-  }
+function confirmDelete(record: API.UserVO) {
+  const modal = Modal.confirm({
+    title: '确认删除该用户吗？',
+    okText: '确认',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        const res = await deleteUser({ id: record.id });
+        if (res.data?.data) {
+          message.success('删除成功');
+          fetchUsers();
+        }
+      } catch {
+        modal.destroy();
+      }
+    },
+  });
 }
 
 // ---------- 编辑 ----------
@@ -269,15 +293,15 @@ function handleEditCancel() {
 
 // ---------- 表格列定义 ----------
 const columns = [
-  { title: '头像', key: 'avatar', width: 64, align: 'center' as const },
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 72 },
-  { title: '账号', dataIndex: 'userAccount', key: 'userAccount', ellipsis: true },
-  { title: '昵称', dataIndex: 'username', key: 'username', ellipsis: true },
-  { title: '邮箱', dataIndex: 'email', key: 'email', ellipsis: true },
-  { title: '角色', key: 'role', width: 100, align: 'center' as const },
-  { title: '状态', key: 'status', width: 90, align: 'center' as const },
-  { title: '创建时间', dataIndex: 'creatTime', key: 'creatTime', width: 170, ellipsis: true },
-  { title: '操作', key: 'action', width: 150, align: 'center' as const, fixed: 'right' as const },
+  { title: '头像', key: 'avatar', width: 60, align: 'center' as const },
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 120, ellipsis: true },
+  { title: '账号', dataIndex: 'userAccount', key: 'userAccount', width: 110, ellipsis: true },
+  { title: '昵称', dataIndex: 'username', key: 'username', width: 110, ellipsis: true },
+  { title: '邮箱', dataIndex: 'email', key: 'email', width: 180, ellipsis: true },
+  { title: '角色', key: 'role', width: 90, align: 'center' as const },
+  { title: '状态', key: 'status', width: 80, align: 'center' as const },
+  { title: '创建时间', key: 'creatTime', width: 160 },
+  { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
 ];
 
 onMounted(fetchUsers);
@@ -285,11 +309,9 @@ onMounted(fetchUsers);
 
 <style scoped>
 .user-manage {
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 0;
 }
 
 .panel {
@@ -342,17 +364,26 @@ onMounted(fetchUsers);
   gap: 8px 0;
 }
 
-/* 表格区 */
-.table-panel {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+:deep(.ant-form-inline .ant-form-item) {
+  margin-right: 12px;
+  margin-bottom: 0;
 }
 
-.user-table {
-  flex: 1;
-  min-height: 0;
+:deep(.ant-form-inline .ant-form-item-label) {
+  padding-right: 4px;
+}
+
+:deep(.ant-form-inline .ant-form-item-label > label) {
+  font-size: 13px;
+}
+
+:deep(.search-form .ant-input-affix-wrapper) {
+  padding: 4px 8px;
+}
+
+/* 表格区 */
+.table-panel {
+  flex-shrink: 0;
 }
 
 .pagination-wrap {
@@ -360,7 +391,7 @@ onMounted(fetchUsers);
   justify-content: flex-end;
   padding-top: 16px;
   border-top: 1px solid var(--border-soft);
-  margin-top: auto;
+  margin-top: 16px;
 }
 
 /* 头像 */
@@ -386,18 +417,46 @@ onMounted(fetchUsers);
 }
 
 /* 编辑表单 */
-.edit-avatar-row {
+.edit-form {
+  padding: 8px 0 0;
+}
+
+.edit-avatar-section {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
   gap: 14px;
-  margin-bottom: 16px;
+  padding: 16px 0 8px;
 }
 
 .edit-preview-avatar {
   background: var(--primary-wash) !important;
   color: var(--primary) !important;
-  flex-shrink: 0;
+  border: 3px solid var(--primary-wash);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+}
+
+.avatar-input-item {
+  width: 100%;
+  margin-bottom: 0 !important;
+}
+
+.edit-divider {
+  margin: 8px 0 16px !important;
+  border-color: var(--border-soft) !important;
+}
+
+.form-section {
   margin-bottom: 4px;
+}
+
+.form-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
 }
 
 .form-row-2 {
@@ -425,9 +484,5 @@ onMounted(fetchUsers);
 
 :deep(.ant-table) {
   background: transparent !important;
-}
-
-:deep(.ant-table-wrapper) {
-  flex: 1;
 }
 </style>

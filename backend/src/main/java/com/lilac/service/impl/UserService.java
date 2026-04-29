@@ -2,6 +2,7 @@ package com.lilac.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.domain.dto.user.UserQueryRequest;
+import com.lilac.domain.dto.user.UserUpdateRequest;
 import com.lilac.domain.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lilac.domain.vo.LoginUserVO;
@@ -62,4 +63,26 @@ public interface UserService extends IService<User> {
      * @return 用户
      */
     Page<UserVO> listUserVOByPage(UserQueryRequest userQueryRequest);
+
+    /**
+     * 获取当前登录用户
+     *
+     * @return 用户
+     */
+    User getLoginUser();
+
+    /**
+     * 刷新指定用户的 Sa-Token session 缓存
+     *
+     * @param userId 用户 ID
+     */
+    void refreshUserSession(Long userId);
+
+    /**
+     * 更新用户信息
+     *
+     * @param userUpdateRequest 用户更新请求
+     * @return 更新结果
+     */
+    boolean updateUser(UserUpdateRequest userUpdateRequest);
 }

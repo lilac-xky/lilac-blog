@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.UserConstant;
 import com.lilac.domain.dto.user.UserQueryRequest;
+import com.lilac.domain.dto.user.UserUpdateRequest;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
@@ -21,8 +22,10 @@ import com.lilac.manager.email.MailService;
 import com.lilac.service.impl.UserService;
 import com.lilac.mapper.UserMapper;
 import com.lilac.utils.ThrowUtils;
+import cn.dev33.satoken.session.SaSession;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -270,6 +273,101 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Page<UserVO> userVOPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         userVOPage.setRecords(userPage.getRecords().stream().map(UserVO::objToVo).toList());
         return userVOPage;
+    }
+
+    /**
+     * 获取当前登录用户（从 Sa-Token session 读取，不查 DB）
+     *
+     * @return 当前登录用户
+     */
+    @Override
+    public User getLoginUser() {
+        LoginUserVO vo = null;
+        if (StpKit.ADMIN.isLogin()) {
+            vo = (LoginUserVO) StpKit.ADMIN.getSession().get(UserConstant.ADMIN_LOGIN_STATE);
+        } else if (StpKit.USER.isLogin()) {
+            vo = (LoginUserVO) StpKit.USER.getSession().get(UserConstant.USER_LOGIN_STATE);
+        }
+        if (vo == null) return null;
+        User user = new User();
+        BeanUtil.copyProperties(vo, user);
+        return user;
+    }
+
+    /**
+     * 刷新指定用户的 Sa-Token session 缓存（用户信息更新后调用）
+     *
+     * @param userId 用户 ID
+     */
+    @Override
+    public void refreshUserSession(Long userId) {
+        User user = this.getById(userId);
+        if (user == null) return;
+        LoginUserVO freshVO = getLoginUserVO(user);
+        if(freshVO.getRole().equals(UserConstant.ADMIN_ROLE)){
+            refreshSession(StpKit.ADMIN, UserConstant.ADMIN_LOGIN_STATE, userId, freshVO);
+        }
+        if(freshVO.getRole().equals(UserConstant.USER_DEFAULT_ROLE)){
+            refreshSession(StpKit.USER, UserConstant.USER_LOGIN_STATE, userId, freshVO);
+        }
+    }
+
+    /**
+     * 更新用户信息
+     *
+     * @param userUpdateRequest 用户更新请求
+     * @return 更新结果
+     */
+    @Override
+    public boolean updateUser(UserUpdateRequest userUpdateRequest) {
+        Long id = userUpdateRequest.getId();
+        String userAccount = userUpdateRequest.getUserAccount();
+        String email = userUpdateRequest.getEmail();
+        // 排除自身后检查用户名是否被其他用户占用
+        if (StrUtil.isNotBlank(userAccount)) {
+            long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>()
+                    .eq(User::getUserAccount, userAccount)
+                    .ne(User::getId, id));
+            if (count > 0) {
+                throw new BusinessException(HttpsCodeEnum.USER_EXIST, "用户名已存在");
+            }
+        }
+        // 排除自身后检查邮箱是否被其他用户占用
+        if (StrUtil.isNotBlank(email)) {
+            long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>()
+                    .eq(User::getEmail, email)
+                    .ne(User::getId, id));
+            if (count > 0) {
+                throw new BusinessException(HttpsCodeEnum.USER_EXIST, "邮箱已存在");
+            }
+        }
+        User user = new User();
+        BeanUtils.copyProperties(userUpdateRequest, user);
+        boolean result = this.updateById(user);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        refreshUserSession(id);
+        return true;
+    }
+
+    /**
+     * 刷新指定用户的 Sa-Token session 缓存（用户信息更新后调用）
+     *
+     * @param stpLogic       Sa-Token 逻辑
+     * @param sessionKey     session key
+     * @param userId         用户 ID
+     * @param freshVO        刷新的 VO
+     */
+    private void refreshSession(cn.dev33.satoken.stp.StpLogic stpLogic, String sessionKey, Long userId, LoginUserVO freshVO) {
+        try {
+            SaSession session = stpLogic.getSessionByLoginId(userId, false);
+            if (session == null) return;
+            LoginUserVO existing = (LoginUserVO) session.get(sessionKey);
+            if (existing == null) return;
+            // 保留原 token，仅刷新用户信息字段
+            freshVO.setToken(existing.getToken());
+            session.set(sessionKey, freshVO);
+        } catch (Exception ignored) {
+        }
     }
 
     /**

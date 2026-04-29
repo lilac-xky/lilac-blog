@@ -14,7 +14,7 @@
             </a-badge>
             <a-dropdown placement="bottomRight">
                 <div class="user-chip">
-                    <a-avatar :size="32" :src="userStore.loginUser?.avater || undefined" class="user-avatar">
+                    <a-avatar :size="32" :src="userStore.loginUser?.avatar || undefined" class="user-avatar">
                         <template #icon>
                             <UserOutlined />
                         </template>
