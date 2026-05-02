@@ -145,6 +145,12 @@ declare namespace API {
     code?: string;
   };
 
+  type UserStatusRequest = {
+    id?: number;
+    /** 1正常，0异常 */
+    status?: number;
+  };
+
   type UserUpdateRequest = {
     /** id */
     id?: number;

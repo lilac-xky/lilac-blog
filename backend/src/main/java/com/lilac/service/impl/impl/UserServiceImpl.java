@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.UserConstant;
 import com.lilac.domain.dto.user.UserQueryRequest;
+import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.LoginUserVO;
@@ -133,15 +134,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public LoginUserVO adminLogin(String account, String password) {
         // 参数校验
-        if (StrUtil.hasBlank(account, password)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR);
-        }
-        if (account.length() > 50) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户名过长");
-        }
-        if (password.length() < 6 || password.length() > 20) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
-        }
+        validateAccountAndPassword(account, password);
         // 查询数据库是否存在该用户
         User user = getAuthenticatedUser(account, password);
         if (user == null) {
@@ -149,6 +142,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         if(!UserConstant.ADMIN_ROLE.equals(user.getRole())){
             throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "非管理员无法登录");
+        }
+        if(user.getStatus() != 1){
+            throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "用户状态异常");
         }
         // 登录
         StpKit.ADMIN.login(user.getId());
@@ -168,20 +164,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public LoginUserVO userLogin(String account, String password) {
         // 参数校验
-        if (StrUtil.hasBlank(account, password)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR);
-        }
-        if (account.length() > 50) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户名过长");
-        }
-        if (password.length() < 6 || password.length() > 20) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
-        }
+        validateAccountAndPassword(account, password);
         // 查询数据库是否存在该用户
         User user = getAuthenticatedUser(account, password);
         if (user == null) {
             log.info("数据库不存在该用户");
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "账号或密码错误");
+        }
+        if(user.getStatus() != 1){
+            throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "用户状态异常");
         }
         // 登录
         StpKit.USER.login(user.getId());
@@ -235,7 +226,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         // 防刷校验：检查是否发送过于频繁（1分钟内不准重复发送）
         String limitKey = UserConstant.USER_REGISTER_LIMIT_KEY + email;
-        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(limitKey))) {
+        if (stringRedisTemplate.hasKey(limitKey)) {
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "发送过于频繁，请稍后再试");
         }
         // 生成6位随机验证码
@@ -323,6 +314,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Long id = userUpdateRequest.getId();
         String userAccount = userUpdateRequest.getUserAccount();
         String email = userUpdateRequest.getEmail();
+        String role = userUpdateRequest.getRole();
+        Integer status = userUpdateRequest.getStatus();
         // 排除自身后检查用户名是否被其他用户占用
         if (StrUtil.isNotBlank(userAccount)) {
             long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>()
@@ -341,8 +334,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 throw new BusinessException(HttpsCodeEnum.USER_EXIST, "邮箱已存在");
             }
         }
+        // 不能更改自己角色
+        // todo 待权限校验细化修改
+        if (StrUtil.isNotBlank(role)) {
+            if(!role.equals(getLoginUser().getRole())){
+                throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的角色");
+            }
+        }
+        // 不能更改自己状态
+        if(ObjUtil.isNotEmpty(status)){
+            if(!status.equals(getLoginUser().getStatus())){
+                throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的状态");
+            }
+        }
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest, user);
+        boolean result = this.updateById(user);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        refreshUserSession(id);
+        return true;
+    }
+
+    /**
+     * 更新用户状态
+     *
+     * @param request 用户状态请求
+     * @return 更新结果
+     */
+    @Override
+    public boolean updateUserStatus(UserStatusRequest request) {
+        Long id = request.getId();
+        Integer status = request.getStatus();
+        User loginUser = getLoginUser();
+        if (id.equals(loginUser.getId())) {
+            throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的状态");
+        }
+        User user = new User();
+        user.setId(id);
+        user.setStatus(status);
         boolean result = this.updateById(user);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         refreshUserSession(id);
@@ -441,5 +470,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public String getEncodedPassword(String userPassword) {
         final String salt = "lilac";
         return DigestUtils.md5DigestAsHex((salt + userPassword).getBytes());
+    }
+
+    /**
+     * 验证用户名和密码
+     *
+     * @param account 用户名
+     * @param password 密码
+     */
+    void validateAccountAndPassword(String account, String password){
+        if (StrUtil.hasBlank(account, password)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR);
+        }
+        if (account.length() > 50) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "用户名过长");
+        }
+        if (password.length() < 6 || password.length() > 20) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
+        }
     }
 }

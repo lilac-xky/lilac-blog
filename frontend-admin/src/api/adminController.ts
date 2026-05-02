@@ -2,6 +2,14 @@
 /* eslint-disable */
 import request from "@/request";
 
+/** 验证当前 token 有效性 GET /api/admin/currentUser */
+export async function currentUser(options?: { [key: string]: any }) {
+  return request<API.ResultBoolean>("/api/admin/currentUser", {
+    method: "GET",
+    ...(options || {}),
+  });
+}
+
 /** 删除用户 POST /api/admin/delete */
 export async function deleteUser(
   body: API.DeleteRequest,
@@ -61,6 +69,21 @@ export async function updateUser(
   options?: { [key: string]: any }
 ) {
   return request<API.ResultBoolean>("/api/admin/update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 更新用户状态 POST /api/admin/updateStatus */
+export async function updateUserStatus(
+  body: API.UserStatusRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/admin/updateStatus", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

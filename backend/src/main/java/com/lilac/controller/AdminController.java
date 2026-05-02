@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.common.DeleteRequest;
 import com.lilac.domain.dto.user.UserLoginRequest;
 import com.lilac.domain.dto.user.UserQueryRequest;
+import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.result.Result;
@@ -14,10 +15,7 @@ import com.lilac.exception.BusinessException;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 管理员
@@ -70,6 +68,20 @@ public class AdminController {
     }
 
     /**
+     * 更新用户状态
+     *
+     * @param userStatusRequest 用户状态请求
+     * @return 更新结果
+     */
+    @PostMapping("/updateStatus")
+    public Result<Boolean> updateUserStatus(@RequestBody UserStatusRequest userStatusRequest) {
+        ThrowUtils.throwIf(userStatusRequest == null || userStatusRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
+        boolean result = userService.updateUserStatus(userStatusRequest);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        return Result.success(true);
+    }
+
+    /**
      * 删除用户
      *
      * @param deleteRequest 删除请求
@@ -98,6 +110,16 @@ public class AdminController {
         ThrowUtils.throwIf(userQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         Page<UserVO> userVOList = userService.listUserVOByPage(userQueryRequest);
         return Result.success(userVOList);
+    }
+
+    /**
+     * 验证当前 token 有效性
+     *
+     * @return 验证结果
+     */
+    @GetMapping("/currentUser")
+    public Result<Boolean> currentUser() {
+        return Result.success(true);
     }
 
 }

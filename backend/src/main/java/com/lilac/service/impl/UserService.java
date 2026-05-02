@@ -2,6 +2,7 @@ package com.lilac.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.domain.dto.user.UserQueryRequest;
+import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
 import com.lilac.domain.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -85,4 +86,12 @@ public interface UserService extends IService<User> {
      * @return 更新结果
      */
     boolean updateUser(UserUpdateRequest userUpdateRequest);
+
+    /**
+     * 更新用户状态
+     *
+     * @param request 用户状态请求
+     * @return 更新结果
+     */
+    boolean updateUserStatus(UserStatusRequest request);
 }

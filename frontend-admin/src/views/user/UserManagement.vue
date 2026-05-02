@@ -69,7 +69,9 @@
 
           <!-- 状态列 -->
           <template v-else-if="column.key === 'status'">
-            <a-badge :status="record.status === 1 ? 'success' : 'error'" :text="record.status === 1 ? '正常' : '异常'" />
+            <a-switch :checked="record.status === 1" :loading="statusLoadingId === record.id"
+              :disabled="record.id === loginUser?.id" checked-children="正常" un-checked-children="异常"
+              @change="(val: boolean) => handleStatusChange(record, val)" />
           </template>
 
           <!-- 创建时间列 -->
@@ -113,11 +115,23 @@
 
         <!-- 头像区域 -->
         <div class="edit-avatar-section">
-          <a-avatar :src="editForm.avatar" :size="72" class="edit-preview-avatar">
-            <template #icon><UserOutlined /></template>
-          </a-avatar>
+          <a-upload :show-upload-list="false" accept="image/png,image/jpeg,image/jpg,image/webp"
+            :custom-request="handleAvatarUpload" :before-upload="beforeAvatarUpload">
+            <div class="avatar-uploader-wrap">
+              <a-avatar :src="editForm.avatar" :size="80" class="edit-preview-avatar">
+                <template #icon>
+                  <UserOutlined />
+                </template>
+              </a-avatar>
+              <div class="avatar-upload-mask">
+                <LoadingOutlined v-if="avatarUploading" />
+                <CameraOutlined v-else />
+                <span class="mask-text">更换头像</span>
+              </div>
+            </div>
+          </a-upload>
           <a-form-item name="avatar" class="avatar-input-item">
-            <a-input v-model:value="editForm.avatar" placeholder="请输入头像 URL" allow-clear />
+            <a-input v-model:value="editForm.avatar" placeholder="或输入图片链接" allow-clear size="small" />
           </a-form-item>
         </div>
 
@@ -175,8 +189,14 @@ import {
   SearchOutlined,
   EditOutlined,
   DeleteOutlined,
+  CameraOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons-vue';
-import { listUserVoByPage, updateUser, deleteUser } from '@/api/adminController';
+import { listUserVoByPage, updateUser, deleteUser, updateUserStatus } from '@/api/adminController';
+import { uploadFile } from '@/api/fileController';
+import { useUserStore } from '@/stores/user';
+
+const { loginUser } = useUserStore();
 
 // ---------- 查询 ----------
 const loading = ref(false);
@@ -223,6 +243,23 @@ function handleReset() {
   fetchUsers();
 }
 
+// ---------- 状态切换 ----------
+const statusLoadingId = ref<number | undefined>(undefined);
+
+async function handleStatusChange(record: API.UserVO, val: boolean) {
+  statusLoadingId.value = record.id as number;
+  const newStatus = val ? 1 : 0;
+  try {
+    const res = await updateUserStatus({ id: record.id as number, status: newStatus });
+    if (res.data?.data) {
+      record.status = newStatus;
+      message.success(val ? '已启用' : '已禁用');
+    }
+  } finally {
+    statusLoadingId.value = undefined;
+  }
+}
+
 // ---------- 删除 ----------
 function confirmDelete(record: API.UserVO) {
   const modal = Modal.confirm({
@@ -242,6 +279,36 @@ function confirmDelete(record: API.UserVO) {
       }
     },
   });
+}
+
+// ---------- 头像上传 ----------
+const avatarUploading = ref(false);
+
+function beforeAvatarUpload(file: File) {
+  const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    message.error('仅支持 PNG / JPG / WEBP 格式');
+    return false;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    message.error('图片不能超过 5MB');
+    return false;
+  }
+  return true;
+}
+
+async function handleAvatarUpload({ file }: { file: File }) {
+  avatarUploading.value = true;
+  try {
+    const res = await uploadFile({}, file);
+    const url = res.data?.data?.url;
+    if (url) {
+      editForm.avatar = url;
+      message.success('头像上传成功');
+    }
+  } finally {
+    avatarUploading.value = false;
+  }
 }
 
 // ---------- 编辑 ----------
@@ -299,7 +366,7 @@ const columns = [
   { title: '昵称', dataIndex: 'username', key: 'username', width: 110, ellipsis: true },
   { title: '邮箱', dataIndex: 'email', key: 'email', width: 180, ellipsis: true },
   { title: '角色', key: 'role', width: 90, align: 'center' as const },
-  { title: '状态', key: 'status', width: 80, align: 'center' as const },
+  { title: '状态', key: 'status', width: 100, align: 'center' as const },
   { title: '创建时间', key: 'creatTime', width: 160 },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
 ];
@@ -425,8 +492,40 @@ onMounted(fetchUsers);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   padding: 16px 0 8px;
+}
+
+.avatar-uploader-wrap {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.avatar-uploader-wrap:hover .avatar-upload-mask {
+  opacity: 1;
+}
+
+.avatar-upload-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: #fff;
+  font-size: 16px;
+}
+
+.mask-text {
+  font-size: 11px;
+  line-height: 1;
 }
 
 .edit-preview-avatar {
@@ -434,6 +533,7 @@ onMounted(fetchUsers);
   color: var(--primary) !important;
   border: 3px solid var(--primary-wash);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+  display: block !important;
 }
 
 .avatar-input-item {
