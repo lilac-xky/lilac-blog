@@ -13,8 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.util.Date;
 
+import cn.hutool.core.util.StrUtil;
+
 import static com.lilac.constant.FileConstant.PROJECT_NAME;
-import static com.lilac.constant.FileConstant.THUMBNAIL_STYLE;
 
 /**
  * 图片上传模板
@@ -32,11 +33,12 @@ public abstract class PictureUploadTemplate<S> {
     /**
      * 上传图片
      *
-     * @param source           数据源
-     * @param uploadPathPrefix OSS 路径前缀
-     * @return 原图与缩略图 URL
+     * @param source              数据源
+     * @param uploadPathPrefix    上传路径前缀
+     * @param thumbnailStyle      缩略图样式
+     * @return 图片 URL
      */
-    public final UploadPictureResult uploadPicture(S source, String uploadPathPrefix) {
+    public final UploadPictureResult uploadPicture(S source, String uploadPathPrefix, String thumbnailStyle) {
         // 校验图片
         validPicture(source);
         // 获取原始文件名
@@ -57,7 +59,7 @@ public abstract class PictureUploadTemplate<S> {
             String url = buildUrl(objectName);
             UploadPictureResult result = new UploadPictureResult();
             result.setUrl(url);
-            result.setThumbnailUrl(url + "?" + THUMBNAIL_STYLE);
+            result.setThumbnailUrl(StrUtil.isBlank(thumbnailStyle) ? url : url + "?" + thumbnailStyle);
             return result;
         } catch (BusinessException e) {
             throw e;

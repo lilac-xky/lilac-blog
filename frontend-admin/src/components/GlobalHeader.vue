@@ -14,7 +14,7 @@
             </a-badge>
             <a-dropdown placement="bottomRight">
                 <div class="user-chip">
-                    <a-avatar :size="32" :src="userStore.loginUser?.avatar || undefined" class="user-avatar">
+                    <a-avatar :size="32" :src="getAvatarSrc(userStore.loginUser?.avatar)" class="user-avatar">
                         <template #icon>
                             <UserOutlined />
                         </template>
@@ -56,6 +56,13 @@ import { useUserStore } from '@/stores/user';
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+
+function getAvatarSrc(url?: string | null): string | undefined {
+    if (!url) return undefined;
+    if (!url.includes('.aliyuncs.com')) return url;
+    if (url.includes('x-oss-process')) return url;
+    return url + '?x-oss-process=image/resize,w_200/format,webp';
+}
 
 // 页面标题和副标题映射
 const titleMap: Record<string, { title: string; subtitle: string }> = {

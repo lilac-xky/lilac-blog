@@ -30,14 +30,15 @@ public class LocalStorageServiceImpl implements FileStorageService {
     private static final String host = "http://localhost:9090/api/uploads/";
 
     /**
-     * 上传文件
+     * 文件上传
      *
      * @param file 文件
      * @param uploadPathPrefix 文件上传路径前缀
-     * @return 文件访问路径
+     * @param thumbnailStyle 缩略图样式
+     * @return 上传结果
      */
     @Override
-    public UploadPictureResult uploadFile(MultipartFile file, String uploadPathPrefix) {
+    public UploadPictureResult uploadFile(MultipartFile file, String uploadPathPrefix, String thumbnailStyle) {
         if (file.isEmpty()) {
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "上传文件不能为空");
         }
@@ -68,14 +69,15 @@ public class LocalStorageServiceImpl implements FileStorageService {
     }
 
     /**
-     * 通过 URL 上传文件
+     * 通过外链 URL 上传
      *
-     * @param url 文件 URL
+     * @param url  外链图片 URL
      * @param uploadPathPrefix 文件上传路径前缀
-     * @return 文件访问路径
+     * @param thumbnailStyle 缩略图样式
+     * @return 上传结果
      */
     @Override
-    public UploadPictureResult uploadByUrl(String url, String uploadPathPrefix) {
+    public UploadPictureResult uploadByUrl(String url, String uploadPathPrefix, String thumbnailStyle) {
         // 本地存储未实现 URL 拉取：开源用户如有需要可按 OSS 模板自行扩展
         throw new BusinessException(HttpsCodeEnum.SYSTEM_ERROR, "本地存储暂不支持 URL 上传，请切换到 OSS");
     }

@@ -337,13 +337,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 不能更改自己角色
         // todo 待权限校验细化修改
         if (StrUtil.isNotBlank(role)) {
-            if(!role.equals(getLoginUser().getRole())){
+            if(id.equals(getLoginUser().getId()) && !role.equals(getLoginUser().getRole())){
                 throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的角色");
             }
         }
         // 不能更改自己状态
         if(ObjUtil.isNotEmpty(status)){
-            if(!status.equals(getLoginUser().getStatus())){
+            if(id.equals(getLoginUser().getId()) && !status.equals(getLoginUser().getStatus())){
                 throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的状态");
             }
         }

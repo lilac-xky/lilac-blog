@@ -21,24 +21,26 @@ public class OssStorageServiceImpl implements FileStorageService {
     private UrlPictureUpload urlPictureUpload;
 
     /**
-     * 文件上传
+     * 通过文件上传
      *
-     * @param file 文件
-     * @return 上传结果（原图 URL）
-     */
-    @Override
-    public UploadPictureResult uploadFile(MultipartFile file, String uploadPathPrefix) {
-        return filePictureUpload.uploadPicture(file, uploadPathPrefix);
-    }
-
-    /**
-     * 通过外链 URL 上传：服务端拉取后转存
-     *
-     * @param url 外链图片 URL
+     * @param file             文件
+     * @param uploadPathPrefix OSS 存储路径前缀
      * @return 上传结果（原图 + 缩略图 URL）
      */
     @Override
-    public UploadPictureResult uploadByUrl(String url, String uploadPathPrefix) {
-        return urlPictureUpload.uploadPicture(url, uploadPathPrefix);
+    public UploadPictureResult uploadFile(MultipartFile file, String uploadPathPrefix, String thumbnailStyle) {
+        return filePictureUpload.uploadPicture(file, uploadPathPrefix, thumbnailStyle);
+    }
+
+    /**
+     * 通过外链 URL 上传
+     *
+     * @param url              外链图片 URL
+     * @param uploadPathPrefix OSS 存储路径前缀
+     * @return 上传结果（原图 + 缩略图 URL）
+     */
+    @Override
+    public UploadPictureResult uploadByUrl(String url, String uploadPathPrefix, String thumbnailStyle) {
+        return urlPictureUpload.uploadPicture(url, uploadPathPrefix, thumbnailStyle);
     }
 }

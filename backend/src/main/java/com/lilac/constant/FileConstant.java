@@ -28,8 +28,13 @@ public interface FileConstant {
     String PROJECT_NAME = "lilac-blog";
 
     /**
-     * 缩略图样式
+     * 头像缩略图样式（200px 宽，WebP）
      */
-    String THUMBNAIL_STYLE = "x-oss-process=image/resize,w_200/format,webp";
+    String THUMBNAIL_STYLE_AVATAR = "x-oss-process=image/resize,w_200/format,webp";
+
+    /**
+     * 文章封面缩略图样式（800px 宽，WebP）
+     */
+    String THUMBNAIL_STYLE_COVER = "x-oss-process=image/resize,w_800/format,webp";
 
 }

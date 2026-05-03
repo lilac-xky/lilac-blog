@@ -78,6 +78,13 @@ declare namespace API {
   type uploadByUrlParams = {
     /** 外链图片 URL */
     url: string;
+    /** 上传场景：avatar（头像）/ cover（封面）/ content（正文） */
+    type: string;
+  };
+
+  type uploadFileParams = {
+    /** 上传场景：avatar（头像）/ cover（封面）/ content（正文） */
+    type: string;
   };
 
   type UploadPictureResult = {

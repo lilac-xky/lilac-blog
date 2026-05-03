@@ -53,7 +53,7 @@
         <!-- 头像列 -->
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'avatar'">
-            <a-avatar :src="record.avatar" :size="36" class="user-avatar">
+            <a-avatar :src="getAvatarSrc(record.avatar)" :size="36" class="user-avatar">
               <template #icon>
                 <UserOutlined />
               </template>
@@ -118,7 +118,7 @@
           <a-upload :show-upload-list="false" accept="image/png,image/jpeg,image/jpg,image/webp"
             :custom-request="handleAvatarUpload" :before-upload="beforeAvatarUpload">
             <div class="avatar-uploader-wrap">
-              <a-avatar :src="editForm.avatar" :size="80" class="edit-preview-avatar">
+              <a-avatar :src="getAvatarSrc(editForm.avatar)" :size="80" class="edit-preview-avatar">
                 <template #icon>
                   <UserOutlined />
                 </template>
@@ -284,6 +284,13 @@ function confirmDelete(record: API.UserVO) {
 // ---------- 头像上传 ----------
 const avatarUploading = ref(false);
 
+function getAvatarSrc(url?: string): string | undefined {
+  if (!url) return undefined;
+  if (!url.includes('.aliyuncs.com')) return url;
+  if (url.includes('x-oss-process')) return url;
+  return url + '?x-oss-process=image/resize,w_200/format,webp';
+}
+
 function beforeAvatarUpload(file: File) {
   const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
   if (!allowed.includes(file.type)) {
@@ -300,7 +307,7 @@ function beforeAvatarUpload(file: File) {
 async function handleAvatarUpload({ file }: { file: File }) {
   avatarUploading.value = true;
   try {
-    const res = await uploadFile({}, file);
+    const res = await uploadFile({ type: 'avatar' }, {}, file);
     const url = res.data?.data?.url;
     if (url) {
       editForm.avatar = url;
@@ -364,7 +371,7 @@ const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 120, ellipsis: true },
   { title: '账号', dataIndex: 'userAccount', key: 'userAccount', width: 110, ellipsis: true },
   { title: '昵称', dataIndex: 'username', key: 'username', width: 110, ellipsis: true },
-  { title: '邮箱', dataIndex: 'email', key: 'email', width: 180, ellipsis: true },
+  { title: '邮箱', dataIndex: 'email', key: 'email', width: 160, ellipsis: true },
   { title: '角色', key: 'role', width: 90, align: 'center' as const },
   { title: '状态', key: 'status', width: 100, align: 'center' as const },
   { title: '创建时间', key: 'creatTime', width: 160 },
