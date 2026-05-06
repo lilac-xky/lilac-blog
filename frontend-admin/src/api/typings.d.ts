@@ -1,6 +1,134 @@
 declare namespace API {
+  type Article = {
+    /** id */
+    id?: number;
+    /** 标题 */
+    title?: string;
+    /** 摘要 */
+    summary?: string;
+    /** 文章内容 */
+    content?: string;
+    /** 关联分类 */
+    categoryId?: number;
+    /** 封面图片URL（WebP缩略图） */
+    coverUrl?: string;
+    /** 投稿人id */
+    userId?: number;
+    /** 浏览量 */
+    viewCount?: number;
+    /** 1置顶，0普通 */
+    isTop?: number;
+    /** 0草稿，1待审核，2审核 */
+    status?: number;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type ArticleAddRequest = {
+    /** 标题 */
+    title?: string;
+    /** 摘要 */
+    summary?: string;
+    /** 文章内容 */
+    content?: string;
+    /** 关联分类 */
+    categoryId?: number;
+    /** 封面图片URL（WebP缩略图） */
+    coverUrl?: string;
+    /** 0草稿，1待审核，2审核 */
+    status?: number;
+    /** 1置顶，0普通 */
+    isTop?: number;
+    /** 标签列表 */
+    tagIds?: number[];
+  };
+
+  type ArticleQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** id */
+    id?: number;
+    /** 标题 */
+    title?: string;
+    /** 关联分类 */
+    categoryId?: number;
+    /** 投稿人id */
+    userId?: number;
+    /** 1置顶，0普通 */
+    isTop?: number;
+    /** 0草稿，1待审核，2审核 */
+    status?: number;
+    /** 标签列表 */
+    tagIds?: number[];
+  };
+
+  type ArticleUpdateRequest = {
+    /** id */
+    id?: number;
+    /** 标题 */
+    title?: string;
+    /** 摘要 */
+    summary?: string;
+    /** 文章内容 */
+    content?: string;
+    /** 关联分类 */
+    categoryId?: number;
+    /** 封面图片URL（WebP缩略图） */
+    coverUrl?: string;
+    /** 1置顶，0普通 */
+    isTop?: number;
+    /** 0草稿，1待审核，2审核 */
+    status?: number;
+    /** 标签列表 */
+    tagIds?: number[];
+  };
+
+  type ArticleVO = {
+    /** id */
+    id?: number;
+    /** 标题 */
+    title?: string;
+    /** 摘要 */
+    summary?: string;
+    /** 文章内容 */
+    content?: string;
+    /** 关联分类 */
+    categoryId?: number;
+    /** 封面图片URL（WebP缩略图） */
+    coverUrl?: string;
+    /** 投稿人id */
+    userId?: number;
+    /** 浏览量 */
+    viewCount?: number;
+    /** 1置顶，0普通 */
+    isTop?: number;
+    /** 0草稿，1待审核，2审核 */
+    status?: number;
+    /** 创建时间 */
+    createTime?: string;
+    /** 分类名称 */
+    categoryName?: string;
+    /** 标签列表 */
+    tags?: TagVO[];
+  };
+
   type DeleteRequest = {
     /** id */
+    id?: number;
+  };
+
+  type getArticleParams = {
+    /** 文章id */
     id?: number;
   };
 
@@ -27,6 +155,32 @@ declare namespace API {
     asc?: boolean;
   };
 
+  type PageArticle = {
+    records?: Article[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageArticleVO = {
+    records?: ArticleVO[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
   type PageUserVO = {
     records?: UserVO[];
     total?: number;
@@ -38,6 +192,12 @@ declare namespace API {
     optimizeJoinOfCountSql?: boolean;
     maxLimit?: number;
     countId?: string;
+  };
+
+  type ResultArticleVO = {
+    code?: number;
+    msg?: string;
+    data?: ArticleVO;
   };
 
   type ResultBoolean = {
@@ -58,6 +218,18 @@ declare namespace API {
     data?: number;
   };
 
+  type ResultPageArticle = {
+    code?: number;
+    msg?: string;
+    data?: PageArticle;
+  };
+
+  type ResultPageArticleVO = {
+    code?: number;
+    msg?: string;
+    data?: PageArticleVO;
+  };
+
   type ResultPageUserVO = {
     code?: number;
     msg?: string;
@@ -73,6 +245,13 @@ declare namespace API {
   type sendRegisterCodeParams = {
     /** 邮箱 */
     email: string;
+  };
+
+  type TagVO = {
+    /** 标签id */
+    id?: number;
+    /** 标签名称 */
+    tagName?: string;
   };
 
   type uploadByUrlParams = {
@@ -190,6 +369,6 @@ declare namespace API {
     /** 1正常，0异常 */
     status?: number;
     /** 创建时间 */
-    creatTime?: string;
+    createTime?: string;
   };
 }

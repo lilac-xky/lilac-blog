@@ -94,4 +94,11 @@ public interface UserService extends IService<User> {
      * @return 更新结果
      */
     boolean updateUserStatus(UserStatusRequest request);
+
+    /**
+     * 判断是否为管理员
+     *
+     * @return 是否为管理员
+     */
+    boolean isAdmin();
 }

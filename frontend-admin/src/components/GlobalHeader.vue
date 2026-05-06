@@ -67,7 +67,9 @@ function getAvatarSrc(url?: string | null): string | undefined {
 // 页面标题和副标题映射
 const titleMap: Record<string, { title: string; subtitle: string }> = {
     '/': { title: '仪表盘', subtitle: '欢迎回到 lilac-blog 后台管理系统' },
-    '/write-blog': { title: '写 Blog', subtitle: '创作一篇新的博客文章' },
+    '/write-blog': { title: '写 Blog', subtitle: 'Markdown 编辑器' },
+    '/article/manage': { title: '文章管理', subtitle: '管理所有文章' },
+    '/user/manage': { title: '用户管理', subtitle: '管理所有用户' },
     '/blog/category': { title: '分类管理', subtitle: '管理你的博客分类' },
     '/blog/tag': { title: '标签管理', subtitle: '管理你的博客标签' },
     '/about': { title: '关于我', subtitle: '维护个人介绍信息' },

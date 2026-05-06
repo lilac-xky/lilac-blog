@@ -29,6 +29,16 @@ const router = createRouter({
           name: 'userManage',
           component: UserManagement,
         },
+        {
+          path: 'article/manage',
+          name: 'articleManage',
+          component: () => import('@/views/article/ArticleManagement.vue'),
+        },
+        {
+          path: 'write-blog',
+          name: 'writeBlog',
+          component: () => import('@/views/article/WriteBlog.vue'),
+        },
       ],
     },
   ],

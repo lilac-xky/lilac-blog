@@ -256,10 +256,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
-        // 构建查询条件
-        LambdaQueryWrapper<User> queryWrapper = getQueryWrapper(userQueryRequest);
         // 执行分页查询
-        Page<User> userPage = this.page(new Page<>(current, size), queryWrapper);
+        Page<User> userPage = this.page(new Page<>(current, size), getQueryWrapper(userQueryRequest));
         // 转换为 VO
         Page<UserVO> userVOPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         userVOPage.setRecords(userPage.getRecords().stream().map(UserVO::objToVo).toList());
@@ -379,6 +377,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
+     * 判断是否为管理员
+     *
+     * @return 是否为管理员
+     */
+    @Override
+    public boolean isAdmin() {
+        User loginUser = getLoginUser();
+        return loginUser.getRole().equals(UserConstant.ADMIN_ROLE);
+    }
+
+    /**
      * 刷新指定用户的 Sa-Token session 缓存（用户信息更新后调用）
      *
      * @param stpLogic       Sa-Token 逻辑
@@ -426,7 +435,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.eq(ObjUtil.isNotEmpty(status), User::getStatus, status);
         // 排序处理
         boolean isDesc = "descend".equalsIgnoreCase(sortOrder);
-        queryWrapper.orderBy(true, isDesc, User::getCreatTime);
+        queryWrapper.orderBy(true, isDesc, User::getCreateTime);
         return queryWrapper;
     }
 

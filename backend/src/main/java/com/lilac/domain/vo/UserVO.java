@@ -46,7 +46,7 @@ public class UserVO {
     /**
      * 创建时间
      */
-    private Date creatTime;
+    private Date createTime;
 
     /**
      * 转换为对象
