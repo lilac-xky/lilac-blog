@@ -13,10 +13,7 @@ import com.lilac.service.impl.ArticleService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 文章接口
@@ -37,7 +34,6 @@ public class ArticleController {
     @PostMapping("/add")
     public Result<Long> addArticle(@RequestBody ArticleAddRequest articleAddRequest) {
         ThrowUtils.throwIf(articleAddRequest == null, HttpsCodeEnum.PARAMS_ERROR);
-        // todo 待处理标签
         long article = articleService.addArticle(articleAddRequest);
         return Result.success(article);
     }
@@ -67,7 +63,6 @@ public class ArticleController {
     @PostMapping("/list/page/vo")
     public Result<Page<ArticleVO>> listArticleVOByPage(@RequestBody ArticleQueryRequest articleQueryRequest) {
         ThrowUtils.throwIf(articleQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
-        long current = articleQueryRequest.getCurrent();
         long size = articleQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, HttpsCodeEnum.PARAMS_ERROR);
@@ -85,16 +80,9 @@ public class ArticleController {
     @PostMapping("/update")
     public Result<Boolean> updateArticle(@RequestBody ArticleUpdateRequest articleUpdateRequest) {
         ThrowUtils.throwIf(articleUpdateRequest == null, HttpsCodeEnum.PARAMS_ERROR);
-        Article article = new Article();
-        BeanUtils.copyProperties(articleUpdateRequest, article);
-        // 判断是否有该文章
-        Article oldArticle = articleService.getById(article.getId());
-        ThrowUtils.throwIf(oldArticle == null, HttpsCodeEnum.NOT_FOUND_ERROR);
-        // 更新
-        // todo 待处理标签
-        boolean update = articleService.updateById(article);
+        boolean update = articleService.updateArticle(articleUpdateRequest);
         ThrowUtils.throwIf(!update, HttpsCodeEnum.OPERATION_ERROR);
-        return Result.success(update);
+        return Result.success(true);
     }
 
     /**
@@ -106,10 +94,9 @@ public class ArticleController {
     @PostMapping("/delete")
     public Result<Boolean> deleteArticle(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null, HttpsCodeEnum.PARAMS_ERROR);
-        // todo 待处理标签
-        boolean delete = articleService.removeById(deleteRequest.getId());
+        boolean delete = articleService.deleteArticle(deleteRequest.getId());
         ThrowUtils.throwIf(!delete, HttpsCodeEnum.OPERATION_ERROR);
-        return Result.success();
+        return Result.success(true);
     }
 
     /**
@@ -118,7 +105,7 @@ public class ArticleController {
      * @param id 文章id
      * @return 文章
      */
-    @PostMapping("/get")
+    @GetMapping("/get")
     public Result<ArticleVO> getArticle(Long id) {
         ThrowUtils.throwIf(id == null, HttpsCodeEnum.PARAMS_ERROR);
         Article article = articleService.getById(id);

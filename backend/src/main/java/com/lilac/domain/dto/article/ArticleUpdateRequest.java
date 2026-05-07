@@ -52,5 +52,5 @@ public class ArticleUpdateRequest {
     /**
      * 标签列表
      */
-    private List<Integer> tagIds;
+    private List<Long> tagIds;
 }

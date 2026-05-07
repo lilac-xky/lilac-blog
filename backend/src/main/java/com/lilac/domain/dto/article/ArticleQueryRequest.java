@@ -45,5 +45,5 @@ public class ArticleQueryRequest extends PageRequest {
     /**
      * 标签列表
      */
-    private List<Integer> tagIds;
+    private List<Long> tagIds;
 }

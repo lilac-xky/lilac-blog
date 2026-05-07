@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.domain.dto.article.ArticleAddRequest;
 import com.lilac.domain.dto.article.ArticleQueryRequest;
+import com.lilac.domain.dto.article.ArticleUpdateRequest;
 import com.lilac.domain.entity.Article;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lilac.domain.vo.ArticleVO;
@@ -32,4 +33,20 @@ public interface ArticleService extends IService<Article> {
      * @return 查询条件
      */
     LambdaQueryWrapper<Article> getQueryWrapper(ArticleQueryRequest articleQueryRequest);
+
+    /**
+     * 获取文章详情
+     *
+     * @param articleUpdateRequest 修改参数
+     * @return 文章详情
+     */
+    Boolean updateArticle(ArticleUpdateRequest articleUpdateRequest);
+
+    /**
+     * 删除文章
+     *
+     * @param id 文章id
+     * @return 删除结果
+     */
+    Boolean deleteArticle(Long id);
 }

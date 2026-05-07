@@ -63,11 +63,8 @@
 
         <!-- 操作按钮 -->
         <div class="panel setting-card action-card">
-          <a-button block style="margin-bottom: 8px" :loading="saving && form.status === 0" @click="save(0)">
-            保存草稿
-          </a-button>
-          <a-button block type="primary" :loading="saving && form.status === 2" @click="save(2)">
-            发布文章
+          <a-button block type="primary" :loading="saving" @click="save">
+            {{ form.status === 2 ? '发布文章' : '保存草稿' }}
           </a-button>
         </div>
       </div>
@@ -92,12 +89,12 @@ import { uploadFile } from '@/api/fileController';
 const route = useRoute();
 const router = useRouter();
 
-const articleId = ref<number | undefined>(
-  route.query.id ? Number(route.query.id) : undefined,
+const articleId = ref<string | undefined>(
+    typeof route.query.id === 'string' ? route.query.id : undefined,
 );
 
 // ---------- 表单 ----------
-const form = reactive<API.ArticleAddRequest & { id?: number }>({
+const form = reactive<API.ArticleAddRequest & { id?: string }>({
   title: '',
   content: '',
   summary: '',
@@ -110,10 +107,10 @@ const form = reactive<API.ArticleAddRequest & { id?: number }>({
 onMounted(async () => {
   if (!articleId.value) return;
   try {
-    const res = await getArticle({ id: articleId.value });
+    const res = await getArticle({id: articleId.value as unknown as number});
     const vo = res.data?.data;
     if (vo) {
-      form.id = vo.id;
+      form.id = vo.id as unknown as string;
       form.title = vo.title ?? '';
       form.content = vo.content ?? '';
       form.summary = vo.summary ?? '';
@@ -181,7 +178,7 @@ async function onUploadImg(files: File[], callback: (urls: string[]) => void) {
 // ---------- 保存 / 发布 ----------
 const saving = ref(false);
 
-async function save(status: number) {
+async function save() {
   if (!form.title?.trim()) {
     message.warning('请输入文章标题');
     return;
@@ -191,19 +188,19 @@ async function save(status: number) {
     return;
   }
 
-  form.status = status;
+  const isPublish = form.status === 2;
   saving.value = true;
   try {
     if (articleId.value) {
-      const res = await updateArticle({ ...form, id: articleId.value });
+      const res = await updateArticle({...form, id: articleId.value as unknown as number});
       if (res.data?.data) {
-        message.success(status === 2 ? '发布成功' : '草稿已保存');
+        message.success(isPublish ? '发布成功' : '草稿已保存');
         router.push('/article/manage');
       }
     } else {
       const res = await addArticle({ ...form });
       if (res.data?.data) {
-        message.success(status === 2 ? '发布成功' : '草稿已保存');
+        message.success(isPublish ? '发布成功' : '草稿已保存');
         router.push('/article/manage');
       }
     }

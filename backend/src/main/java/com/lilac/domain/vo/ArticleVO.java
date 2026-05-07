@@ -80,8 +80,8 @@ public class ArticleVO {
     /**
      * 对象转为VO
      *
-     * @param article
-     * @return
+     * @param article 文章对象
+     * @return ArticleVO
      */
     public static ArticleVO objToVo(Article article) {
         if (article == null) {
@@ -95,8 +95,8 @@ public class ArticleVO {
     /**
      * VO 转为对象
      *
-     * @param articleVO
-     * @return
+     * @param articleVO 文章VO对象
+     * @return Article
      */
     public static Article voToObj(ArticleVO articleVO) {
         if (articleVO == null) {

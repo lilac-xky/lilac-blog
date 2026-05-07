@@ -50,7 +50,7 @@
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="article-table" :scroll="{ x: 900 }">
+               size="middle" class="article-table" :scroll="{ x: 1180 }">
         <template #bodyCell="{ column, record }">
           <!-- 封面列 -->
           <template v-if="column.key === 'cover'">
@@ -65,6 +65,15 @@
           <!-- 标题列 -->
           <template v-else-if="column.key === 'title'">
             <span class="article-title" :title="record.title">{{ record.title || '无标题' }}</span>
+          </template>
+
+          <!-- 摘要列 -->
+          <template v-else-if="column.key === 'summary'">
+            <a-tooltip v-if="record.summary" :title="record.summary" placement="topLeft"
+                       :overlay-style="{ maxWidth: '420px' }">
+              <span class="article-summary">{{ record.summary }}</span>
+            </a-tooltip>
+            <span v-else class="text-muted">—</span>
           </template>
 
           <!-- 状态列 -->
@@ -226,7 +235,8 @@ function confirmDelete(record: API.Article) {
 // ---------- 表格列定义 ----------
 const columns = [
   { title: '封面', key: 'cover', width: 80, align: 'center' as const },
-  { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, minWidth: 200 },
+  {title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 200},
+  {title: '摘要', key: 'summary', dataIndex: 'summary', ellipsis: true, width: 240},
   { title: '状态', key: 'status', width: 90, align: 'center' as const },
   { title: '置顶', key: 'isTop', width: 70, align: 'center' as const },
   { title: '浏览量', key: 'viewCount', width: 80, align: 'center' as const },
@@ -348,6 +358,17 @@ onMounted(fetchArticles);
 .article-title {
   font-weight: 500;
   color: var(--text-primary);
+}
+
+.article-summary {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 
 .status-tag {

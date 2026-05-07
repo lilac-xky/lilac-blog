@@ -32,14 +32,14 @@ export async function deleteArticle(
   });
 }
 
-/** 获取文章详情 POST /api/article/get */
+/** 获取文章详情 GET /api/article/get */
 export async function getArticle(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getArticleParams,
   options?: { [key: string]: any }
 ) {
   return request<API.ResultArticleVO>("/api/article/get", {
-    method: "POST",
+      method: "GET",
     params: {
       ...params,
     },
