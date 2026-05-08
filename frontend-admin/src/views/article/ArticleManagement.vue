@@ -92,8 +92,9 @@
 
           <!-- 标签列 -->
           <template v-else-if="column.key === 'tags'">
-            <template v-if="record.tags && record.tags.length">
-              <a-tag v-for="tag in record.tags" :key="tag.id" class="status-tag" style="margin-bottom: 2px">
+            <template v-if="(record.tags ?? []).filter(Boolean).length">
+              <a-tag v-for="tag in (record.tags ?? []).filter((t: API.TagVO | null) => !!t && t.id != null)"
+                :key="tag.id" class="status-tag" style="margin-bottom: 2px">
                 {{ tag.tagName }}
               </a-tag>
             </template>

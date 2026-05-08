@@ -148,7 +148,7 @@ onMounted(async () => {
       form.status = vo.status ?? 0;
       form.isTop = vo.isTop ?? 0;
       form.categoryId = vo.categoryId ?? undefined;
-      form.tagIds = ((vo.tags ?? []) as Array<{ id: number }>).map(t => Number(t.id));
+      form.tagIds = ((vo.tags ?? []) as Array<{ id: number }>).map(t => t.id);
     }
   } catch {
     message.error('加载文章失败');

@@ -1,5 +1,6 @@
 <template>
     <div class="auth-page">
+        <StarrySky />
         <!-- 左侧品牌区 -->
         <div class="auth-hero">
             <div class="hero-content">
@@ -127,15 +128,18 @@ import {
 } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { register, sendRegisterCode } from '@/api/userController';
+import StarrySky from '@/components/StarrySky.vue';
 
 const router = useRouter();
 const loading = ref(false);
+// 是否已勾选服务协议
 const agree = ref(false);
+// 验证码发送状态：发送中 + 重发倒计时
 const sendingCode = ref(false);
 const countdown = ref(0);
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
-// 表单数据
+// 注册表单数据
 const formState = reactive<API.UserRegisterRequest>({
     userAccount: '',
     email: '',
@@ -144,7 +148,7 @@ const formState = reactive<API.UserRegisterRequest>({
     code: '',
 });
 
-// 确认密码校验
+// 确认密码校验：必须与 password 一致
 const validateCheckPassword = async (_rule: Rule, value: string) => {
     if (!value) {
         return Promise.reject('请再次输入密码');
@@ -186,7 +190,7 @@ const rules: Record<string, Rule[]> = {
     ],
 };
 
-// 启动倒计时
+// 启动 60 秒重发倒计时
 function startCountdown() {
     countdown.value = 60;
     countdownTimer = setInterval(() => {
@@ -198,7 +202,7 @@ function startCountdown() {
     }, 1000);
 }
 
-// 发送验证码
+// 发送邮箱验证码
 async function handleSendCode() {
     const email = formState.email?.trim();
     if (!email) {
@@ -224,11 +228,12 @@ async function handleSendCode() {
     }
 }
 
+// 离开页面时清理定时器，避免内存泄漏
 onUnmounted(() => {
     if (countdownTimer) clearInterval(countdownTimer);
 });
 
-// 注册逻辑
+// 注册逻辑：成功后跳转到登录页
 async function handleRegister() {
     loading.value = true;
     try {
@@ -247,28 +252,36 @@ async function handleRegister() {
 
 <style scoped>
 .auth-page {
+    position: relative;
     height: 100vh;
     width: 100vw;
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     overflow: hidden;
-    background: var(--bg-page);
+    background: rgba(8, 7, 15, 0.35);
+    color: var(--text-primary);
+}
+
+.auth-page>.auth-hero,
+.auth-page>.auth-form-wrap {
+    position: relative;
+    z-index: 1;
 }
 
 .auth-hero {
     position: relative;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 60%, #3a3a3a 100%);
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 48px;
+    border-right: 1px solid var(--border-soft);
 }
 
 .hero-content {
     position: relative;
     z-index: 2;
-    color: #fff;
+    color: var(--text-primary);
     max-width: 440px;
 }
 
@@ -292,16 +305,20 @@ async function handleRegister() {
 }
 
 .hero-title {
-    font-size: 40px;
+    font-size: 44px;
     font-weight: 800;
     line-height: 1.2;
     margin-bottom: 16px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #7dd3fc 60%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .hero-desc {
     font-size: 15px;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.7;
+    color: var(--text-secondary);
+    line-height: 1.8;
     margin-bottom: 40px;
 }
 
@@ -321,35 +338,37 @@ async function handleRegister() {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 14px;
-    color: #fff;
+    color: var(--accent);
     backdrop-filter: blur(6px);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
 }
 
 .step-text {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text-secondary);
 }
 
 .hero-deco {
     position: absolute;
     border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.35;
+    filter: blur(80px);
+    opacity: 0.5;
 }
 
 .hero-deco-2 {
-    width: 260px;
-    height: 260px;
-    background: #f59e0b;
-    bottom: -60px;
+    width: 280px;
+    height: 280px;
+    background: #ec4899;
+    bottom: -80px;
     left: -60px;
+    opacity: 0.35;
 }
 
 .auth-form-wrap {
@@ -363,14 +382,20 @@ async function handleRegister() {
 .auth-form {
     width: 100%;
     max-width: 400px;
+    padding: 32px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
 }
 
 .form-header {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 }
 
 .form-header h2 {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 8px;
@@ -387,6 +412,14 @@ async function handleRegister() {
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-pink)) !important;
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+}
+
+.submit-btn:hover {
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.55) !important;
+    transform: translateY(-1px);
 }
 
 .form-footer {
@@ -397,19 +430,19 @@ async function handleRegister() {
 }
 
 .link-primary {
-    color: var(--text-primary);
+    color: var(--accent);
     font-weight: 600;
     margin: 0 2px;
 }
 
 .link-primary:hover {
+    color: var(--accent-pink);
     text-decoration: underline;
 }
 
-
 :deep(.ant-form-item-label > label) {
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--text-secondary);
 }
 
 :deep(.ant-form-item) {
@@ -428,7 +461,15 @@ async function handleRegister() {
 .code-btn {
     flex-shrink: 0;
     min-width: 120px;
-    border-radius: var(--radius-sm) !important;
+    border-radius: var(--radius-pill) !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    color: var(--accent) !important;
+}
+
+.code-btn:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.2) !important;
+    color: #fff !important;
 }
 
 @media (max-width: 900px) {

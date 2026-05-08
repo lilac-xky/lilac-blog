@@ -4,6 +4,7 @@ import antd from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
 
+// 创建 Vue 应用并挂载全局插件
 const app = createApp(App)
 
 app.use(createPinia())

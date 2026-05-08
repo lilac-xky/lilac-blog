@@ -1,5 +1,6 @@
 <template>
     <div class="auth-page">
+        <StarrySky />
         <!-- 左侧品牌区 -->
         <div class="auth-hero">
             <div class="hero-content">
@@ -78,6 +79,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { login } from '@/api/userController';
 import { useUserStore } from '@/stores/user';
+import StarrySky from '@/components/StarrySky.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -91,6 +93,7 @@ const formState = reactive<API.UserLoginRequest>({
     password: '',
 });
 
+// 表单验证规则
 const rules: Record<string, Rule[]> = {
     account: [
         { required: true, message: '请输入账号或邮箱', trigger: 'blur' },
@@ -102,7 +105,7 @@ const rules: Record<string, Rule[]> = {
     ],
 };
 
-// 登录逻辑
+// 登录逻辑：成功后写入用户态并跳转回原始路由
 async function handleLogin() {
     loading.value = true;
     try {
@@ -123,28 +126,36 @@ async function handleLogin() {
 
 <style scoped>
 .auth-page {
+    position: relative;
     height: 100vh;
     width: 100vw;
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     overflow: hidden;
-    background: var(--bg-page);
+    background: rgba(8, 7, 15, 0.35);
+    color: var(--text-primary);
+}
+
+.auth-page>.auth-hero,
+.auth-page>.auth-form-wrap {
+    position: relative;
+    z-index: 1;
 }
 
 .auth-hero {
     position: relative;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 60%, #3a3a3a 100%);
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 48px;
+    border-right: 1px solid var(--border-soft);
 }
 
 .hero-content {
     position: relative;
     z-index: 2;
-    color: #fff;
+    color: var(--text-primary);
     max-width: 440px;
 }
 
@@ -168,16 +179,20 @@ async function handleLogin() {
 }
 
 .hero-title {
-    font-size: 40px;
+    font-size: 44px;
     font-weight: 800;
     line-height: 1.2;
     margin-bottom: 16px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #7dd3fc 60%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .hero-desc {
     font-size: 15px;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.7;
+    color: var(--text-secondary);
+    line-height: 1.8;
     margin-bottom: 36px;
 }
 
@@ -192,41 +207,43 @@ async function handleLogin() {
     align-items: center;
     gap: 8px;
     padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius-pill);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(6px);
+    color: var(--text-secondary);
+    backdrop-filter: blur(8px);
 }
 
 .badge .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
 }
 
 .hero-deco {
     position: absolute;
     border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.35;
+    filter: blur(80px);
+    opacity: 0.5;
 }
 
 .hero-deco-1 {
-    width: 320px;
-    height: 320px;
-    background: #667eea;
-    top: -80px;
+    width: 360px;
+    height: 360px;
+    background: #0ea5e9;
+    top: -100px;
     right: -80px;
 }
 
 .hero-deco-2 {
-    width: 260px;
-    height: 260px;
+    width: 280px;
+    height: 280px;
     background: #ec4899;
-    bottom: -60px;
+    bottom: -80px;
     left: -60px;
+    opacity: 0.35;
 }
 
 .auth-form-wrap {
@@ -240,14 +257,20 @@ async function handleLogin() {
 .auth-form {
     width: 100%;
     max-width: 400px;
+    padding: 36px 32px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
 }
 
 .form-header {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
 }
 
 .form-header h2 {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 8px;
@@ -273,7 +296,7 @@ async function handleLogin() {
 }
 
 .link-forgot:hover {
-    color: var(--text-primary);
+    color: var(--accent);
 }
 
 .submit-btn {
@@ -282,6 +305,14 @@ async function handleLogin() {
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-pink)) !important;
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+}
+
+.submit-btn:hover {
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.55) !important;
+    transform: translateY(-1px);
 }
 
 .form-footer {
@@ -292,19 +323,19 @@ async function handleLogin() {
 }
 
 .link-primary {
-    color: var(--text-primary);
+    color: var(--accent);
     font-weight: 600;
     margin-left: 4px;
 }
 
 .link-primary:hover {
+    color: var(--accent-pink);
     text-decoration: underline;
 }
 
-
 :deep(.ant-form-item-label > label) {
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--text-secondary);
 }
 
 @media (max-width: 900px) {

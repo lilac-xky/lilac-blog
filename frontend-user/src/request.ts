@@ -2,13 +2,14 @@ import axios from 'axios';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 
+// axios 实例：统一 baseURL、超时与跨域携带凭证
 const request = axios.create({
     baseURL: 'http://localhost:9090',
     timeout: 60000,
     withCredentials: true,
 });
 
-// 请求拦截器
+// 请求拦截器：注入 user-token
 request.interceptors.request.use(
     (config) => {
         const token = useUserStore().loginUser?.token;
@@ -20,9 +21,10 @@ request.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// 认证失败码：清除本地登录态
 const AUTH_FAIL_CODES = new Set([401, 400001]);
 
-// 响应拦截器
+// 响应拦截器：统一处理业务码与认证失效
 request.interceptors.response.use(
     (response) => {
         const { data, config } = response;

@@ -1,10 +1,11 @@
-// @ts-ignore
-/* eslint-disable */
-// API 更新时间：
-// API 唯一标识：
 import * as userController from "./userController";
-import * as adminController from "./adminController";
+import * as articleController from "./articleController";
+import * as categoryController from "./categoryController";
+import * as tagController from "./tagController";
+
 export default {
   userController,
-  adminController,
+  articleController,
+  categoryController,
+  tagController,
 };
