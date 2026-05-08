@@ -64,7 +64,7 @@ public class CategoryController {
      * @return 分类列表
      */
     @PostMapping("/list/page/vo")
-    public Result<Page<Category>> listCategoryByPageVO(@RequestBody CategoryQueryRequest categoryQueryRequest) {
+    public Result<Page<CategoryVO>> listCategoryByPageVO(@RequestBody CategoryQueryRequest categoryQueryRequest) {
         ThrowUtils.throwIf(categoryQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long current = categoryQueryRequest.getCurrent();
         long size = categoryQueryRequest.getPageSize();
@@ -72,7 +72,7 @@ public class CategoryController {
         Page<Category> categoryPage = categoryService.page(new Page<>(current, size), categoryService.getQueryWrapper(categoryQueryRequest));
         Page<CategoryVO> categoryVOPage = new Page<>(categoryPage.getCurrent(), categoryPage.getSize(), categoryPage.getTotal());
         categoryVOPage.setRecords(categoryPage.getRecords().stream().map(CategoryVO::objToVo).toList());
-        return Result.success(categoryPage);
+        return Result.success(categoryVOPage);
     }
 
     /**

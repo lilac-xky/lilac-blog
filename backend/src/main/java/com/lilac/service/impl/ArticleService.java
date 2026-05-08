@@ -21,11 +21,18 @@ public interface ArticleService extends IService<Article> {
     long addArticle(ArticleAddRequest articleAddRequest);
 
     /**
-     * 获取文章列表
+     * 获取文章列表（前台，只返回已审核文章）
      * @param articleQueryRequest 查询参数
      * @return 文章列表
      */
     Page<ArticleVO> listArticleByVOPage(ArticleQueryRequest articleQueryRequest);
+
+    /**
+     * 获取文章列表（管理员，不限制状态）
+     * @param articleQueryRequest 查询参数
+     * @return 文章列表
+     */
+    Page<ArticleVO> listArticleAdminVOPage(ArticleQueryRequest articleQueryRequest);
 
     /**
      * 获取查询条件
@@ -49,4 +56,12 @@ public interface ArticleService extends IService<Article> {
      * @return 删除结果
      */
     Boolean deleteArticle(Long id);
+
+    /**
+     * 获取文章详情（含分类名称和标签）
+     *
+     * @param id 文章id
+     * @return 文章VO
+     */
+    ArticleVO getArticleVO(Long id);
 }

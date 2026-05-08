@@ -4,11 +4,9 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.domain.dto.category.CategoryAddRequest;
 import com.lilac.domain.dto.category.CategoryQueryRequest;
-import com.lilac.domain.dto.category.CategoryUpdateRequest;
 import com.lilac.domain.entity.Article;
 import com.lilac.domain.entity.Category;
 import com.lilac.enums.HttpsCodeEnum;
@@ -18,9 +16,8 @@ import com.lilac.mapper.CategoryMapper;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
 * 分类Service实现
@@ -28,6 +25,7 @@ import java.util.List;
 @Service
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService{
 
+    @Lazy
     @Resource
     private ArticleService articleService;
 

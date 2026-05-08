@@ -64,7 +64,7 @@ public class TagController {
      * @return 标签列表
      */
     @PostMapping("/list/page/vo")
-    public Result<Page<Tag>> listTagByPageVO(@RequestBody TagQueryRequest tagQueryRequest) {
+    public Result<Page<TagVO>> listTagByPageVO(@RequestBody TagQueryRequest tagQueryRequest) {
         ThrowUtils.throwIf(tagQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long current = tagQueryRequest.getCurrent();
         long size = tagQueryRequest.getPageSize();
@@ -72,7 +72,7 @@ public class TagController {
         Page<Tag> tagPage = tagService.page(new Page<>(current, size), tagService.getQueryWrapper(tagQueryRequest));
         Page<TagVO> tagVOPage = new Page<>(tagPage.getCurrent(), tagPage.getSize(), tagPage.getTotal());
         tagVOPage.setRecords(tagPage.getRecords().stream().map(TagVO::objToVo).toList());
-        return Result.success(tagPage);
+        return Result.success(tagVOPage);
     }
 
     /**

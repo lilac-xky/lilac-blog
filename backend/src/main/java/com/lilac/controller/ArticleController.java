@@ -5,14 +5,12 @@ import com.lilac.common.DeleteRequest;
 import com.lilac.domain.dto.article.ArticleAddRequest;
 import com.lilac.domain.dto.article.ArticleQueryRequest;
 import com.lilac.domain.dto.article.ArticleUpdateRequest;
-import com.lilac.domain.entity.Article;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.ArticleVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.service.impl.ArticleService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -45,13 +43,10 @@ public class ArticleController {
      * @return 文章列表
      */
     @PostMapping("/list/page")
-    public Result<Page<Article>> listArticleByPage(@RequestBody ArticleQueryRequest articleQueryRequest) {
+    public Result<Page<ArticleVO>> listArticleByPage(@RequestBody ArticleQueryRequest articleQueryRequest) {
         ThrowUtils.throwIf(articleQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
-        long current = articleQueryRequest.getCurrent();
-        long size = articleQueryRequest.getPageSize();
-        // 执行分页查询
-        Page<Article> articlePage = articleService.page(new Page<>(current, size), articleService.getQueryWrapper(articleQueryRequest));
-        return Result.success(articlePage);
+        Page<ArticleVO> articleVOPage = articleService.listArticleAdminVOPage(articleQueryRequest);
+        return Result.success(articleVOPage);
     }
 
     /**
@@ -108,8 +103,6 @@ public class ArticleController {
     @GetMapping("/get")
     public Result<ArticleVO> getArticle(Long id) {
         ThrowUtils.throwIf(id == null, HttpsCodeEnum.PARAMS_ERROR);
-        Article article = articleService.getById(id);
-        ThrowUtils.throwIf(article == null, HttpsCodeEnum.NOT_FOUND_ERROR);
-        return Result.success(ArticleVO.objToVo(article));
+        return Result.success(articleService.getArticleVO(id));
     }
 }

@@ -7,9 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.domain.dto.tag.TagAddRequest;
 import com.lilac.domain.dto.tag.TagQueryRequest;
-import com.lilac.domain.dto.tag.TagUpdateRequest;
 import com.lilac.domain.entity.ArticleTag;
-import com.lilac.domain.entity.Category;
 import com.lilac.domain.entity.Tag;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.service.impl.ArticleTagService;
@@ -17,7 +15,6 @@ import com.lilac.service.impl.TagService;
 import com.lilac.mapper.TagMapper;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

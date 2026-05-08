@@ -12,12 +12,17 @@ import com.lilac.domain.dto.article.ArticleQueryRequest;
 import com.lilac.domain.dto.article.ArticleUpdateRequest;
 import com.lilac.domain.entity.Article;
 import com.lilac.domain.entity.ArticleTag;
+import com.lilac.domain.entity.Category;
+import com.lilac.domain.entity.Tag;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.ArticleVO;
+import com.lilac.domain.vo.TagVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.service.impl.ArticleService;
 import com.lilac.mapper.ArticleMapper;
 import com.lilac.service.impl.ArticleTagService;
+import com.lilac.service.impl.CategoryService;
+import com.lilac.service.impl.TagService;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -25,7 +30,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +46,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private UserService userService;
     @Resource
     private ArticleTagService articleTagService;
+    @Resource
+    private CategoryService categoryService;
+    @Resource
+    private TagService tagService;
 
     /**
      * 添加文章
@@ -54,7 +66,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         User loginUser = userService.getLoginUser();
         article.setUserId(loginUser.getId());
         if (articleAddRequest.getStatus() == null) {
-            article.setStatus(0);
+            articleAddRequest.setStatus(0);
         }
         if (userService.isAdmin() && articleAddRequest.getStatus() != 0) {
             article.setStatus(2);
@@ -80,7 +92,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 查询文章列表
+     * 查询文章列表（前台，只返回已审核文章）
      *
      * @param articleQueryRequest 查询文章参数
      * @return 文章列表
@@ -94,9 +106,27 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
         Page<Article> articlePage = this.page(new Page<>(articleQueryRequest.getCurrent(),
                 articleQueryRequest.getPageSize()), getQueryWrapper(articleQueryRequest));
-        // 转换为 VO
         Page<ArticleVO> articleVOPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
         articleVOPage.setRecords(articlePage.getRecords().stream().map(ArticleVO::objToVo).toList());
+        fillArticleNames(articleVOPage.getRecords());
+        return articleVOPage;
+    }
+
+    /**
+     * 查询文章列表（管理员，不限制状态）
+     *
+     * @param articleQueryRequest 查询文章参数
+     * @return 文章列表
+     */
+    @Override
+    public Page<ArticleVO> listArticleAdminVOPage(ArticleQueryRequest articleQueryRequest) {
+        ThrowUtils.throwIf(articleQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
+        Page<Article> articlePage = this.page(
+                new Page<>(articleQueryRequest.getCurrent(), articleQueryRequest.getPageSize()),
+                getQueryWrapper(articleQueryRequest));
+        Page<ArticleVO> articleVOPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
+        articleVOPage.setRecords(articlePage.getRecords().stream().map(ArticleVO::objToVo).toList());
+        fillArticleNames(articleVOPage.getRecords());
         return articleVOPage;
     }
 
@@ -124,11 +154,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapper.eq(ObjUtil.isNotEmpty(isTop), Article::getIsTop, isTop);
         queryWrapper.eq(ObjUtil.isNotEmpty(status), Article::getStatus, status);
         queryWrapper.eq(ObjUtil.isNotEmpty(categoryId), Article::getCategoryId, categoryId);
-        // todo 标签待处理
+        // 按标签过滤：先查关联表拿到文章ID列表
+        List<Long> tagIds = articleQueryRequest.getTagIds();
+        if (tagIds != null && !tagIds.isEmpty()) {
+            List<Long> articleIdsByTags = articleTagService
+                    .list(new LambdaQueryWrapper<ArticleTag>().in(ArticleTag::getTagId, tagIds))
+                    .stream().map(ArticleTag::getArticleId).distinct().toList();
+            // 没有匹配文章时用 -1 确保结果为空而非全量
+            queryWrapper.in(Article::getId, articleIdsByTags.isEmpty() ? List.of(-1L) : articleIdsByTags);
+        }
         // 排序处理
         boolean isDesc = "descend".equalsIgnoreCase(sortOrder);
         queryWrapper.orderBy(true, isDesc, Article::getCreateTime);
         return queryWrapper;
+    }
+
+    /**
+     * 获取文章详情（含分类名称和标签）
+     *
+     * @param id 文章id
+     * @return 文章VO
+     */
+    @Override
+    public ArticleVO getArticleVO(Long id) {
+        Article article = this.getById(id);
+        ThrowUtils.throwIf(article == null, HttpsCodeEnum.NOT_FOUND_ERROR);
+        ArticleVO articleVO = ArticleVO.objToVo(article);
+        fillArticleNames(List.of(articleVO));
+        return articleVO;
     }
 
     /**
@@ -179,5 +232,32 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ThrowUtils.throwIf(!remove, HttpsCodeEnum.OPERATION_ERROR);
         return true;
     }
-}
 
+    /**
+     * 批量填充文章VO的分类名称和标签列表（避免N+1查询）
+     */
+    private void fillArticleNames(List<ArticleVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        // 批量查分类名称
+        List<Long> categoryIds = records.stream().map(ArticleVO::getCategoryId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, String> categoryNameMap = categoryIds.isEmpty() ? Collections.emptyMap() : categoryService.listByIds(categoryIds)
+                .stream().collect(Collectors.toMap(Category::getId, Category::getCategoryName));
+
+        // 批量查标签关联
+        List<Long> articleIds = records.stream().map(ArticleVO::getId).toList();
+        List<ArticleTag> articleTags = articleTagService.list(new LambdaQueryWrapper<ArticleTag>().in(ArticleTag::getArticleId, articleIds));
+        List<Long> tagIds = articleTags.stream().map(ArticleTag::getTagId).distinct().toList();
+        Map<Long, TagVO> tagVOMap = tagIds.isEmpty() ? Collections.emptyMap() : tagService.listByIds(tagIds)
+                .stream().collect(Collectors.toMap(Tag::getId, TagVO::objToVo));
+        Map<Long, List<TagVO>> articleTagMap = articleTags.stream()
+                .collect(Collectors.groupingBy(ArticleTag::getArticleId,
+                        Collectors.mapping(at -> tagVOMap.get(at.getTagId()), Collectors.toList())));
+
+        records.forEach(vo -> {
+            vo.setCategoryName(categoryNameMap.get(vo.getCategoryId()));
+            vo.setTags(articleTagMap.getOrDefault(vo.getId(), Collections.emptyList()));
+        });
+    }
+}
