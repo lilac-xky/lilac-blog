@@ -46,6 +46,12 @@
             <artifactId>sa-token-spring-boot3-starter</artifactId>
             <version>1.45.0</version>
         </dependency>
+<!--        sa-token 整合 Redis（Jackson 序列化）-->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+            <version>1.45.0</version>
+        </dependency>
 <!--        hutool-->
         <dependency>
             <groupId>cn.hutool</groupId>

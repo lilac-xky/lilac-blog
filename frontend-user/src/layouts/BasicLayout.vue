@@ -60,6 +60,9 @@
         <!-- 页脚 -->
         <footer class="blog-footer">
             <span>© {{ year }} lilac-blog · 在星海中记录代码与思考</span>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="beian-link">
+                蜀ICP备2025159235号-1
+            </a>
         </footer>
     </div>
 </template>
@@ -265,11 +268,25 @@ async function handleMenu({ key }: { key: string }) {
 
 .blog-footer {
     position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px 14px;
     text-align: center;
     color: var(--text-muted);
     padding: 24px 16px 32px;
     font-size: 12px;
     border-top: 1px solid var(--border-soft);
+}
+
+.beian-link {
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.beian-link:hover {
+    color: var(--accent);
 }
 
 @media (max-width: 720px) {
