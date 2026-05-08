@@ -16,59 +16,86 @@
 
 ## 📖 简介
 
-Lilac Blog 面向访客与注册用户的前台站点，提供博客浏览、用户注册登录、收藏 / 订阅 / 评论等互动能力（部分功能建设中）。
+Lilac Blog 面向访客与注册用户的前台站点。当前已实现：首页、文章列表、文章详情（Markdown 渲染）、归档、用户注册（带邮箱验证码）/ 登录，以及音乐播放器、星空背景、滚动歌词等氛围组件。
 
 ## ✨ 特性
 
 - ⚡ **Vite 8** 极速启动与热更新
 - 🎨 **Ant Design Vue 4** + `@ant-design/icons-vue` 图标集
+- ✍️ **md-editor-v3** Markdown 渲染（文章详情）
 - 🧭 **游客友好**：默认允许未登录浏览，互动功能再校验
 - 🧾 **Pinia 状态持久化**：登录信息写入 `localStorage("lilac-blog-user")`
-- 🧠 **TypeScript 严格模式** + `@/*` 路径别名
+- 🔢 **json-bigint**：前端安全解析后端 `Long` 类型 ID，避免精度丢失
 - 🕒 **dayjs** 轻量时间处理
+- 🎵 **氛围组件**：MusicPlayer / StarrySky / LyricsMarquee
+- 🧠 **TypeScript 严格模式** + `@/*` 路径别名
 
 ## 🛠️ 技术栈
 
-| 依赖                     | 版本    | 用途         |
-| ------------------------ | ------- | ------------ |
-| vue                      | 3.5.31  | 框架         |
-| vite                     | 8.0.3   | 构建工具     |
-| typescript               | 6.0     | 类型系统     |
-| ant-design-vue           | 4.2.6   | UI 组件库    |
-| @ant-design/icons-vue    | 7.0.1   | 图标         |
-| pinia                    | 3.0.4   | 状态管理     |
-| vue-router               | 5.0.4   | 路由         |
-| axios                    | 1.15    | HTTP 客户端  |
-| dayjs                    | 1.11.13 | 时间处理     |
+| 依赖                     | 版本    | 用途              |
+| ------------------------ | ------- | ----------------- |
+| vue                      | 3.5.31  | 框架              |
+| vite                     | 8.0.3   | 构建工具          |
+| typescript               | 6.0     | 类型系统          |
+| ant-design-vue           | 4.2.6   | UI 组件库         |
+| @ant-design/icons-vue    | 7.0.1   | 图标              |
+| md-editor-v3             | 6.5.0   | Markdown 渲染     |
+| pinia                    | 3.0.4   | 状态管理          |
+| vue-router               | 5.0.4   | 路由              |
+| axios                    | 1.15    | HTTP 客户端       |
+| dayjs                    | 1.11.13 | 时间处理          |
+| json-bigint              | 1.0.0   | BigInt JSON 解析  |
 
 ## 📦 目录结构
 
 ```
 frontend-user/
 ├── src/
-│   ├── main.ts                 # 入口
-│   ├── App.vue                 # 根组件
-│   ├── request.ts              # Axios 实例（注入 user-token）
-│   ├── api/                    # 接口客户端
+│   ├── main.ts                       # 入口
+│   ├── App.vue                       # 根组件
+│   ├── request.ts                    # Axios 实例（注入 user-token）
+│   ├── api/                          # 接口客户端
 │   │   ├── userController.ts
+│   │   ├── articleController.ts
+│   │   ├── categoryController.ts
+│   │   ├── tagController.ts
+│   │   ├── index.ts
 │   │   └── typings.d.ts
 │   ├── assets/
-│   ├── components/             # 通用组件
+│   ├── components/                   # 通用 / 氛围组件
+│   │   ├── ArticleCard.vue           # 文章卡片
+│   │   ├── MusicPlayer.vue           # 音乐播放器
+│   │   ├── StarrySky.vue             # 星空背景
+│   │   └── LyricsMarquee.vue         # 滚动歌词
 │   ├── layouts/
-│   │   └── BasicLayout.vue     # 主布局
+│   │   └── BasicLayout.vue           # 主布局
 │   ├── router/
-│   │   └── index.ts            # 路由
+│   │   └── index.ts                  # 路由
 │   ├── stores/
-│   │   └── user.ts             # 当前登录用户（Pinia）
+│   │   └── user.ts                   # 当前登录用户（Pinia）
 │   └── views/
-│       ├── Home.vue            # 博客首页
+│       ├── Home.vue                  # 博客首页
+│       ├── Articles.vue              # 文章列表
+│       ├── Archive.vue               # 归档（按时间）
+│       ├── ArticleDetail.vue         # 文章详情（Markdown）
 │       └── login/
-│           ├── Login.vue       # 登录
-│           └── Register.vue    # 注册
+│           ├── Login.vue             # 登录
+│           └── Register.vue          # 注册（邮箱验证码）
 ├── vite.config.ts
 ├── tsconfig.*.json
 └── package.json
 ```
+
+## 🧭 路由总览
+
+| 路径               | 页面               | 说明                |
+| ------------------ | ------------------ | ------------------- |
+| `/login`           | Login.vue          | 用户登录            |
+| `/register`        | Register.vue       | 用户注册            |
+| `/`                | Home.vue           | 博客首页            |
+| `/articles`        | Articles.vue       | 文章列表            |
+| `/archive`         | Archive.vue        | 归档                |
+| `/article/:id`     | ArticleDetail.vue  | 文章详情（按 id）   |
 
 ## 🚀 快速开始
 
@@ -117,11 +144,17 @@ npm run build
 
 ## 🔁 已对接接口
 
-| 方法   | 路径                     | 说明     |
-| ------ | ------------------------ | -------- |
-| POST   | `/api/user/register`     | 注册     |
-| POST   | `/api/user/login`        | 登录     |
-| GET    | `/api/user/logout`       | 登出     |
+| 方法 | 路径                     | 说明                |
+| ---- | ------------------------ | ------------------- |
+| POST | `/api/user/register`     | 注册（带验证码）    |
+| POST | `/api/user/login`        | 登录                |
+| GET  | `/api/user/logout`       | 登出                |
+| GET  | `/api/user/sendCode`     | 发送邮箱验证码      |
+| POST | `/api/user/update`       | 修改个人资料        |
+| POST | `/api/article/list/page/vo` | 文章列表（前台）  |
+| GET  | `/api/article/get`       | 文章详情            |
+| POST | `/api/category/list/page/vo` | 分类列表          |
+| POST | `/api/tag/list/page/vo`  | 标签列表            |
 
 更多接口详见 [../docs/API.md](../docs/API.md)。
 
@@ -130,6 +163,7 @@ npm run build
 - baseURL：`http://localhost:9090`（见 [src/request.ts](src/request.ts)）
 - `withCredentials: true` — 若使用 Cookie 鉴权可启用
 - 超时：`60000ms`
+- 大整数 ID 使用 `json-bigint` 安全解析
 
 ## 🧑‍💻 推荐 IDE
 

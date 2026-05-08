@@ -16,60 +16,84 @@
 
 ## 📖 简介
 
-Lilac Blog 的管理员后台，用于站点内容管理。当前已实现管理员登录、登录态守卫、基础布局；文章 / 评论 / 用户管理等模块陆续建设中。
+Lilac Blog 的管理员后台，用于站点内容管理。当前已支持：管理员登录与守卫、用户管理、文章发布与管理（Markdown 编辑器）、分类与标签管理、文件上传。
 
 ## ✨ 特性
 
 - ⚡ **Vite 8** 极速冷启动与 HMR
-- 🎨 **Ant Design Vue 4** 企业级 UI，自带暗色主题覆写
-- 🔐 **路由守卫**：未登录请求自动跳转 `/login?redirect=<from>`
+- 🎨 **Ant Design Vue 4** 企业级 UI，自定义主题
+- ✍️ **md-editor-v3** Markdown 编辑器，支持图片上传、预览
+- 🔐 **路由守卫**：未登录跳转 `/login?redirect=<from>`，并通过 `/admin/currentUser` 远端校验 token
 - 🧾 **Pinia 状态持久化**：登录信息写入 `localStorage("lilac-blog-admin")`
 - 🔄 **OpenAPI 类型生成**：一键同步后端接口到 `src/api/`
 - 🧠 **TypeScript 严格模式** + `@/*` 路径别名
 
 ## 🛠️ 技术栈
 
-| 依赖              | 版本    | 用途         |
-| ----------------- | ------- | ------------ |
-| vue               | 3.5.31  | 框架         |
-| vite              | 8.0.3   | 构建工具     |
-| typescript        | 6.0     | 类型系统     |
-| ant-design-vue    | 4.2.6   | UI 组件库    |
-| pinia             | 3.0.4   | 状态管理     |
-| vue-router        | 5.0.4   | 路由         |
-| axios             | 1.15    | HTTP 客户端  |
-| @umijs/openapi    | 1.14    | API 生成     |
+| 依赖              | 版本    | 用途              |
+| ----------------- | ------- | ----------------- |
+| vue               | 3.5.31  | 框架              |
+| vite              | 8.0.3   | 构建工具          |
+| typescript        | 6.0     | 类型系统          |
+| ant-design-vue    | 4.2.6   | UI 组件库         |
+| md-editor-v3      | 6.5.0   | Markdown 编辑器   |
+| pinia             | 3.0.4   | 状态管理          |
+| vue-router        | 5.0.4   | 路由              |
+| axios             | 1.15    | HTTP 客户端       |
+| @umijs/openapi    | 1.14    | API 生成          |
 
 ## 📦 目录结构
 
 ```
 frontend-admin/
 ├── src/
-│   ├── main.ts                 # 入口：注册 Pinia / Router / AntD
-│   ├── App.vue                 # 根组件，主题配置
-│   ├── request.ts              # Axios 实例（注入 admin-token）
-│   ├── api/                    # 由 OpenAPI 生成的接口客户端
+│   ├── main.ts                       # 入口：注册 Pinia / Router / AntD
+│   ├── App.vue                       # 根组件，主题配置
+│   ├── request.ts                    # Axios 实例（注入 admin-token）
+│   ├── api/                          # 由 OpenAPI 生成的接口客户端
 │   │   ├── adminController.ts
 │   │   ├── userController.ts
+│   │   ├── articleController.ts
+│   │   ├── categoryController.ts
+│   │   ├── tagController.ts
+│   │   ├── fileController.ts
+│   │   ├── index.ts
 │   │   └── typings.d.ts
 │   ├── assets/
 │   ├── components/
-│   │   ├── GlobalHeader.vue    # 顶部栏
-│   │   └── GlobalSider.vue     # 侧边栏
+│   │   ├── GlobalHeader.vue          # 顶部栏
+│   │   └── GlobalSider.vue           # 侧边栏（含菜单）
 │   ├── layouts/
-│   │   └── BasicLayout.vue     # 登录后主布局
+│   │   └── BasicLayout.vue           # 登录后主布局
 │   ├── router/
-│   │   └── index.ts            # 路由 + 全局守卫
+│   │   └── index.ts                  # 路由 + 全局守卫（远端校验 token）
 │   ├── stores/
-│   │   └── user.ts             # 当前登录用户（Pinia）
+│   │   └── user.ts                   # 当前登录用户（Pinia）
 │   └── views/
-│       ├── Home.vue            # 仪表盘首页
-│       └── login/Login.vue     # 管理员登录
-├── openapi.config.js           # OpenAPI 生成配置
+│       ├── Home.vue                  # 仪表盘
+│       ├── login/Login.vue           # 管理员登录
+│       ├── user/UserManagement.vue   # 用户管理
+│       ├── article/ArticleManagement.vue  # 文章列表 / 审核
+│       ├── article/WriteBlog.vue          # 写博客（Markdown）
+│       ├── category/CategoryManagement.vue # 分类管理
+│       └── tag/TagManagement.vue           # 标签管理
+├── openapi.config.js                 # OpenAPI 生成配置
 ├── vite.config.ts
 ├── tsconfig.*.json
 └── package.json
 ```
+
+## 🧭 路由总览
+
+| 路径               | 页面                  | 说明           |
+| ------------------ | --------------------- | -------------- |
+| `/login`           | Login.vue             | 管理员登录     |
+| `/`                | Home.vue              | 仪表盘         |
+| `/user/manage`     | UserManagement.vue    | 用户管理       |
+| `/article/manage`  | ArticleManagement.vue | 文章管理       |
+| `/write-blog`      | WriteBlog.vue         | Markdown 写作  |
+| `/blog/category`   | CategoryManagement.vue| 分类管理       |
+| `/blog/tag`        | TagManagement.vue     | 标签管理       |
 
 ## 🚀 快速开始
 
@@ -121,12 +145,14 @@ npm run preview
 
 - 请求头：`admin-token: <uuid>`（由 `src/request.ts` 自动注入）
 - 登录态存储：Pinia + `localStorage` key `"lilac-blog-admin"`
-- 认证失败码：`401` / `400001`，拦截器自动清空登录态并跳转 `/login`
+- 启动后首次导航会调用 `/admin/currentUser` 校验 token，失败则清除登录态并跳转 `/login`
+- 认证失败码：`401` / `400001`，拦截器自动清空登录态
 
 ## 🌐 与后端的连接
 
 - baseURL：`http://localhost:9090`（见 [src/request.ts](src/request.ts)）
-- 如需修改，在 `request.ts` 中调整或改为读取环境变量
+- 接口契约由后端 OpenAPI 文档生成，见 `openapi.config.js`
+- 文件上传走 `/api/file/upload`（`type=avatar | cover | content`）
 
 ## 🎨 主题
 
