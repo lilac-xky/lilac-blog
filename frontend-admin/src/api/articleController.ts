@@ -39,7 +39,7 @@ export async function getArticle(
   options?: { [key: string]: any }
 ) {
   return request<API.ResultArticleVO>("/api/article/get", {
-      method: "GET",
+    method: "GET",
     params: {
       ...params,
     },
@@ -52,7 +52,7 @@ export async function listArticleByPage(
   body: API.ArticleQueryRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.ResultPageArticle>("/api/article/list/page", {
+  return request<API.ResultPageArticleVO>("/api/article/list/page", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

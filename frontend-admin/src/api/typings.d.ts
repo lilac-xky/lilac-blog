@@ -1,35 +1,4 @@
 declare namespace API {
-  type Article = {
-    /** id */
-    id?: number;
-    /** 标题 */
-    title?: string;
-    /** 摘要 */
-    summary?: string;
-    /** 文章内容 */
-    content?: string;
-    /** 关联分类 */
-    categoryId?: number;
-    /** 封面图片URL（WebP缩略图） */
-    coverUrl?: string;
-    /** 投稿人id */
-    userId?: number;
-    /** 浏览量 */
-    viewCount?: number;
-    /** 1置顶，0普通 */
-    isTop?: number;
-    /** 0草稿，1待审核，2审核 */
-    status?: number;
-    /** 创建时间 */
-    createTime?: string;
-    /** 修改时间 */
-    updateTime?: string;
-    /** 编辑时间 */
-    editTime?: string;
-    /** 0正常，1删除 */
-    isDeleted?: number;
-  };
-
   type ArticleAddRequest = {
     /** 标题 */
     title?: string;
@@ -122,6 +91,53 @@ declare namespace API {
     tags?: TagVO[];
   };
 
+  type Category = {
+    /** 分类id */
+    id?: number;
+    /** 分类名称 */
+    categoryName?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type CategoryAddRequest = {
+    /** 分类名称 */
+    categoryName?: string;
+  };
+
+  type CategoryQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** 分类id */
+    id?: number;
+    /** 分类名称 */
+    categoryName?: string;
+  };
+
+  type CategoryUpdateRequest = {
+    /** 分类id */
+    id?: number;
+    /** 分类名称 */
+    categoryName?: string;
+  };
+
+  type CategoryVO = {
+    /** 分类id */
+    id?: number;
+    /** 分类名称 */
+    categoryName?: string;
+  };
+
   type DeleteRequest = {
     /** id */
     id?: number;
@@ -155,8 +171,8 @@ declare namespace API {
     asc?: boolean;
   };
 
-  type PageArticle = {
-    records?: Article[];
+  type PageArticleVO = {
+    records?: ArticleVO[];
     total?: number;
     size?: number;
     current?: number;
@@ -168,8 +184,47 @@ declare namespace API {
     countId?: string;
   };
 
-  type PageArticleVO = {
-    records?: ArticleVO[];
+  type PageCategory = {
+    records?: Category[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageCategoryVO = {
+    records?: CategoryVO[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageTag = {
+    records?: Tag[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageTagVO = {
+    records?: TagVO[];
     total?: number;
     size?: number;
     current?: number;
@@ -218,16 +273,34 @@ declare namespace API {
     data?: number;
   };
 
-  type ResultPageArticle = {
-    code?: number;
-    msg?: string;
-    data?: PageArticle;
-  };
-
   type ResultPageArticleVO = {
     code?: number;
     msg?: string;
     data?: PageArticleVO;
+  };
+
+  type ResultPageCategory = {
+    code?: number;
+    msg?: string;
+    data?: PageCategory;
+  };
+
+  type ResultPageCategoryVO = {
+    code?: number;
+    msg?: string;
+    data?: PageCategoryVO;
+  };
+
+  type ResultPageTag = {
+    code?: number;
+    msg?: string;
+    data?: PageTag;
+  };
+
+  type ResultPageTagVO = {
+    code?: number;
+    msg?: string;
+    data?: PageTagVO;
   };
 
   type ResultPageUserVO = {
@@ -245,6 +318,46 @@ declare namespace API {
   type sendRegisterCodeParams = {
     /** 邮箱 */
     email: string;
+  };
+
+  type Tag = {
+    /** 标签id */
+    id?: number;
+    /** 标签名称 */
+    tagName?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type TagAddRequest = {
+    /** 标签名称 */
+    tagName?: string;
+  };
+
+  type TagQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** 标签id */
+    id?: number;
+    /** 标签名称 */
+    tagName?: string;
+  };
+
+  type TagUpdateRequest = {
+    /** 标签id */
+    id?: number;
+    /** 标签名称 */
+    tagName?: string;
   };
 
   type TagVO = {

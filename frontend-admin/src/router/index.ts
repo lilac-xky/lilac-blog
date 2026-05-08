@@ -39,6 +39,16 @@ const router = createRouter({
           name: 'writeBlog',
           component: () => import('@/views/article/WriteBlog.vue'),
         },
+        {
+          path: 'blog/category',
+          name: 'categoryManage',
+          component: () => import('@/views/category/CategoryManagement.vue'),
+        },
+        {
+          path: 'blog/tag',
+          name: 'tagManage',
+          component: () => import('@/views/tag/TagManagement.vue'),
+        },
       ],
     },
   ],

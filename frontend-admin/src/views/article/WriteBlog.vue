@@ -10,7 +10,7 @@
       <!-- Markdown 编辑器 -->
       <div class="editor-wrap panel">
         <MdEditor v-model="form.content" :theme="'light'" language="zh-CN" :on-upload-img="onUploadImg"
-          class="md-editor" />
+          :scroll-auto="false" class="md-editor" />
       </div>
 
       <!-- 右侧设置面板 -->
@@ -42,6 +42,20 @@
           <div class="setting-label">摘要</div>
           <a-textarea v-model:value="form.summary" placeholder="填写文章摘要（可选）" :auto-size="{ minRows: 3, maxRows: 5 }"
             allow-clear />
+        </div>
+
+        <!-- 分类 -->
+        <div class="panel setting-card">
+          <div class="setting-label">分类</div>
+          <a-select v-model:value="form.categoryId" placeholder="选择分类（可选）" allow-clear style="width: 100%"
+            :options="categoryOptions.map(c => ({ value: c.id, label: c.categoryName }))" />
+        </div>
+
+        <!-- 标签 -->
+        <div class="panel setting-card">
+          <div class="setting-label">标签</div>
+          <a-select v-model:value="form.tagIds" mode="multiple" placeholder="选择标签（可选）" allow-clear style="width: 100%"
+            :options="tagOptions.map(t => ({ value: t.id, label: t.tagName }))" />
         </div>
 
         <!-- 状态 & 置顶 -->
@@ -85,12 +99,14 @@ import {
 } from '@ant-design/icons-vue';
 import { addArticle, updateArticle, getArticle } from '@/api/articleController';
 import { uploadFile } from '@/api/fileController';
+import { listCategoryByPage } from '@/api/categoryController';
+import { listTagByPage } from '@/api/tagController';
 
 const route = useRoute();
 const router = useRouter();
 
 const articleId = ref<string | undefined>(
-    typeof route.query.id === 'string' ? route.query.id : undefined,
+  typeof route.query.id === 'string' ? route.query.id : undefined,
 );
 
 // ---------- 表单 ----------
@@ -101,13 +117,27 @@ const form = reactive<API.ArticleAddRequest & { id?: string }>({
   coverUrl: '',
   status: 0,
   isTop: 0,
+  categoryId: undefined,
+  tagIds: [],
 });
+
+// ---------- 分类/标签选项 ----------
+const categoryOptions = ref<Array<{ id: number; categoryName: string }>>([]);
+const tagOptions = ref<Array<{ id: number; tagName: string }>>([]);
 
 // ---------- 加载已有文章 ----------
 onMounted(async () => {
+  // 并行加载分类和标签选项
+  const [catRes, tagRes] = await Promise.all([
+    listCategoryByPage({ current: 1, pageSize: 200 }),
+    listTagByPage({ current: 1, pageSize: 200 }),
+  ]);
+  categoryOptions.value = (catRes.data?.data?.records ?? []) as Array<{ id: number; categoryName: string }>;
+  tagOptions.value = (tagRes.data?.data?.records ?? []) as Array<{ id: number; tagName: string }>;
+
   if (!articleId.value) return;
   try {
-    const res = await getArticle({id: articleId.value as unknown as number});
+    const res = await getArticle({ id: articleId.value as unknown as number });
     const vo = res.data?.data;
     if (vo) {
       form.id = vo.id as unknown as string;
@@ -117,6 +147,8 @@ onMounted(async () => {
       form.coverUrl = vo.coverUrl ?? '';
       form.status = vo.status ?? 0;
       form.isTop = vo.isTop ?? 0;
+      form.categoryId = vo.categoryId ?? undefined;
+      form.tagIds = ((vo.tags ?? []) as Array<{ id: number }>).map(t => Number(t.id));
     }
   } catch {
     message.error('加载文章失败');
@@ -192,7 +224,7 @@ async function save() {
   saving.value = true;
   try {
     if (articleId.value) {
-      const res = await updateArticle({...form, id: articleId.value as unknown as number});
+      const res = await updateArticle({ ...form, id: articleId.value as unknown as number });
       if (res.data?.data) {
         message.success(isPublish ? '发布成功' : '草稿已保存');
         router.push('/article/manage');
@@ -274,6 +306,8 @@ async function save() {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
 }
 
 .setting-card {

@@ -1,0 +1,335 @@
+<template>
+  <div class="category-manage">
+    <!-- 搜索面板 -->
+    <div class="panel search-panel">
+      <div class="panel-header tight">
+        <div class="panel-title small">条件筛选</div>
+        <a-button type="primary" @click="openAddModal">
+          <template #icon>
+            <PlusOutlined />
+          </template>
+          新增分类
+        </a-button>
+      </div>
+      <a-form layout="inline" :model="queryForm" class="search-form">
+        <a-form-item label="分类名">
+          <a-input v-model:value="queryForm.categoryName" placeholder="分类名关键词" allow-clear style="width: 200px" />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" :loading="loading" @click="handleSearch">
+            <template #icon>
+              <SearchOutlined />
+            </template>
+            搜索
+          </a-button>
+          <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
+        </a-form-item>
+      </a-form>
+    </div>
+
+    <!-- 表格面板 -->
+    <div class="panel table-panel">
+      <div class="panel-header tight">
+        <div class="panel-title small">
+          分类列表
+          <span class="total-badge">共 {{ total }} 个分类</span>
+        </div>
+      </div>
+
+      <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
+        size="middle" class="category-table" :scroll="{ x: 700 }">
+        <template #bodyCell="{ column, record }">
+          <!-- 创建时间列 -->
+          <template v-if="column.key === 'createTime'">
+            {{ record.createTime ? record.createTime.replace('T', ' ').split('.')[0] : '-' }}
+          </template>
+
+          <!-- 操作列 -->
+          <template v-else-if="column.key === 'action'">
+            <a-space>
+              <a-button type="link" size="small" class="action-edit" @click="openEditModal(record)">
+                <template #icon>
+                  <EditOutlined />
+                </template>
+                编辑
+              </a-button>
+              <a-divider type="vertical" />
+              <a-button type="link" size="small" danger @click="confirmDelete(record)">
+                <template #icon>
+                  <DeleteOutlined />
+                </template>
+                删除
+              </a-button>
+            </a-space>
+          </template>
+        </template>
+      </a-table>
+
+      <!-- 分页 -->
+      <div class="pagination-wrap">
+        <a-pagination v-model:current="queryForm.current" v-model:page-size="queryForm.pageSize" :total="total"
+          :page-size-options="['10', '20', '50']" show-quick-jumper show-size-changer
+          :show-total="(t: number) => `共 ${t} 条`" @change="fetchCategories" @show-size-change="fetchCategories" />
+      </div>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <a-modal v-model:open="modalVisible" :title="editingId ? '编辑分类' : '新增分类'" :confirm-loading="modalLoading"
+      ok-text="保存" cancel-text="取消" :width="420" @ok="handleModalOk" @cancel="handleModalCancel">
+      <a-form ref="modalFormRef" :model="modalForm" :rules="modalRules" layout="vertical" style="margin-top: 16px">
+        <a-form-item label="分类名" name="categoryName">
+          <a-input v-model:value="modalForm.categoryName" placeholder="请输入分类名" allow-clear />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
+import { message, Modal } from 'ant-design-vue';
+import type { FormInstance } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import {
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+} from '@ant-design/icons-vue';
+import { listCategoryByPage, addCategory, updateCategory, deleteCategory } from '@/api/categoryController';
+
+// ---------- 查询 ----------
+const loading = ref(false);
+const total = ref(0);
+const tableData = ref<API.Category[]>([]);
+
+const queryForm = reactive<API.CategoryQueryRequest>({
+  current: 1,
+  pageSize: 10,
+  categoryName: undefined,
+});
+
+async function fetchCategories() {
+  loading.value = true;
+  try {
+    const res = await listCategoryByPage({ ...queryForm });
+    if (res.data?.data) {
+      tableData.value = res.data.data.records ?? [];
+      total.value = Number(res.data.data.total ?? 0);
+    }
+  } catch {
+    // 错误由 request 拦截器统一提示
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleSearch() {
+  queryForm.current = 1;
+  fetchCategories();
+}
+
+function handleReset() {
+  queryForm.categoryName = undefined;
+  queryForm.current = 1;
+  fetchCategories();
+}
+
+// ---------- 删除 ----------
+function confirmDelete(record: API.Category) {
+  const modal = Modal.confirm({
+    title: '确认删除该分类吗？',
+    content: `「${record.categoryName}」删除后不可恢复`,
+    okText: '确认',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        const res = await deleteCategory({ id: record.id });
+        if (res.data?.data) {
+          message.success('删除成功');
+          fetchCategories();
+        }
+      } catch {
+        modal.destroy();
+      }
+    },
+  });
+}
+
+// ---------- 新增/编辑弹窗 ----------
+const modalVisible = ref(false);
+const modalLoading = ref(false);
+const editingId = ref<number | undefined>(undefined);
+const modalFormRef = ref<FormInstance>();
+const modalForm = reactive<{ categoryName: string }>({ categoryName: '' });
+
+const modalRules: Record<string, Rule[]> = {
+  categoryName: [{ required: true, message: '请输入分类名', trigger: 'blur' }],
+};
+
+function openAddModal() {
+  editingId.value = undefined;
+  modalForm.categoryName = '';
+  modalVisible.value = true;
+}
+
+function openEditModal(record: API.Category) {
+  editingId.value = record.id as number;
+  modalForm.categoryName = record.categoryName ?? '';
+  modalVisible.value = true;
+}
+
+async function handleModalOk() {
+  try {
+    await modalFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  modalLoading.value = true;
+  try {
+    if (editingId.value) {
+      const res = await updateCategory({ id: editingId.value, categoryName: modalForm.categoryName });
+      if (res.data?.data) {
+        message.success('更新成功');
+        modalVisible.value = false;
+        fetchCategories();
+      }
+    } else {
+      const res = await addCategory({ categoryName: modalForm.categoryName });
+      if (res.data?.data) {
+        message.success('新增成功');
+        modalVisible.value = false;
+        fetchCategories();
+      }
+    }
+  } finally {
+    modalLoading.value = false;
+  }
+}
+
+function handleModalCancel() {
+  modalFormRef.value?.resetFields();
+}
+
+// ---------- 表格列定义 ----------
+const columns = [
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 240 },
+  { title: '分类名', dataIndex: 'categoryName', key: 'categoryName', width: 200 },
+  { title: '创建时间', key: 'createTime', width: 180 },
+  { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
+];
+
+onMounted(fetchCategories);
+</script>
+
+<style scoped>
+.category-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panel-header.tight {
+  margin-bottom: 12px;
+}
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title.small {
+  font-size: 14px;
+}
+
+.total-badge {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-page);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 400;
+}
+
+.search-panel {
+  flex-shrink: 0;
+}
+
+.search-form {
+  flex-wrap: wrap;
+  gap: 8px 0;
+}
+
+:deep(.ant-form-inline .ant-form-item) {
+  margin-right: 12px;
+  margin-bottom: 0;
+}
+
+:deep(.ant-form-inline .ant-form-item-label) {
+  padding-right: 4px;
+}
+
+:deep(.ant-form-inline .ant-form-item-label > label) {
+  font-size: 13px;
+}
+
+.table-panel {
+  flex-shrink: 0;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+  margin-top: 16px;
+}
+
+.action-edit {
+  color: var(--primary) !important;
+}
+
+.action-edit:hover {
+  color: var(--primary-hover) !important;
+}
+
+:deep(.ant-table-thead > tr > th) {
+  background: var(--bg-page) !important;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-soft) !important;
+}
+
+:deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border-soft) !important;
+  font-size: 13px;
+}
+
+:deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--bg-page) !important;
+}
+
+:deep(.ant-table) {
+  background: transparent !important;
+}
+</style>

@@ -6,9 +6,13 @@ import * as userController from "./userController";
 import * as adminController from "./adminController";
 import * as fileController from "./fileController";
 import * as articleController from "./articleController";
+import * as tagController from "./tagController";
+import * as categoryController from "./categoryController";
 export default {
   userController,
   adminController,
   fileController,
   articleController,
+  tagController,
+  categoryController,
 };

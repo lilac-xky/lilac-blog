@@ -22,6 +22,14 @@
             <a-select-option :value="2">已发布</a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item label="分类">
+          <a-select v-model:value="queryForm.categoryId" placeholder="全部" allow-clear style="width: 120px"
+            :options="categoryOptions.map(c => ({ value: c.id, label: c.categoryName }))" />
+        </a-form-item>
+        <a-form-item label="标签">
+          <a-select v-model:value="filterTagId" placeholder="全部" allow-clear style="width: 120px"
+            :options="tagOptions.map(t => ({ value: t.id, label: t.tagName }))" />
+        </a-form-item>
         <a-form-item label="置顶">
           <a-select v-model:value="queryForm.isTop" placeholder="全部" allow-clear style="width: 100px">
             <a-select-option :value="1">是</a-select-option>
@@ -50,7 +58,7 @@
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-               size="middle" class="article-table" :scroll="{ x: 1180 }">
+        size="middle" class="article-table" :scroll="{ x: 1380 }">
         <template #bodyCell="{ column, record }">
           <!-- 封面列 -->
           <template v-if="column.key === 'cover'">
@@ -70,9 +78,25 @@
           <!-- 摘要列 -->
           <template v-else-if="column.key === 'summary'">
             <a-tooltip v-if="record.summary" :title="record.summary" placement="topLeft"
-                       :overlay-style="{ maxWidth: '420px' }">
+              :overlay-style="{ maxWidth: '420px' }">
               <span class="article-summary">{{ record.summary }}</span>
             </a-tooltip>
+            <span v-else class="text-muted">—</span>
+          </template>
+
+          <!-- 分类列 -->
+          <template v-else-if="column.key === 'categoryName'">
+            <a-tag v-if="record.categoryName" color="blue" class="status-tag">{{ record.categoryName }}</a-tag>
+            <span v-else class="text-muted">—</span>
+          </template>
+
+          <!-- 标签列 -->
+          <template v-else-if="column.key === 'tags'">
+            <template v-if="record.tags && record.tags.length">
+              <a-tag v-for="tag in record.tags" :key="tag.id" class="status-tag" style="margin-bottom: 2px">
+                {{ tag.tagName }}
+              </a-tag>
+            </template>
             <span v-else class="text-muted">—</span>
           </template>
 
@@ -142,13 +166,19 @@ import {
   PictureOutlined,
 } from '@ant-design/icons-vue';
 import { listArticleByPage, deleteArticle } from '@/api/articleController';
+import { listCategoryByPage } from '@/api/categoryController';
+import { listTagByPage } from '@/api/tagController';
 
 const router = useRouter();
+
+// ---------- 分类/标签选项 ----------
+const categoryOptions = ref<Array<{ id: number; categoryName: string }>>([]);
+const tagOptions = ref<Array<{ id: number; tagName: string }>>([]);
 
 // ---------- 查询 ----------
 const loading = ref(false);
 const total = ref(0);
-const tableData = ref<API.Article[]>([]);
+const tableData = ref<API.ArticleVO[]>([]);
 
 const queryForm = reactive<API.ArticleQueryRequest>({
   current: 1,
@@ -156,12 +186,21 @@ const queryForm = reactive<API.ArticleQueryRequest>({
   title: undefined,
   status: undefined,
   isTop: undefined,
+  categoryId: undefined,
+  tagIds: undefined,
 });
+
+// tagIds 在 UI 上用单个 tagId 来驱动，转换时包装成数组
+const filterTagId = ref<number | undefined>(undefined);
 
 async function fetchArticles() {
   loading.value = true;
   try {
-    const res = await listArticleByPage({ ...queryForm });
+    const params = {
+      ...queryForm,
+      tagIds: filterTagId.value !== undefined ? [filterTagId.value] : undefined,
+    };
+    const res = await listArticleByPage(params);
     if (res.data?.data) {
       tableData.value = res.data.data.records ?? [];
       total.value = Number(res.data.data.total ?? 0);
@@ -182,6 +221,8 @@ function handleReset() {
   queryForm.title = undefined;
   queryForm.status = undefined;
   queryForm.isTop = undefined;
+  queryForm.categoryId = undefined;
+  filterTagId.value = undefined;
   queryForm.current = 1;
   fetchArticles();
 }
@@ -206,12 +247,12 @@ function goWrite() {
   router.push('/write-blog');
 }
 
-function goEdit(record: API.Article) {
+function goEdit(record: API.ArticleVO) {
   router.push({ path: '/write-blog', query: { id: record.id } });
 }
 
 // ---------- 删除 ----------
-function confirmDelete(record: API.Article) {
+function confirmDelete(record: API.ArticleVO) {
   const modal = Modal.confirm({
     title: '确认删除该文章吗？',
     content: `「${record.title || '无标题'}」删除后不可恢复`,
@@ -235,8 +276,10 @@ function confirmDelete(record: API.Article) {
 // ---------- 表格列定义 ----------
 const columns = [
   { title: '封面', key: 'cover', width: 80, align: 'center' as const },
-  {title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 200},
-  {title: '摘要', key: 'summary', dataIndex: 'summary', ellipsis: true, width: 240},
+  { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 180 },
+  { title: '摘要', key: 'summary', dataIndex: 'summary', ellipsis: true, width: 200 },
+  { title: '分类', key: 'categoryName', width: 100 },
+  { title: '标签', key: 'tags', width: 160 },
   { title: '状态', key: 'status', width: 90, align: 'center' as const },
   { title: '置顶', key: 'isTop', width: 70, align: 'center' as const },
   { title: '浏览量', key: 'viewCount', width: 80, align: 'center' as const },
@@ -244,7 +287,15 @@ const columns = [
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
 ];
 
-onMounted(fetchArticles);
+onMounted(async () => {
+  const [catRes, tagRes] = await Promise.all([
+    listCategoryByPage({ current: 1, pageSize: 200 }),
+    listTagByPage({ current: 1, pageSize: 200 }),
+  ]);
+  categoryOptions.value = (catRes.data?.data?.records ?? []) as Array<{ id: number; categoryName: string }>;
+  tagOptions.value = (tagRes.data?.data?.records ?? []) as Array<{ id: number; tagName: string }>;
+  fetchArticles();
+});
 </script>
 
 <style scoped>
