@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { computed, h, ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Empty } from 'ant-design-vue';
 import {
@@ -133,6 +133,9 @@ import {
   ClockCircleOutlined,
   SettingOutlined,
 } from '@ant-design/icons-vue';
+import { listArticleByPage } from '@/api/articleController';
+import { listCategoryByPage } from '@/api/categoryController';
+import { listTagByPage } from '@/api/tagController';
 
 const router = useRouter();
 const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE;
@@ -152,14 +155,13 @@ const greeting = computed(() => {
 const today = computed(() => {
   const d = new Date();
   const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-  return `${d.getMonth() + 1}月${d.getDate()}日 星期${weekDays[d.getDay()]}`;
+  return `${d.getMonth() + 1}月${d.getDate()}日 星期${weekDays[d.getDay()] ?? ''}`;
 });
 
-// 统计卡片数据（占位数据，后续接入真实 API）
-// 四张卡统一使用琥珀金 wash 作图标底色，保持克制商务感
+// 统计卡片（总浏览量暂无后端聚合接口，保留为 0）
 const STAT_COLOR = 'var(--primary)';
 const STAT_BG = 'var(--primary-wash)';
-const statCards = [
+const statCards = reactive([
   {
     title: '文章总数',
     value: 0,
@@ -200,7 +202,7 @@ const statCards = [
     trend: 18,
     onClick: () => { },
   },
-];
+]);
 
 // 快捷操作
 const quickActions = [
@@ -212,8 +214,8 @@ const quickActions = [
   { label: '设置', icon: h(SettingOutlined), color: '#13c2c2', onClick: () => { } },
 ];
 
-// 最近文章占位
-const recentArticles: {
+// 最近文章
+const recentArticles = ref<{
   id: number;
   title: string;
   time: string;
@@ -221,9 +223,55 @@ const recentArticles: {
   status: string;
   statusColor: string;
   cover: string;
-}[] = [];
+}[]>([]);
 
-// 今日待办占位
+// 辅助：格式化时间
+function formatTime(t?: string) {
+  if (!t) return '';
+  const d = new Date(t);
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// 辅助：文章状态映射
+const STATUS_MAP: Record<number, { label: string; color: string }> = {
+  0: { label: '草稿', color: 'default' },
+  1: { label: '待审核', color: 'warning' },
+  2: { label: '已发布', color: 'success' },
+};
+function statusLabel(s?: number) { return STATUS_MAP[s ?? 0]?.label ?? '未知'; }
+function statusColor(s?: number) { return STATUS_MAP[s ?? 0]?.color ?? 'default'; }
+
+// 辅助：用 id 取固定封面色
+const COVER_COLORS = ['#1890ff', '#52c41a', '#faad14', '#eb2f96', '#722ed1', '#13c2c2'];
+function coverColor(id?: number): string { return COVER_COLORS[(id ?? 0) % COVER_COLORS.length] ?? '#1890ff'; }
+
+// 加载真实数据
+onMounted(async () => {
+  const [artRes, catRes, tagRes, recentRes] = await Promise.allSettled([
+    listArticleByPage({ current: 1, pageSize: 1 }),
+    listCategoryByPage({ current: 1, pageSize: 1 }),
+    listTagByPage({ current: 1, pageSize: 1 }),
+    listArticleByPage({ current: 1, pageSize: 5, sortOrder: 'descend' }),
+  ]);
+
+  if (artRes.status === 'fulfilled') statCards[0]!.value = artRes.value?.data?.data?.total ?? 0;
+  if (catRes.status === 'fulfilled') statCards[1]!.value = catRes.value?.data?.data?.total ?? 0;
+  if (tagRes.status === 'fulfilled') statCards[2]!.value = tagRes.value?.data?.data?.total ?? 0;
+
+  if (recentRes.status === 'fulfilled') {
+    recentArticles.value = (recentRes.value?.data?.data?.records ?? []).map(a => ({
+      id: a.id!,
+      title: a.title ?? '(无标题)',
+      time: formatTime(a.createTime),
+      views: a.viewCount ?? 0,
+      status: statusLabel(a.status),
+      statusColor: statusColor(a.status),
+      cover: coverColor(a.id),
+    }));
+  }
+});
+
+// 今日待办（功能未开发，保留占位）
 const todos = [
   { id: 1, text: '完成博客首页样式统一', time: '10:00', color: '#1890ff' },
   { id: 2, text: '审核 3 条新留言', time: '14:00', color: '#faad14' },
@@ -389,6 +437,7 @@ const todos = [
 }
 
 .quick-item {
+  --c: transparent;
   background: var(--bg-page);
   border-radius: 12px;
   padding: 14px 8px;
