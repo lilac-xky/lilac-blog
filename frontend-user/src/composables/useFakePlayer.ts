@@ -66,7 +66,7 @@ export function useFakePlayer(): FakePlayerState {
         index: 0,
     });
 
-    const track = computed(() => playlist[state.index]);
+    const track = computed(() => playlist[state.index]!);
     const duration = computed(() => track.value.duration);
     const progress = computed(() =>
         duration.value > 0 ? state.currentTime / duration.value : 0

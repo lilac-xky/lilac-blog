@@ -4,7 +4,7 @@ import { useUserStore } from '@/stores/user';
 import router from '@/router';
 
 const request = axios.create({
-    baseURL: 'http://localhost:9090',
+    baseURL: import.meta.env.VITE_API_BASE_URL || '',
     timeout: 60000,
     withCredentials: true,
 });

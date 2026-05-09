@@ -75,8 +75,8 @@
           </template>
 
           <!-- 创建时间列 -->
-          <template v-else-if="column.key === 'creatTime'">
-            {{ record.creatTime ? record.creatTime.replace('T', ' ').split('.')[0] : '-' }}
+          <template v-else-if="column.key === 'createTime'">
+            {{ record.createTime ? record.createTime.replace('T', ' ').split('.')[0] : '-' }}
           </template>
 
           <!-- 操作列 -->
@@ -374,7 +374,7 @@ const columns = [
   { title: '邮箱', dataIndex: 'email', key: 'email', width: 160, ellipsis: true },
   { title: '角色', key: 'role', width: 90, align: 'center' as const },
   { title: '状态', key: 'status', width: 100, align: 'center' as const },
-  { title: '创建时间', key: 'creatTime', width: 160 },
+  { title: '创建时间', key: 'createTime', width: 160 },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
 ];
 
