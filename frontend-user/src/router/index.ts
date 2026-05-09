@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import BasicLayout from '@/layouts/BasicLayout.vue'
 import Home from '@/views/Home.vue'
-import Articles from '@/views/Articles.vue'
 import Archive from '@/views/Archive.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'
 import Login from '@/views/login/Login.vue'
@@ -26,7 +25,6 @@ const router = createRouter({
       component: BasicLayout,
       children: [
         { path: '', name: 'home', component: Home },
-        { path: 'articles', name: 'articles', component: Articles },
         { path: 'archive', name: 'archive', component: Archive },
         { path: 'article/:id', name: 'article-detail', component: ArticleDetail },
       ],

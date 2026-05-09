@@ -64,8 +64,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         // 查询拼装
         queryWrapper.eq(ObjUtil.isNotEmpty(id), Category::getId, id);
         queryWrapper.eq(StrUtil.isNotBlank(categoryName), Category::getCategoryName, categoryName);
-        queryWrapper.orderByDesc(Category::getId);
-        boolean isDesc = "descend".equalsIgnoreCase(sortOrder);
+        boolean isDesc = !"ascend".equalsIgnoreCase(sortOrder);
         queryWrapper.orderBy(true, isDesc, Category::getCreateTime);
         return queryWrapper;
     }

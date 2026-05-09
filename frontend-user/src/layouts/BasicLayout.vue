@@ -83,7 +83,6 @@ const year = new Date().getFullYear();
 // 顶部导航项
 const navItems = [
     { label: '首页', path: '/' },
-    { label: '文章', path: '/articles' },
     { label: '归档', path: '/archive' },
 ];
 

@@ -20,7 +20,7 @@
 
         <!-- 分类 / 标签 筛选条 -->
         <div class="filter-card glass-card">
-            <div class="filter-section" v-if="categories.length">
+            <div class="filter-section filter-section-with-toggle" v-if="categories.length">
                 <span class="filter-label">分类</span>
                 <div class="pills">
                     <button class="pill" :class="{ active: filterType === 'all' }" @click="setAll">
@@ -29,6 +29,18 @@
                     <button v-for="c in categories" :key="`c${c.id}`" class="pill"
                         :class="{ active: filterType === 'category' && filterId === c.id }" @click="pickCategory(c)">
                         {{ c.categoryName }}
+                    </button>
+                </div>
+                <div class="view-toggle">
+                    <button class="toggle-btn" :class="{ active: viewMode === 'timeline' }"
+                        @click="viewMode = 'timeline'">
+                        <MenuOutlined />
+                        <span>中枢链路</span>
+                    </button>
+                    <button class="toggle-btn" :class="{ active: viewMode === 'grid' }"
+                        @click="viewMode = 'grid'">
+                        <AppstoreOutlined />
+                        <span>矩阵网格</span>
                     </button>
                 </div>
             </div>
@@ -43,22 +55,26 @@
             </div>
         </div>
 
-        <!-- 时间轴风格的归档列表 -->
+        <!-- 加载态 -->
         <div v-if="loading && !records.length" class="loading">
             <a-spin />
         </div>
-        <div v-else-if="records.length" class="timeline">
-            <div v-for="a in records" :key="a.id" class="tl-item">
-                <div class="tl-dot"></div>
-                <div class="tl-date">
-                    <ClockCircleOutlined />
-                    {{ formatDate(a.createTime) }}
-                </div>
-                <div class="tl-card">
-                    <ArticleCard :article="a" />
-                </div>
-            </div>
+
+        <!-- 中枢链路：竖线居中，文章左右锯齿排列 -->
+        <div v-else-if="records.length && viewMode === 'timeline'" class="archive-timeline">
+            <div class="timeline-line"></div>
+            <article v-for="a in records" :key="a.id" class="tl-item">
+                <span class="tl-dot"></span>
+                <ArticleCard :article="a" />
+            </article>
         </div>
+
+        <!-- 矩阵网格：自适应多列网格 -->
+        <div v-else-if="records.length && viewMode === 'grid'" class="archive-grid">
+            <ArticleCard v-for="a in records" :key="a.id" :article="a" />
+        </div>
+
+        <!-- 空态 -->
         <div v-else class="empty glass-card">
             <FileSearchOutlined />
             <p>没有匹配的文章</p>
@@ -72,13 +88,20 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { ClockCircleOutlined, FileSearchOutlined, SearchOutlined } from '@ant-design/icons-vue';
-import dayjs from 'dayjs';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import {
+    AppstoreOutlined,
+    FileSearchOutlined,
+    MenuOutlined,
+    SearchOutlined,
+} from '@ant-design/icons-vue';
 import { listArticleVoByPage } from '@/api/articleController';
 import { listCategoryByPageVo } from '@/api/categoryController';
 import { listTagByPageVo } from '@/api/tagController';
 import ArticleCard from '@/components/ArticleCard.vue';
+
+const route = useRoute();
 
 // 列表与分页状态
 const records = ref<API.ArticleVO[]>([]);
@@ -97,10 +120,8 @@ const keyword = ref('');
 const filterType = ref<'all' | 'category' | 'tag'>('all');
 const filterId = ref<number | null>(null);
 
-// 格式化日期：YYYY-MM-DD HH:mm
-function formatDate(d?: string) {
-    return d ? dayjs(d).format('YYYY-MM-DD HH:mm') : '';
-}
+// 视图模式：中枢链路（锯齿时间轴）/ 矩阵网格
+const viewMode = ref<'timeline' | 'grid'>('timeline');
 
 // 拉取分类与标签列表（用于筛选条）
 async function loadFilters() {
@@ -194,7 +215,31 @@ function onClearSearch(e: any) {
     }
 }
 
+// 根据当前 URL query 同步 keyword / 分类 / 标签 筛选状态
+function syncFromQuery() {
+    const q = route.query;
+    keyword.value = typeof q.title === 'string' ? q.title : '';
+    if (q.categoryId) {
+        filterType.value = 'category';
+        filterId.value = Number(q.categoryId);
+    } else if (q.tagId) {
+        filterType.value = 'tag';
+        filterId.value = Number(q.tagId);
+    } else {
+        filterType.value = 'all';
+        filterId.value = null;
+    }
+    current.value = 1;
+}
+
+// 监听 query 变化（如从首页标签云点入），重新拉取列表
+watch(() => route.query, () => {
+    syncFromQuery();
+    loadList();
+});
+
 onMounted(() => {
+    syncFromQuery();
     loadTotalAll();
     loadFilters();
     loadList();
@@ -250,17 +295,25 @@ onMounted(() => {
     background: transparent !important;
 }
 
-.filter-card {
+/* 筛选卡：覆盖 .glass-card 让背景更透 */
+.filter-card.glass-card {
     padding: 20px 22px;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    background: rgba(20, 18, 40, 0.22) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 .filter-section {
     display: flex;
     align-items: flex-start;
     gap: 14px;
+}
+
+/* 第一行筛选区右侧需腾出空间放视图切换按钮 */
+.filter-section-with-toggle .pills {
+    padding-right: 8px;
 }
 
 .filter-label {
@@ -311,50 +364,122 @@ onMounted(() => {
     color: #fff;
 }
 
-.timeline {
-    position: relative;
-    padding-left: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
+/* 视图切换按钮组 */
+.view-toggle {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-soft);
 }
 
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 9px;
-    top: 6px;
-    bottom: 6px;
-    width: 2px;
-    background: linear-gradient(180deg, var(--accent), transparent);
-}
-
-.tl-item {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tl-dot {
-    position: absolute;
-    left: -24px;
-    top: 8px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 12px var(--accent);
-    border: 2px solid #0d0a1f;
-}
-
-.tl-date {
+.toggle-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.toggle-btn:hover {
+    color: var(--text-primary);
+}
+
+.toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+}
+
+/* 矩阵网格视图：自适应多列 */
+.archive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 22px;
+    padding: 8px 0;
+}
+
+/* 归档时间轴 */
+.archive-timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    padding: 24px 0;
+}
+
+.timeline-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg,
+            rgba(56, 189, 248, 0.7),
+            rgba(56, 189, 248, 0.25) 60%,
+            transparent);
+    pointer-events: none;
+}
+
+/* tl-item 仍占满半侧（保持圆点相对中线的定位准确），卡片在内部限宽并贴中线一侧 */
+.tl-item {
+    position: relative;
+    width: calc(50% - 70px);
+}
+
+.tl-item:nth-of-type(odd) {
+    align-self: flex-start;
+}
+
+.tl-item:nth-of-type(even) {
+    align-self: flex-end;
+}
+
+/* 时间轴卡片：横向宽幅矩形（宽 > 高） */
+.tl-item :deep(.article-card) {
+    max-width: 410px;
+    width: 100%;
+}
+
+.tl-item:nth-of-type(odd) :deep(.article-card) {
+    margin-left: auto;
+}
+
+.tl-item:nth-of-type(even) :deep(.article-card) {
+    margin-right: auto;
+}
+
+/* 圆点：垂直居中对齐卡片中部，精确落在中线上（70px 间距 + 圆点半径 10px） */
+.tl-dot {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent), 0 0 0 6px rgba(56, 189, 248, 0.18);
+    border: 2px solid #0d0a1f;
+    z-index: 2;
+}
+
+.tl-item:nth-of-type(odd) .tl-dot {
+    right: -80px;
+}
+
+.tl-item:nth-of-type(even) .tl-dot {
+    left: -80px;
 }
 
 .loading {
@@ -383,6 +508,55 @@ onMounted(() => {
     .filter-section {
         flex-direction: column;
         gap: 8px;
+    }
+
+    .view-toggle {
+        align-self: flex-start;
+    }
+
+    .toggle-btn span {
+        display: none;
+    }
+
+    /* 矩阵网格：移动端单列 */
+    .archive-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* 移动端：单列布局，时间线移至左侧 */
+    .archive-timeline {
+        gap: 24px;
+        padding: 16px 0 16px 28px;
+    }
+
+    .timeline-line {
+        left: 8px;
+        transform: none;
+    }
+
+    .tl-item {
+        width: 100%;
+        max-width: none;
+    }
+
+    .tl-item:nth-of-type(odd),
+    .tl-item:nth-of-type(even) {
+        align-self: stretch;
+    }
+
+    /* 移动端：卡片占满 + 圆点回到顶部左侧 */
+    .tl-item :deep(.article-card) {
+        max-width: none;
+        margin: 0 !important;
+    }
+
+    .tl-item:nth-of-type(odd) .tl-dot,
+    .tl-item:nth-of-type(even) .tl-dot {
+        top: 24px;
+        transform: none;
+        left: -28px;
+        right: auto;
     }
 }
 </style>

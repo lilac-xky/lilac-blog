@@ -58,7 +58,8 @@
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="article-table" :scroll="{ x: 1380 }">
+        size="middle" class="article-table" :scroll="{ x: 1380 }" :show-sorter-tooltip="false"
+        @change="handleTableChange">
         <template #bodyCell="{ column, record }">
           <!-- 封面列 -->
           <template v-if="column.key === 'cover'">
@@ -156,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import {
@@ -189,7 +190,11 @@ const queryForm = reactive<API.ArticleQueryRequest>({
   isTop: undefined,
   categoryId: undefined,
   tagIds: undefined,
+  sortOrder: 'descend',
 });
+
+// 创建时间排序方向（默认降序）
+const sortCreateOrder = ref<'descend' | 'ascend'>('descend');
 
 // tagIds 在 UI 上用单个 tagId 来驱动，转换时包装成数组
 const filterTagId = ref<number | undefined>(undefined);
@@ -224,6 +229,19 @@ function handleReset() {
   queryForm.isTop = undefined;
   queryForm.categoryId = undefined;
   filterTagId.value = undefined;
+  queryForm.current = 1;
+  sortCreateOrder.value = 'descend';
+  queryForm.sortOrder = 'descend';
+  fetchArticles();
+}
+
+// 表格变化（仅用于切换创建时间排序方向）
+function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
+  if (!sorter) return;
+  const key = sorter.columnKey ?? sorter.field;
+  if (key !== 'createTime') return;
+  sortCreateOrder.value = sortCreateOrder.value === 'descend' ? 'ascend' : 'descend';
+  queryForm.sortOrder = sortCreateOrder.value;
   queryForm.current = 1;
   fetchArticles();
 }
@@ -275,7 +293,7 @@ function confirmDelete(record: API.ArticleVO) {
 }
 
 // ---------- 表格列定义 ----------
-const columns = [
+const columns = computed(() => [
   { title: '封面', key: 'cover', width: 80, align: 'center' as const },
   { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 180 },
   { title: '摘要', key: 'summary', dataIndex: 'summary', ellipsis: true, width: 200 },
@@ -284,9 +302,16 @@ const columns = [
   { title: '状态', key: 'status', width: 90, align: 'center' as const },
   { title: '置顶', key: 'isTop', width: 70, align: 'center' as const },
   { title: '浏览量', key: 'viewCount', width: 80, align: 'center' as const },
-  { title: '创建时间', key: 'createTime', width: 160 },
+  {
+    title: '创建时间',
+    key: 'createTime',
+    width: 160,
+    sorter: true,
+    sortOrder: sortCreateOrder.value,
+    sortDirections: ['descend', 'ascend'] as const,
+  },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
-];
+]);
 
 onMounted(async () => {
   const [catRes, tagRes] = await Promise.all([

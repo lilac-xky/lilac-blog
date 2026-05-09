@@ -37,7 +37,8 @@
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="tag-table" :scroll="{ x: 700 }">
+        size="middle" class="tag-table" :scroll="{ x: 700 }" :show-sorter-tooltip="false"
+        @change="handleTableChange">
         <template #bodyCell="{ column, record }">
           <!-- 创建时间列 -->
           <template v-if="column.key === 'createTime'">
@@ -86,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -107,7 +108,11 @@ const queryForm = reactive<API.TagQueryRequest>({
   current: 1,
   pageSize: 10,
   tagName: undefined,
+  sortOrder: 'descend',
 });
+
+// 创建时间排序方向（默认降序）
+const sortCreateOrder = ref<'descend' | 'ascend'>('descend');
 
 async function fetchTags() {
   loading.value = true;
@@ -131,6 +136,19 @@ function handleSearch() {
 
 function handleReset() {
   queryForm.tagName = undefined;
+  queryForm.current = 1;
+  sortCreateOrder.value = 'descend';
+  queryForm.sortOrder = 'descend';
+  fetchTags();
+}
+
+// 表格变化（仅用于切换创建时间排序方向）
+function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
+  if (!sorter) return;
+  const key = sorter.columnKey ?? sorter.field;
+  if (key !== 'createTime') return;
+  sortCreateOrder.value = sortCreateOrder.value === 'descend' ? 'ascend' : 'descend';
+  queryForm.sortOrder = sortCreateOrder.value;
   queryForm.current = 1;
   fetchTags();
 }
@@ -213,12 +231,19 @@ function handleModalCancel() {
 }
 
 // ---------- 表格列定义 ----------
-const columns = [
+const columns = computed(() => [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 240 },
   { title: '标签名', dataIndex: 'tagName', key: 'tagName', width: 200 },
-  { title: '创建时间', key: 'createTime', width: 180 },
+  {
+    title: '创建时间',
+    key: 'createTime',
+    width: 180,
+    sorter: true,
+    sortOrder: sortCreateOrder.value,
+    sortDirections: ['descend', 'ascend'] as const,
+  },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
-];
+]);
 
 onMounted(fetchTags);
 </script>

@@ -63,7 +63,7 @@
         <section class="timeline-section">
             <div class="section-head">
                 <h3>时间轴</h3>
-                <router-link to="/articles" class="more-link">查看全部 →</router-link>
+                <router-link to="/archive" class="more-link">查看全部 →</router-link>
             </div>
 
             <div v-if="loadingList" class="list-loading">
@@ -123,7 +123,7 @@
                 <span class="cloud-hint">点击进入对应标签下的文章</span>
             </div>
             <div class="tagcloud glass-card">
-                <router-link v-for="t in tags" :key="t.id" :to="`/articles?tagId=${t.id}`" class="cloud-tag"
+                <router-link v-for="t in tags" :key="t.id" :to="`/archive?tagId=${t.id}`" class="cloud-tag"
                     :style="cloudStyle(t)">
                     #{{ t.tagName }}
                 </router-link>
@@ -178,7 +178,7 @@ const keyword = ref('');
 
 function onSearch() {
     const q = keyword.value.trim();
-    router.push({ path: '/articles', query: q ? { title: q } : {} });
+    router.push({ path: '/archive', query: q ? { title: q } : {} });
 }
 
 async function copyQQ() {

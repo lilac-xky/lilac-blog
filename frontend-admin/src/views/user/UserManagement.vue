@@ -49,7 +49,8 @@
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="user-table" :scroll="{ x: 900 }">
+        size="middle" class="user-table" :scroll="{ x: 900 }" :show-sorter-tooltip="false"
+        @change="handleTableChange">
         <!-- 头像列 -->
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'avatar'">
@@ -180,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -211,7 +212,11 @@ const queryForm = reactive<API.UserQueryRequest>({
   email: undefined,
   role: undefined,
   status: undefined,
+  sortOrder: 'descend',
 });
+
+// 创建时间排序方向（默认降序）
+const sortCreateOrder = ref<'descend' | 'ascend'>('descend');
 
 async function fetchUsers() {
   loading.value = true;
@@ -239,6 +244,19 @@ function handleReset() {
   queryForm.email = undefined;
   queryForm.role = undefined;
   queryForm.status = undefined;
+  queryForm.current = 1;
+  sortCreateOrder.value = 'descend';
+  queryForm.sortOrder = 'descend';
+  fetchUsers();
+}
+
+// 表格变化（仅用于切换创建时间排序方向）
+function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
+  if (!sorter) return;
+  const key = sorter.columnKey ?? sorter.field;
+  if (key !== 'createTime') return;
+  sortCreateOrder.value = sortCreateOrder.value === 'descend' ? 'ascend' : 'descend';
+  queryForm.sortOrder = sortCreateOrder.value;
   queryForm.current = 1;
   fetchUsers();
 }
@@ -366,7 +384,7 @@ function handleEditCancel() {
 }
 
 // ---------- 表格列定义 ----------
-const columns = [
+const columns = computed(() => [
   { title: '头像', key: 'avatar', width: 60, align: 'center' as const },
   { title: 'ID', dataIndex: 'id', key: 'id', width: 120, ellipsis: true },
   { title: '账号', dataIndex: 'userAccount', key: 'userAccount', width: 110, ellipsis: true },
@@ -374,9 +392,16 @@ const columns = [
   { title: '邮箱', dataIndex: 'email', key: 'email', width: 160, ellipsis: true },
   { title: '角色', key: 'role', width: 90, align: 'center' as const },
   { title: '状态', key: 'status', width: 100, align: 'center' as const },
-  { title: '创建时间', key: 'createTime', width: 160 },
+  {
+    title: '创建时间',
+    key: 'createTime',
+    width: 160,
+    sorter: true,
+    sortOrder: sortCreateOrder.value,
+    sortDirections: ['descend', 'ascend'] as const,
+  },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
-];
+]);
 
 onMounted(fetchUsers);
 </script>

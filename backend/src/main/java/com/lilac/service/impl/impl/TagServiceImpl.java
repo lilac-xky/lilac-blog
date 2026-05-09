@@ -57,8 +57,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         // 拼装查询参数
         queryWrapper.eq(ObjUtil.isNotEmpty(id), Tag::getId, id);
         queryWrapper.eq(StrUtil.isNotBlank(tagName), Tag::getTagName, tagName);
-        queryWrapper.orderByDesc(Tag::getId);
-        boolean isDesc = "descend".equalsIgnoreCase(sortOrder);
+        boolean isDesc = !"ascend".equalsIgnoreCase(sortOrder);
         queryWrapper.orderBy(true, isDesc, Tag::getCreateTime);
         return queryWrapper;
     }

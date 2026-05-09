@@ -56,7 +56,8 @@ import GlobalSider from '@/components/GlobalSider.vue';
 #basicLayout .content {
     background: transparent;
     padding: 16px 28px 8px 28px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
     min-height: 0;
 }
