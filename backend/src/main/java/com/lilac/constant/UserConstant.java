@@ -15,6 +15,8 @@ public interface UserConstant {
 
     String ADMIN_ROLE = "admin";
 
+    String USER_ROLE = "user";
+
     /**
      * 用户注册验证码缓存key
      */

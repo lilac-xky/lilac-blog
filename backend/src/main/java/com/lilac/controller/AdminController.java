@@ -12,6 +12,7 @@ import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
+import com.lilac.manager.auth.anotation.SaAdminAuth;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/admin")
+@SaAdminAuth("admin")
 public class AdminController {
 
     @Resource

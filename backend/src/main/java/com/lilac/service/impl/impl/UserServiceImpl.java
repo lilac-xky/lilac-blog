@@ -333,7 +333,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         // 不能更改自己角色
-        // todo 待权限校验细化修改
+        // todo 增加新角色需要更改权限
         if (StrUtil.isNotBlank(role)) {
             if(id.equals(getLoginUser().getId()) && !role.equals(getLoginUser().getRole())){
                 throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的角色");

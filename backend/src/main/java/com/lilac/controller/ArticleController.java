@@ -8,6 +8,7 @@ import com.lilac.domain.dto.article.ArticleUpdateRequest;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.ArticleVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.manager.auth.anotation.SaAdminPermission;
 import com.lilac.service.impl.ArticleService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -30,6 +31,7 @@ public class ArticleController {
      * @return 添加结果
      */
     @PostMapping("/add")
+    @SaAdminPermission("article:add")
     public Result<Long> addArticle(@RequestBody ArticleAddRequest articleAddRequest) {
         ThrowUtils.throwIf(articleAddRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long article = articleService.addArticle(articleAddRequest);
@@ -43,6 +45,7 @@ public class ArticleController {
      * @return 文章列表
      */
     @PostMapping("/list/page")
+    @SaAdminPermission("article:list")
     public Result<Page<ArticleVO>> listArticleByPage(@RequestBody ArticleQueryRequest articleQueryRequest) {
         ThrowUtils.throwIf(articleQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         Page<ArticleVO> articleVOPage = articleService.listArticleAdminVOPage(articleQueryRequest);
@@ -73,6 +76,7 @@ public class ArticleController {
      * @return 更新结果
      */
     @PostMapping("/update")
+    @SaAdminPermission("article:update")
     public Result<Boolean> updateArticle(@RequestBody ArticleUpdateRequest articleUpdateRequest) {
         ThrowUtils.throwIf(articleUpdateRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean update = articleService.updateArticle(articleUpdateRequest);
@@ -87,6 +91,7 @@ public class ArticleController {
      * @return 删除结果
      */
     @PostMapping("/delete")
+    @SaAdminPermission("article:delete")
     public Result<Boolean> deleteArticle(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean delete = articleService.deleteArticle(deleteRequest.getId());

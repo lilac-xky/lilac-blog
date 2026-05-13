@@ -9,6 +9,7 @@ import com.lilac.domain.entity.Category;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.CategoryVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.manager.auth.anotation.SaAdminPermission;
 import com.lilac.service.impl.CategoryService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -35,6 +36,7 @@ public class CategoryController {
      * @return 添加结果
      */
     @PostMapping("/add")
+    @SaAdminPermission("category:add")
     public Result<Long> addCategory(@RequestBody CategoryAddRequest categoryAddRequest) {
         ThrowUtils.throwIf(categoryAddRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long category = categoryService.addCategory(categoryAddRequest);
@@ -48,6 +50,7 @@ public class CategoryController {
      * @return 分类列表
      */
     @PostMapping("/list/page")
+    @SaAdminPermission("category:list")
     public Result<Page<Category>> listCategoryByPage(@RequestBody CategoryQueryRequest categoryQueryRequest) {
         ThrowUtils.throwIf(categoryQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long current = categoryQueryRequest.getCurrent();
@@ -82,6 +85,7 @@ public class CategoryController {
      * @return 删除结果
      */
     @PostMapping("/delete")
+    @SaAdminPermission("category:delete")
     public Result<Boolean> deleteCategory(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean delete = categoryService.deleteCategory(deleteRequest.getId());
@@ -96,6 +100,7 @@ public class CategoryController {
      * @return 修改结果
      */
     @PostMapping("/update")
+    @SaAdminPermission("category:update")
     public Result<Boolean> updateCategory(@RequestBody CategoryUpdateRequest categoryUpdateRequest) {
         ThrowUtils.throwIf(categoryUpdateRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         Category category = new Category();

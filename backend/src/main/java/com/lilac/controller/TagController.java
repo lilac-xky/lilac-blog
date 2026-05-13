@@ -9,6 +9,7 @@ import com.lilac.domain.entity.Tag;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.TagVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.manager.auth.anotation.SaAdminPermission;
 import com.lilac.service.impl.TagService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -35,6 +36,7 @@ public class TagController {
      * @return 添加结果
      */
     @PostMapping("/add")
+    @SaAdminPermission("tag:add")
     public Result<Long> addTag(@RequestBody TagAddRequest tagAddRequest) {
         ThrowUtils.throwIf(tagAddRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long tag = tagService.addTag(tagAddRequest);
@@ -48,6 +50,7 @@ public class TagController {
      * @return 标签列表
      */
     @PostMapping("/list/page")
+    @SaAdminPermission("tag:list")
     public Result<Page<Tag>> listTagByPage(@RequestBody TagQueryRequest tagQueryRequest) {
         ThrowUtils.throwIf(tagQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         long current = tagQueryRequest.getCurrent();
@@ -82,6 +85,7 @@ public class TagController {
      * @return 删除结果
      */
     @PostMapping("/delete")
+    @SaAdminPermission("tag:delete")
     public Result<Boolean> deleteTag(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean delete = tagService.deleteTag(deleteRequest.getId());
@@ -96,6 +100,7 @@ public class TagController {
      * @return 修改结果
      */
     @PostMapping("/update")
+    @SaAdminPermission("tag:update")
     public Result<Boolean> updateTag(@RequestBody TagUpdateRequest tagUpdateRequest) {
         ThrowUtils.throwIf(tagUpdateRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         Tag tag = new Tag();

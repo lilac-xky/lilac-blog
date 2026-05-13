@@ -4,6 +4,7 @@ import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.strategy.SaAnnotationStrategy;
+import cn.dev33.satoken.strategy.SaStrategy;
 import com.lilac.manager.auth.StpKit;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
@@ -24,25 +25,18 @@ public class SaTokenConfigure implements WebMvcConfigurer{
     public void addInterceptors(InterceptorRegistry registry) {
         // 管理端拦截器：只校验 /admin/** 的路由
         registry.addInterceptor(new SaInterceptor(handle -> {
-            if ("OPTIONS".equals(SaHolder.getRequest().getMethod())) {
-                return;
-            }
-            // 匹配所有 admin 路径，排除登录注册
+            // 过滤 OPTIONS
+            if (SaHolder.getRequest().getMethod().equals("OPTIONS")) return;
+            // 对于 /admin/** 路径，强制校验 admin 登录
             SaRouter.match("/admin/**")
                     .notMatch("/admin/login", "/admin/logout")
                     .check(r -> StpKit.ADMIN.checkLogin());
-        })).addPathPatterns("/admin/**");
-        // 2. 用户端拦截器：只校验 /user/**
-        registry.addInterceptor(new SaInterceptor(handle -> {
-            if ("OPTIONS".equals(SaHolder.getRequest().getMethod())) {
-                return;
-            }
-            // 匹配所有 user 路径，排除登录注册
+            // 对于 /user/** 路径，强制校验 user 登录
             SaRouter.match("/user/**")
                     .notMatch("/user/login", "/user/register", "/user/logout", "/user/sendCode")
                     .notMatch("file/upload")
                     .check(r -> StpKit.USER.checkLogin());
-        })).addPathPatterns("/user/**");
+        })).addPathPatterns("/**");
     }
 
     @PostConstruct
@@ -50,6 +44,15 @@ public class SaTokenConfigure implements WebMvcConfigurer{
         // 重写Sa-Token的注解处理器，增加注解合并功能 
         SaAnnotationStrategy.instance.getAnnotation = (element, annotationClass) -> {
             return AnnotatedElementUtils.getMergedAnnotation(element, annotationClass);
+        };
+        // 重写权限匹配算法，支持管理员的 "*" 通配符
+        SaStrategy.instance.hasElement = (list, element) -> {
+            // 如果权限列表中包含 *，则代表拥有所有权限
+            if (list.contains("*")) {
+                return true;
+            }
+            // 否则执行标准匹配
+            return list.contains(element);
         };
     }
 }
