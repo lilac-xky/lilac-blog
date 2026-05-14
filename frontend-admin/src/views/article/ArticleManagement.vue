@@ -482,6 +482,7 @@ onMounted(async () => {
 :deep(.ant-table-tbody > tr > td) {
   border-bottom: 1px solid var(--border-soft) !important;
   font-size: 13px;
+  vertical-align: middle;
 }
 
 :deep(.ant-table-tbody > tr:hover > td) {

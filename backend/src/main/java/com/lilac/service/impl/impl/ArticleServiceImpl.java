@@ -163,8 +163,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             // 没有匹配文章时用 -1 确保结果为空而非全量
             queryWrapper.in(Article::getId, articleIdsByTags.isEmpty() ? List.of(-1L) : articleIdsByTags);
         }
-        boolean isDesc = !"ascend".equalsIgnoreCase(sortOrder);
-        queryWrapper.orderBy(true, isDesc, Article::getCreateTime);
+        boolean isAsc = "ascend".equalsIgnoreCase(sortOrder);
+        // 置顶恒置最前，其次按创建时间方向排
+        queryWrapper.orderByDesc(Article::getIsTop)
+                .orderBy(true, isAsc, Article::getCreateTime);
         return queryWrapper;
     }
 

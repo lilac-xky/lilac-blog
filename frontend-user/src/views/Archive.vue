@@ -1,5 +1,5 @@
 <template>
-    <div class="archive-page">
+    <div class="archive-page" ref="archivePageEl">
         <header class="page-head">
             <h1>归档与探索</h1>
             <p class="subtitle">
@@ -37,8 +37,7 @@
                         <MenuOutlined />
                         <span>中枢链路</span>
                     </button>
-                    <button class="toggle-btn" :class="{ active: viewMode === 'grid' }"
-                        @click="viewMode = 'grid'">
+                    <button class="toggle-btn" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'">
                         <AppstoreOutlined />
                         <span>矩阵网格</span>
                     </button>
@@ -88,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import {
     AppstoreOutlined,
@@ -108,7 +107,12 @@ const records = ref<API.ArticleVO[]>([]);
 const total = ref(0);
 const totalAll = ref(0);
 const current = ref(1);
-const pageSize = 10;
+// 矩阵网格的卡片尺寸
+const GRID_CARD_MIN = 260;
+const GRID_GAP = 22;
+const GRID_TARGET_ROWS = 3;
+const pageSize = ref(9);
+const archivePageEl = ref<HTMLElement | null>(null);
 const loading = ref(false);
 
 // 筛选项数据：分类 / 标签
@@ -145,7 +149,7 @@ async function loadTotalAll() {
             { current: 1, pageSize: 1, status: 2 },
             { silentError: true }
         );
-        totalAll.value = res.data?.data?.total ?? 0;
+        totalAll.value = Number(res.data?.data?.total ?? 0);
     } catch {
         totalAll.value = 0;
     }
@@ -157,7 +161,7 @@ async function loadList() {
     try {
         const body: API.ArticleQueryRequest = {
             current: current.value,
-            pageSize,
+            pageSize: pageSize.value,
             status: 2,
         };
         if (keyword.value.trim()) body.title = keyword.value.trim();
@@ -168,7 +172,7 @@ async function loadList() {
         }
         const res = await listArticleVoByPage(body, { silentError: true });
         records.value = res.data?.data?.records ?? [];
-        total.value = res.data?.data?.total ?? 0;
+        total.value = Number(res.data?.data?.total ?? 0);
     } catch {
         records.value = [];
         total.value = 0;
@@ -232,17 +236,53 @@ function syncFromQuery() {
     current.value = 1;
 }
 
-// 监听 query 变化（如从首页标签云点入），重新拉取列表
+// 监听 query 变化，重新拉取列表
 watch(() => route.query, () => {
     syncFromQuery();
     loadList();
 });
 
-onMounted(() => {
+// 根据容器宽度计算每页条数
+function computePageSize(): number {
+    const el = archivePageEl.value;
+    const w = el?.clientWidth ?? 0;
+    if (w <= 0) return pageSize.value;
+    const cols = Math.max(1, Math.floor((w + GRID_GAP) / (GRID_CARD_MIN + GRID_GAP)));
+    return cols * GRID_TARGET_ROWS;
+}
+
+let resizeObserver: ResizeObserver | null = null;
+let resizeTimer: number | null = null;
+
+function observeResize() {
+    if (!archivePageEl.value || typeof ResizeObserver === 'undefined') return;
+    resizeObserver = new ResizeObserver(() => {
+        if (resizeTimer) window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(() => {
+            const next = computePageSize();
+            if (next !== pageSize.value) {
+                pageSize.value = next;
+                current.value = 1;
+                loadList();
+            }
+        }, 200);
+    });
+    resizeObserver.observe(archivePageEl.value);
+}
+
+onMounted(async () => {
     syncFromQuery();
+    await nextTick();
+    pageSize.value = computePageSize();
     loadTotalAll();
     loadFilters();
     loadList();
+    observeResize();
+});
+
+onBeforeUnmount(() => {
+    if (resizeObserver) resizeObserver.disconnect();
+    if (resizeTimer) window.clearTimeout(resizeTimer);
 });
 </script>
 

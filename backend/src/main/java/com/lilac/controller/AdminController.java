@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/admin")
-@SaAdminAuth("admin")
 public class AdminController {
 
     @Resource

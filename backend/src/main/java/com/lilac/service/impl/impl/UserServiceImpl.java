@@ -433,8 +433,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.like(StrUtil.isNotBlank(username), User::getUsername, username);
         queryWrapper.eq(StrUtil.isNotBlank(role), User::getRole, role);
         queryWrapper.eq(ObjUtil.isNotEmpty(status), User::getStatus, status);
-        boolean isDesc = !"ascend".equalsIgnoreCase(sortOrder);
-        queryWrapper.orderBy(true, isDesc, User::getCreateTime);
+        boolean isAsc = "ascend".equalsIgnoreCase(sortOrder);
+        queryWrapper.orderBy(true, isAsc, User::getCreateTime);
         return queryWrapper;
     }
 

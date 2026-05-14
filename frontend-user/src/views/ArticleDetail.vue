@@ -37,8 +37,9 @@
 
             <!-- Markdown 正文 -->
             <div class="md-body">
-                <MdPreview :model-value="article.content || ''" theme="dark" preview-theme="vuepress"
-                    code-theme="atom" :show-code-row-number="false" />
+                <MdPreview :editor-id="editorId" :md-heading-id="makeHeadingId" :model-value="article.content || ''"
+                    theme="dark" preview-theme="vuepress" code-theme="atom" :show-code-row-number="false"
+                    @on-get-catalog="onGetCatalog" />
             </div>
         </div>
         <!-- 文章不存在或被删除 -->
@@ -47,6 +48,10 @@
             <p>文章不存在或已被删除</p>
             <router-link to="/" class="back-home">← 返回首页</router-link>
         </div>
+
+        <!-- 左侧目录 + 右下角回到顶部 -->
+        <ArticleToc v-if="article && headings.length" :headings="headings" :make-id="makeHeadingId" />
+        <BackToTop />
     </div>
 </template>
 
@@ -61,12 +66,23 @@ import {
 } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
 import { MdPreview } from 'md-editor-v3';
+import type { HeadList, MdHeadingId } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
 import { getArticle } from '@/api/articleController';
+import ArticleToc from '@/components/ArticleToc.vue';
+import BackToTop from '@/components/BackToTop.vue';
 
 const route = useRoute();
 const article = ref<API.ArticleVO | null>(null);
 const loading = ref(true);
+
+// Markdown 目录：抽取 h1~h6 用于左侧大纲
+const editorId = 'article-md';
+const headings = ref<HeadList[]>([]);
+const makeHeadingId: MdHeadingId = ({ index }) => `${editorId}-h-${index}`;
+function onGetCatalog(list: HeadList[]) {
+    headings.value = list;
+}
 
 // 过滤掉无效标签
 const validTags = computed(
@@ -81,6 +97,7 @@ function formatDate(d?: string) {
 // 根据路由参数加载文章详情
 async function loadArticle() {
     loading.value = true;
+    headings.value = [];
     try {
         const raw = route.params.id;
         const id = Array.isArray(raw) ? raw[0] : raw;
@@ -220,6 +237,16 @@ watch(() => route.params.id, loadArticle);
     color: var(--text-primary);
     font-size: 15px;
     line-height: 1.85;
+}
+
+/* 让目录跳转时标题不被顶部 sticky 导航栏（68px）遮挡 */
+.md-body :deep(h1),
+.md-body :deep(h2),
+.md-body :deep(h3),
+.md-body :deep(h4),
+.md-body :deep(h5),
+.md-body :deep(h6) {
+    scroll-margin-top: 84px;
 }
 
 .not-found {
