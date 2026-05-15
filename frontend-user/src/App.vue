@@ -7,8 +7,12 @@
 </template>
 
 <script setup lang="ts">
+import { provide } from 'vue';
 import { theme } from 'ant-design-vue';
 import zhCN from 'ant-design-vue/lib/locale/zh_CN';
+import { FakePlayerKey, useFakePlayer } from '@/composables/useFakePlayer';
+
+provide(FakePlayerKey, useFakePlayer());
 
 // 全局主题配置（暗色调 · 青色主色）
 const themeConfig = {

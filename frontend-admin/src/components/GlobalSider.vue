@@ -1,7 +1,8 @@
 <template>
     <div id="global-sider">
         <div class="brand">
-            <img src="../assets/logo.png" alt="logo" class="brand-logo" />
+            <img src="https://lilacs.oss-cn-beijing.aliyuncs.com/lilac-blog/avatar/2026/05/15/2026-05-15AokvgcjLCxWBMW9v.png?x-oss-process=image/resize,w_200"
+                alt="logo" class="brand-logo" />
             <span class="brand-name">lilac-blog</span>
         </div>
         <a-menu class="sider-menu" mode="inline" theme="dark" :items="fixedMenuItems" :selected-keys="selectedKeys"

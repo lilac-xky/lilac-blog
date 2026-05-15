@@ -12,7 +12,8 @@
             <div class="profile-card glass-card">
                 <div class="profile-main">
                     <div class="avatar-wrap">
-                        <img :src="logo" alt="lilac-blog" class="site-avatar" />
+                        <img src="https://lilacs.oss-cn-beijing.aliyuncs.com/lilac-blog/avatar/2026/05/15/2026-05-15AokvgcjLCxWBMW9v.png?x-oss-process=image/resize,w_200"
+                            alt="lilac-blog" class="site-avatar" />
                         <span class="avatar-glow"></span>
                     </div>
                     <div class="profile-info">
@@ -133,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, provide, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import {
@@ -149,11 +150,6 @@ import { listCategoryByPageVo } from '@/api/categoryController';
 import { listTagByPageVo } from '@/api/tagController';
 import MusicPlayer from '@/components/MusicPlayer.vue';
 import LyricsMarquee from '@/components/LyricsMarquee.vue';
-import { FakePlayerKey, useFakePlayer } from '@/composables/useFakePlayer';
-import logo from '@/assets/logo.png';
-
-// 音乐播放器假状态由 Home 持有，向下提供给 MusicPlayer 与 LyricsMarquee
-provide(FakePlayerKey, useFakePlayer());
 
 const router = useRouter();
 

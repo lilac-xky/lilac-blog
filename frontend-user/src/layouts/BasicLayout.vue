@@ -8,7 +8,8 @@
             <div class="header-inner">
                 <!-- 站点 Logo -->
                 <router-link to="/" class="brand">
-                    <img src="@/assets/logo.png" alt="logo" />
+                    <img src="https://lilacs.oss-cn-beijing.aliyuncs.com/lilac-blog/avatar/2026/05/15/2026-05-15AokvgcjLCxWBMW9v.png?x-oss-process=image/resize,w_200"
+                        alt="logo" />
                     <span>lilac-blog</span>
                 </router-link>
 

@@ -1,46 +1,46 @@
-import { reactive, computed, onUnmounted, type InjectionKey } from 'vue';
-import logo from '@/assets/logo.png';
+import { reactive, ref, computed, onUnmounted, type InjectionKey } from 'vue';
+
+const OSS_BASE = 'https://lilacs.oss-cn-beijing.aliyuncs.com/lilac-blog';
 
 export interface FakeTrack {
     title: string;
     artist: string;
     cover: string;
+    url: string;
+    lrcUrl: string;
     duration: number;
     lyric: string;
     accent: string;
 }
 
-// === MOCK START === // TODO: 接入真实歌单后删除
+export interface LyricLine {
+    time: number;
+    text: string;
+}
+
 const playlist: FakeTrack[] = [
+    {
+        title: '第57次取消发送',
+        artist: '菲菲公主',
+        cover: `${OSS_BASE}/cover/haikuotiankong.jpg`,
+        url: `${OSS_BASE}/audio/%E8%8F%B2%E8%8F%B2%E5%85%AC%E4%B8%BB%EF%BC%88%E9%99%86%E7%BB%AE%E8%8F%B2%EF%BC%89%20-%20%E7%AC%AC57%E6%AC%A1%E5%8F%96%E6%B6%88%E5%8F%91%E9%80%81.mp3`,
+        lrcUrl: `/audio/菲菲公主（陆绮菲） - 第57次取消发送.lrc`,
+        duration: 326,
+        lyric: '好像只能礼貌的问候 你的温柔也曾被我拥有',
+        accent: 'linear-gradient(135deg, #5eead4, #38bdf8 55%, #818cf8)',
+    },
     {
         title: '夜空中最亮的星',
         artist: '逃跑计划',
-        cover: logo,
+        cover: `${OSS_BASE}/cover/yekong.jpg`,
+        url: `${OSS_BASE}/audio/%E9%80%83%E8%B7%91%E8%AE%A1%E5%88%92%20-%20%E5%A4%9C%E7%A9%BA%E4%B8%AD%E6%9C%80%E4%BA%AE%E7%9A%84%E6%98%9F.mp3`,
+        lrcUrl: '/audio/逃跑计划 - 夜空中最亮的星.lrc',
         duration: 252,
         lyric:
             '夜空中最亮的星  能否听清  那仰望的人  心底的孤独和叹息    Oh 夜空中最亮的星  能否记起  曾与我同行  消失在风里的身影    我祈祷拥有一颗透明的心灵  和会流泪的眼睛  给我再去相信的勇气  Oh 越过谎言去拥抱你    每当我找不到存在的意义  每当我迷失在黑夜里  夜空中最亮的星  请指引我靠近你',
         accent: 'linear-gradient(135deg, #38bdf8, #6366f1 60%, #ec4899)',
     },
-    {
-        title: '起风了',
-        artist: '买辣椒也用券',
-        cover: logo,
-        duration: 326,
-        lyric:
-            '我曾将青春翻涌成她  也曾指尖弹出盛夏  心之所动  且就随缘去吧    逆着光行走  任风吹雨打    短短的路走走停停  也有了几分的距离  不知抚摸的是故事  还是段心情  也许期待的不过是与时间为敌    再次见到你  微凉晨光里  笑得很甜蜜  从前初识这世间  万般留恋  看着天边似在眼前',
-        accent: 'linear-gradient(135deg, #fbbf24, #ec4899 50%, #8b5cf6)',
-    },
-    {
-        title: '海阔天空',
-        artist: 'Beyond',
-        cover: logo,
-        duration: 326,
-        lyric:
-            '今天我  寒夜里看雪飘过  怀着冷却了的心窝飘远方  风雨里追赶  雾里分不清影踪  天空海阔你与我  可会变 (谁没在变)    多少次  迎着冷眼与嘲笑  从没有放弃过心中的理想  一刹那恍惚  若有所失的感觉  不知不觉已变淡  心里爱 (谁明白我)    原谅我这一生不羁放纵爱自由  也会怕有一天会跌倒  Oh 背弃了理想  谁人都可以  哪会怕有一天只你共我',
-        accent: 'linear-gradient(135deg, #5eead4, #38bdf8 55%, #818cf8)',
-    },
 ];
-// === MOCK END ===
 
 export interface FakePlayerState {
     playing: boolean;
@@ -49,6 +49,9 @@ export interface FakePlayerState {
     track: FakeTrack;
     duration: number;
     progress: number;
+    lyrics: LyricLine[];
+    lyricIndex: number;
+    currentLyric: LyricLine | null;
     play: () => void;
     pause: () => void;
     toggle: () => void;
@@ -59,69 +62,176 @@ export interface FakePlayerState {
 
 export const FakePlayerKey: InjectionKey<FakePlayerState> = Symbol('fake-player');
 
+const LRC_TIME_RE = /\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+
+function parseLrc(raw: string): LyricLine[] {
+    const out: LyricLine[] = [];
+    for (const rawLine of raw.split(/\r?\n/)) {
+        if (!rawLine) continue;
+        const stamps: number[] = [];
+        let m: RegExpExecArray | null;
+        LRC_TIME_RE.lastIndex = 0;
+        while ((m = LRC_TIME_RE.exec(rawLine)) !== null) {
+            const min = parseInt(m[1]!, 10);
+            const sec = parseInt(m[2]!, 10);
+            const fracRaw = m[3] ?? '0';
+            const frac = parseInt(fracRaw.padEnd(3, '0').slice(0, 3), 10);
+            stamps.push(min * 60 + sec + frac / 1000);
+        }
+        if (stamps.length === 0) continue;
+        const text = rawLine.replace(LRC_TIME_RE, '').trim();
+        if (!text) continue;
+        for (const t of stamps) out.push({ time: t, text });
+    }
+    return out.sort((a, b) => a.time - b.time);
+}
+
 export function useFakePlayer(): FakePlayerState {
     const state = reactive({
         playing: false,
         currentTime: 0,
         index: 0,
+        loadedDuration: 0,
     });
 
     const track = computed(() => playlist[state.index]!);
-    const duration = computed(() => track.value.duration);
+    const duration = computed(() =>
+        state.loadedDuration > 0 ? state.loadedDuration : track.value.duration
+    );
     const progress = computed(() =>
         duration.value > 0 ? state.currentTime / duration.value : 0
     );
 
-    let timer: number | null = null;
+    const lyrics = ref<LyricLine[]>([]);
+    let lrcAbort: AbortController | null = null;
 
-    function startTick() {
-        if (timer != null) return;
-        timer = window.setInterval(() => {
-            if (state.currentTime >= duration.value) {
-                next();
-                return;
+    async function loadLyrics(url: string) {
+        if (lrcAbort) lrcAbort.abort();
+        lrcAbort = new AbortController();
+        lyrics.value = [];
+        try {
+            const res = await fetch(url, { signal: lrcAbort.signal });
+            if (!res.ok) return;
+            const text = await res.text();
+            lyrics.value = parseLrc(text);
+        } catch (e) {
+            if ((e as Error).name !== 'AbortError') {
+                console.warn('[player] lrc load failed:', url);
             }
-            state.currentTime += 1;
-        }, 1000);
-    }
-
-    function stopTick() {
-        if (timer != null) {
-            window.clearInterval(timer);
-            timer = null;
         }
     }
 
-    function play() {
+    const lyricIndex = computed(() => {
+        const arr = lyrics.value;
+        if (arr.length === 0) return -1;
+        const t = state.currentTime;
+        let lo = 0;
+        let hi = arr.length - 1;
+        let ans = -1;
+        while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            if (arr[mid]!.time <= t) {
+                ans = mid;
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return ans;
+    });
+
+    const currentLyric = computed<LyricLine | null>(() => {
+        const i = lyricIndex.value;
+        return i >= 0 ? lyrics.value[i]! : null;
+    });
+
+    const audio = new Audio();
+    audio.preload = 'metadata';
+    audio.src = track.value.url;
+    loadLyrics(track.value.lrcUrl);
+
+    function onTimeUpdate() {
+        state.currentTime = audio.currentTime;
+    }
+    function onLoadedMetadata() {
+        state.loadedDuration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    }
+    function onEnded() {
+        next();
+    }
+    function onPlay() {
         state.playing = true;
-        startTick();
+    }
+    function onPause() {
+        state.playing = false;
+    }
+    function onError() {
+        console.warn('[player] audio load failed:', track.value.url);
+        state.playing = false;
+    }
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('error', onError);
+
+    function loadCurrentTrack(autoPlay: boolean) {
+        state.currentTime = 0;
+        state.loadedDuration = 0;
+        audio.src = track.value.url;
+        audio.load();
+        loadLyrics(track.value.lrcUrl);
+        if (autoPlay) play();
+    }
+
+    function play() {
+        audio.play().catch(() => {
+            state.playing = false;
+        });
     }
 
     function pause() {
-        state.playing = false;
-        stopTick();
+        audio.pause();
     }
 
     function toggle() {
-        state.playing ? pause() : play();
+        audio.paused ? play() : pause();
     }
 
     function next() {
+        const wasPlaying = state.playing;
         state.index = (state.index + 1) % playlist.length;
-        state.currentTime = 0;
+        loadCurrentTrack(wasPlaying);
     }
 
     function prev() {
+        const wasPlaying = state.playing;
         state.index = (state.index - 1 + playlist.length) % playlist.length;
-        state.currentTime = 0;
+        loadCurrentTrack(wasPlaying);
     }
 
     function seek(ratio: number) {
         const r = Math.max(0, Math.min(1, ratio));
-        state.currentTime = Math.floor(duration.value * r);
+        const target = duration.value * r;
+        if (Number.isFinite(target)) {
+            audio.currentTime = target;
+            state.currentTime = target;
+        }
     }
 
-    onUnmounted(stopTick);
+    onUnmounted(() => {
+        audio.removeEventListener('timeupdate', onTimeUpdate);
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+        audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('play', onPlay);
+        audio.removeEventListener('pause', onPause);
+        audio.removeEventListener('error', onError);
+        audio.pause();
+        audio.src = '';
+        if (lrcAbort) lrcAbort.abort();
+    });
 
     return {
         get playing() {
@@ -141,6 +251,15 @@ export function useFakePlayer(): FakePlayerState {
         },
         get progress() {
             return progress.value;
+        },
+        get lyrics() {
+            return lyrics.value;
+        },
+        get lyricIndex() {
+            return lyricIndex.value;
+        },
+        get currentLyric() {
+            return currentLyric.value;
         },
         play,
         pause,

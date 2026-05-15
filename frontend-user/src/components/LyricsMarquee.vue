@@ -3,10 +3,12 @@
         <span class="ly-icon">
             <CustomerServiceOutlined />
         </span>
-        <div class="ly-viewport" ref="viewport">
-            <div class="ly-track" ref="track" :style="{ transform: `translateX(${-offset}px)` }">
-                {{ player.track.lyric }}
-            </div>
+        <div class="ly-viewport">
+            <transition name="lyric-fade" mode="out-in">
+                <div class="ly-line" :key="lineKey">
+                    {{ displayText }}
+                </div>
+            </transition>
         </div>
         <span class="ly-progress">
             {{ percentLabel }}
@@ -15,54 +17,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, inject } from 'vue';
 import { CustomerServiceOutlined } from '@ant-design/icons-vue';
 import { FakePlayerKey, type FakePlayerState } from '@/composables/useFakePlayer';
 
 const player = inject<FakePlayerState>(FakePlayerKey);
 
-const viewport = ref<HTMLElement | null>(null);
-const track = ref<HTMLElement | null>(null);
-const viewW = ref(0);
-const trackW = ref(0);
-
-const maxShift = computed(() => Math.max(0, trackW.value - viewW.value));
-const offset = computed(() => {
-    if (!player) return 0;
-    return maxShift.value * Math.min(1, Math.max(0, player.progress));
+const displayText = computed(() => {
+    if (!player) return '';
+    if (player.currentLyric) return player.currentLyric.text;
+    if (player.lyrics.length > 0) return player.lyrics[0]!.text;
+    return player.track.lyric || player.track.title;
 });
+
+const lineKey = computed(() => {
+    if (!player) return 'none';
+    return `${player.index}:${player.lyricIndex}`;
+});
+
 const percentLabel = computed(() =>
     player ? `${Math.round(player.progress * 100)}%` : '0%'
-);
-
-let ro: ResizeObserver | null = null;
-
-function measure() {
-    if (viewport.value) viewW.value = viewport.value.clientWidth;
-    if (track.value) trackW.value = track.value.scrollWidth;
-}
-
-onMounted(() => {
-    measure();
-    if (typeof ResizeObserver !== 'undefined') {
-        ro = new ResizeObserver(measure);
-        if (viewport.value) ro.observe(viewport.value);
-        if (track.value) ro.observe(track.value);
-    } else {
-        window.addEventListener('resize', measure);
-    }
-});
-
-onUnmounted(() => {
-    if (ro) ro.disconnect();
-    else window.removeEventListener('resize', measure);
-});
-
-watch(
-    () => player?.track.lyric,
-    () => {
-        requestAnimationFrame(measure);
-    }
 );
 </script>
 
@@ -98,8 +72,12 @@ watch(
 
 .ly-viewport {
     flex: 1;
-    overflow: hidden;
+    min-width: 0;
+    height: 100%;
     position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
     -webkit-mask-image: linear-gradient(90deg,
             transparent,
             #000 6%,
@@ -112,9 +90,13 @@ watch(
             transparent);
 }
 
-.ly-track {
-    display: inline-block;
+.ly-line {
+    display: block;
+    width: 100%;
+    text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 18px;
     font-weight: 500;
     letter-spacing: 0.04em;
@@ -126,8 +108,24 @@ watch(
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    will-change: transform;
-    transition: transform 0.6s linear;
+    will-change: opacity, transform;
+}
+
+.lyric-fade-enter-active,
+.lyric-fade-leave-active {
+    transition:
+        opacity 0.45s ease,
+        transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lyric-fade-enter-from {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.lyric-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
 }
 
 .ly-progress {
@@ -144,7 +142,7 @@ watch(
 }
 
 @media (max-width: 640px) {
-    .ly-track {
+    .ly-line {
         font-size: 15px;
     }
 
