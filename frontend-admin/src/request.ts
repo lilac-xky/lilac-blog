@@ -6,7 +6,7 @@ import router from '@/router';
 const request = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '',
     timeout: 60000,
-    withCredentials: true,
+    withCredentials: false,
 });
 
 // 请求拦截器：注入 admin-token

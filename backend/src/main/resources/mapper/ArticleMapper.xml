@@ -15,6 +15,7 @@
             <result property="viewCount" column="viewCount" />
             <result property="isTop" column="isTop" />
             <result property="status" column="status" />
+            <result property="rejectReason" column="rejectReason" />
             <result property="createTime" column="createTime" />
             <result property="updateTime" column="updateTime" />
             <result property="editTime" column="editTime" />
@@ -23,7 +24,7 @@
 
     <sql id="Base_Column_List">
         id,title,summary,content,categoryId,coverUrl,
-        userId,viewCount,isTop,status,createTime,
+        userId,viewCount,isTop,status,rejectReason,createTime,
         updateTime,editTime,isDeleted
     </sql>
 </mapper>

@@ -25,19 +25,44 @@
                 <!-- 登录态：已登录显示头像下拉，未登录显示登录/注册按钮 -->
                 <div class="auth-area">
                     <template v-if="userStore.loginUser?.token">
+                        <!-- 写文章快捷入口 -->
+                        <router-link to="/user/write" class="write-shortcut" title="写文章">
+                            <EditOutlined />
+                        </router-link>
                         <a-dropdown placement="bottomRight">
                             <div class="user-chip">
-                                <a-avatar :size="30" :src="userStore.loginUser.avatar || undefined">
-                                    <template #icon>
-                                        <UserOutlined />
-                                    </template>
-                                </a-avatar>
+                                <a-badge :count="unreadCount" :offset="[-2, 0]" :overflow-count="99">
+                                    <a-avatar :size="30" :src="userStore.loginUser.avatar || undefined">
+                                        <template #icon>
+                                            <UserOutlined />
+                                        </template>
+                                    </a-avatar>
+                                </a-badge>
                                 <span class="user-name">
                                     {{ userStore.loginUser.username || userStore.loginUser.userAccount }}
                                 </span>
                             </div>
                             <template #overlay>
                                 <a-menu @click="handleMenu">
+                                    <a-menu-item key="center">
+                                        <UserOutlined /> 用户中心
+                                    </a-menu-item>
+                                    <a-menu-item key="write">
+                                        <EditOutlined /> 写文章
+                                    </a-menu-item>
+                                    <a-menu-item key="articles">
+                                        <FileTextOutlined /> 我的文章
+                                    </a-menu-item>
+                                    <a-menu-item key="messages">
+                                        <a-badge :count="unreadCount" :offset="[8, 0]" :overflow-count="99" dot
+                                            v-if="unreadCount > 0">
+                                            <MessageOutlined /> 消息中心
+                                        </a-badge>
+                                        <template v-else>
+                                            <MessageOutlined /> 消息中心
+                                        </template>
+                                    </a-menu-item>
+                                    <a-menu-divider />
                                     <a-menu-item key="logout">
                                         <LogoutOutlined /> 退出登录
                                     </a-menu-item>
@@ -69,16 +94,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {
+    LogoutOutlined,
+    UserOutlined,
+    EditOutlined,
+    FileTextOutlined,
+    MessageOutlined,
+} from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import { logout } from '@/api/userController';
+import { getUnreadCount } from '@/api/messageController';
 import StarrySky from '@/components/StarrySky.vue';
 
 const userStore = useUserStore();
 const route = useRoute();
+const router = useRouter();
 const year = new Date().getFullYear();
 
 // 顶部导航项
@@ -95,17 +128,61 @@ function isActive(path: string) {
     return currentPath.value.startsWith(path);
 }
 
-// 用户菜单点击：处理退出登录
+// 未读消息计数（轮询 + 路由切换刷新）
+const unreadCount = ref(0);
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+async function refreshUnread() {
+    if (!userStore.loginUser?.token) {
+        unreadCount.value = 0;
+        return;
+    }
+    try {
+        const res = await getUnreadCount({ silentError: true });
+        unreadCount.value = Number(res.data?.data ?? 0);
+    } catch {
+        // ignore
+    }
+}
+
+onMounted(() => {
+    refreshUnread();
+    // 每 60s 轮询一次未读数
+    pollTimer = setInterval(refreshUnread, 60_000);
+});
+
+// 路由切换时刷新一次（如离开消息中心后回到布局）
+watch(() => route.path, () => {
+    refreshUnread();
+});
+
+// 登录态变化时也刷新
+watch(() => userStore.loginUser?.token, () => {
+    refreshUnread();
+});
+
+// 用户菜单点击
 async function handleMenu({ key }: { key: string }) {
     if (key === 'logout') {
         try {
             await logout({ silentError: true });
         } catch {
-            // ignore, still clear local state
+            // ignore
         } finally {
             userStore.clearLoginUser();
+            unreadCount.value = 0;
+            if (pollTimer) clearInterval(pollTimer);
             message.success('已退出登录');
+            router.push('/');
         }
+    } else if (key === 'center') {
+        router.push('/user');
+    } else if (key === 'write') {
+        router.push('/user/write');
+    } else if (key === 'articles') {
+        router.push('/user/articles');
+    } else if (key === 'messages') {
+        router.push('/user/messages');
     }
 }
 </script>
@@ -245,6 +322,25 @@ async function handleMenu({ key }: { key: string }) {
     border-radius: var(--radius-pill);
     cursor: pointer;
     line-height: 1;
+}
+
+.write-shortcut {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--accent) !important;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.write-shortcut:hover {
+    background: var(--accent);
+    color: #fff !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
 }
 
 .user-chip:hover {

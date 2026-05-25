@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/user';
 const request = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '',
     timeout: 60000,
-    withCredentials: true,
+    withCredentials: false,
 });
 
 // 请求拦截器

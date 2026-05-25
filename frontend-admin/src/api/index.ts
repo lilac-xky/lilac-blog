@@ -8,6 +8,7 @@ import * as fileController from "./fileController";
 import * as articleController from "./articleController";
 import * as tagController from "./tagController";
 import * as categoryController from "./categoryController";
+import * as messageController from "./messageController";
 export default {
   userController,
   adminController,
@@ -15,4 +16,5 @@ export default {
   articleController,
   tagController,
   categoryController,
+  messageController,
 };

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.ArticleConstant;
 import com.lilac.domain.dto.article.ArticleAddRequest;
 import com.lilac.domain.dto.article.ArticleQueryRequest;
+import com.lilac.domain.dto.article.ArticleReviewRequest;
 import com.lilac.domain.dto.article.ArticleUpdateRequest;
 import com.lilac.domain.entity.Article;
 import com.lilac.domain.entity.ArticleTag;
@@ -22,6 +23,7 @@ import com.lilac.service.impl.ArticleService;
 import com.lilac.mapper.ArticleMapper;
 import com.lilac.service.impl.ArticleTagService;
 import com.lilac.service.impl.CategoryService;
+import com.lilac.service.impl.MessageService;
 import com.lilac.service.impl.TagService;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
@@ -50,6 +52,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private CategoryService categoryService;
     @Resource
     private TagService tagService;
+    @Resource
+    private MessageService messageService;
 
     /**
      * 添加文章
@@ -150,7 +154,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         // 拼装条件
         queryWrapper.eq(ObjUtil.isNotEmpty(id), Article::getId, id);
         queryWrapper.like(StrUtil.isNotBlank(title), Article::getTitle, title);
-        queryWrapper.like(ObjUtil.isNotEmpty(userId), Article::getUserId, userId);
+        queryWrapper.eq(ObjUtil.isNotEmpty(userId), Article::getUserId, userId);
         queryWrapper.eq(ObjUtil.isNotEmpty(isTop), Article::getIsTop, isTop);
         queryWrapper.eq(ObjUtil.isNotEmpty(status), Article::getStatus, status);
         queryWrapper.eq(ObjUtil.isNotEmpty(categoryId), Article::getCategoryId, categoryId);
@@ -235,7 +239,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 批量填充文章VO的分类名称和标签列表（避免N+1查询）
+     * 批量填充文章VO的分类名称、标签列表、作者信息（避免N+1查询）
      */
     private void fillArticleNames(List<ArticleVO> records) {
         if (records == null || records.isEmpty()) {
@@ -256,9 +260,158 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .collect(Collectors.groupingBy(ArticleTag::getArticleId,
                         Collectors.mapping(at -> tagVOMap.get(at.getTagId()), Collectors.toList())));
 
+        // 批量查作者信息
+        List<Long> userIds = records.stream().map(ArticleVO::getUserId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, User> userMap = userIds.isEmpty() ? Collections.emptyMap() : userService.listByIds(userIds)
+                .stream().collect(Collectors.toMap(User::getId, u -> u));
+
         records.forEach(vo -> {
             vo.setCategoryName(categoryNameMap.get(vo.getCategoryId()));
             vo.setTags(articleTagMap.getOrDefault(vo.getId(), Collections.emptyList()));
+            User author = userMap.get(vo.getUserId());
+            if (author != null) {
+                vo.setAuthorName(author.getUsername());
+                vo.setAuthorAvatar(author.getAvatar());
+            }
         });
+    }
+
+    /**
+     * 普通用户提交文章：允许 status=0(草稿) 或 1(待审核)，其余非法值强制 1
+     */
+    @Override
+    @Transactional
+    public long submitMyArticle(ArticleAddRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        Integer status = request.getStatus();
+        if (!Objects.equals(status, ArticleConstant.STATUS_DRAFT)
+                && !Objects.equals(status, ArticleConstant.STATUS_AUDIT)) {
+            request.setStatus(ArticleConstant.STATUS_AUDIT);
+        }
+        // 普通用户不允许置顶
+        request.setIsTop(0);
+        return addArticle(request);
+    }
+
+    /**
+     * 普通用户更新自己的文章
+     */
+    @Override
+    @Transactional
+    public Boolean updateMyArticle(ArticleUpdateRequest request) {
+        ThrowUtils.throwIf(request == null || request.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
+        Article old = this.getById(request.getId());
+        ThrowUtils.throwIf(old == null, HttpsCodeEnum.NOT_FOUND_ERROR);
+        User loginUser = userService.getLoginUser();
+        ThrowUtils.throwIf(!Objects.equals(old.getUserId(), loginUser.getId()), HttpsCodeEnum.OPERATION_ERROR, "无权限修改他人文章");
+        // 已发布的文章用户不能直接改，避免绕过审核
+        ThrowUtils.throwIf(Objects.equals(old.getStatus(), ArticleConstant.STATUS_PUBLISH),
+                HttpsCodeEnum.OPERATION_ERROR, "已发布的文章请联系管理员修改");
+
+        Article article = new Article();
+        BeanUtils.copyProperties(request, article);
+        // 用户不能改置顶
+        article.setIsTop(null);
+        // 用户只能把状态置为草稿(0)或待审核(1)，其余忽略
+        if (request.getStatus() != null
+                && !Objects.equals(request.getStatus(), ArticleConstant.STATUS_DRAFT)
+                && !Objects.equals(request.getStatus(), ArticleConstant.STATUS_AUDIT)) {
+            article.setStatus(null);
+        }
+        // 重新提交审核, 清空驳回原因
+        if (Objects.equals(request.getStatus(), ArticleConstant.STATUS_AUDIT)) {
+            article.setRejectReason("");
+        }
+
+        // 重写标签
+        List<Long> tagIds = request.getTagIds();
+        if (tagIds != null) {
+            articleTagService.remove(new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, article.getId()));
+            for (Long tagId : tagIds) {
+                ArticleTag at = new ArticleTag();
+                at.setArticleId(article.getId());
+                at.setTagId(tagId);
+                boolean saveTag = articleTagService.save(at);
+                ThrowUtils.throwIf(!saveTag, HttpsCodeEnum.OPERATION_ERROR);
+            }
+        }
+        boolean update = this.updateById(article);
+        ThrowUtils.throwIf(!update, HttpsCodeEnum.OPERATION_ERROR);
+        return true;
+    }
+
+    /**
+     * 普通用户删除自己的文章
+     */
+    @Override
+    @Transactional
+    public Boolean deleteMyArticle(Long id) {
+        ThrowUtils.throwIf(id == null, HttpsCodeEnum.PARAMS_ERROR);
+        Article old = this.getById(id);
+        ThrowUtils.throwIf(old == null, HttpsCodeEnum.NOT_FOUND_ERROR);
+        User loginUser = userService.getLoginUser();
+        ThrowUtils.throwIf(!Objects.equals(old.getUserId(), loginUser.getId()), HttpsCodeEnum.OPERATION_ERROR, "无权限删除他人文章");
+        boolean remove = this.removeById(id);
+        articleTagService.remove(new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, id));
+        ThrowUtils.throwIf(!remove, HttpsCodeEnum.OPERATION_ERROR);
+        return true;
+    }
+
+    /**
+     * 查询我的文章列表（含所有状态）
+     */
+    @Override
+    public Page<ArticleVO> listMyArticles(ArticleQueryRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser();
+        request.setUserId(loginUser.getId());
+        Page<Article> articlePage = this.page(new Page<>(request.getCurrent(), request.getPageSize()), getQueryWrapper(request));
+        Page<ArticleVO> voPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
+        voPage.setRecords(articlePage.getRecords().stream().map(ArticleVO::objToVo).toList());
+        fillArticleNames(voPage.getRecords());
+        return voPage;
+    }
+
+    /**
+     * 管理员审核文章：通过 / 驳回，写入站内消息
+     */
+    @Override
+    @Transactional
+    public Boolean reviewArticle(ArticleReviewRequest request) {
+        ThrowUtils.throwIf(request == null || request.getId() == null || request.getAction() == null, HttpsCodeEnum.PARAMS_ERROR);
+        Article article = this.getById(request.getId());
+        ThrowUtils.throwIf(article == null, HttpsCodeEnum.NOT_FOUND_ERROR);
+        ThrowUtils.throwIf(!Objects.equals(article.getStatus(), ArticleConstant.STATUS_AUDIT),
+                HttpsCodeEnum.OPERATION_ERROR, "该文章不在待审核状态");
+
+        int action = request.getAction();
+        if (action == 1) {
+            // 通过
+            article.setStatus(ArticleConstant.STATUS_PUBLISH);
+            article.setRejectReason("");
+            boolean ok = this.updateById(article);
+            ThrowUtils.throwIf(!ok, HttpsCodeEnum.OPERATION_ERROR);
+            messageService.sendMessage(
+                    article.getUserId(), 1,
+                    "您的文章已通过审核",
+                    "《" + (article.getTitle() == null ? "无标题" : article.getTitle()) + "》已成功发布",
+                    article.getId(), "article");
+        } else if (action == 2) {
+            // 驳回
+            String reason = request.getRejectReason();
+            ThrowUtils.throwIf(StrUtil.isBlank(reason), HttpsCodeEnum.PARAMS_ERROR, "请填写驳回原因");
+            article.setStatus(ArticleConstant.STATUS_DRAFT);
+            article.setRejectReason(reason);
+            boolean ok = this.updateById(article);
+            ThrowUtils.throwIf(!ok, HttpsCodeEnum.OPERATION_ERROR);
+            messageService.sendMessage(
+                    article.getUserId(), 2,
+                    "您的文章未通过审核",
+                    "《" + (article.getTitle() == null ? "无标题" : article.getTitle()) + "》被驳回，原因：" + reason,
+                    article.getId(), "article");
+        } else {
+            ThrowUtils.throwIf(true, HttpsCodeEnum.PARAMS_ERROR, "未知的审核动作");
+        }
+        return true;
     }
 }

@@ -77,12 +77,87 @@ export async function listArticleVoByPage(
   });
 }
 
+/** 文章审核（通过 / 驳回） POST /api/article/review */
+export async function reviewArticle(
+  body: API.ArticleReviewRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/article/review", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 更新文章 POST /api/article/update */
 export async function updateArticle(
   body: API.ArticleUpdateRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.ResultBoolean>("/api/article/update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 普通用户删除自己的文章 POST /api/article/user/delete */
+export async function deleteMyArticle(
+  body: API.DeleteRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/article/user/delete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 分页查询我的文章 POST /api/article/user/my/page */
+export async function listMyArticles(
+  body: API.ArticleQueryRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultPageArticleVO>("/api/article/user/my/page", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 普通用户提交文章（自动进入待审核） POST /api/article/user/submit */
+export async function submitMyArticle(
+  body: API.ArticleAddRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultLong>("/api/article/user/submit", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 普通用户更新自己的文章 POST /api/article/user/update */
+export async function updateMyArticle(
+  body: API.ArticleUpdateRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/article/user/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

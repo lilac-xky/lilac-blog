@@ -42,7 +42,7 @@
         <template #bodyCell="{ column, record }">
           <!-- 创建时间列 -->
           <template v-if="column.key === 'createTime'">
-            {{ record.createTime ? record.createTime.replace('T', ' ').split('.')[0] : '-' }}
+            {{ formatDateTime(record.createTime) }}
           </template>
 
           <!-- 操作列 -->
@@ -98,6 +98,7 @@ import {
   PlusOutlined,
 } from '@ant-design/icons-vue';
 import { listCategoryByPage, addCategory, updateCategory, deleteCategory } from '@/api/categoryController';
+import { formatDateTime } from '@/utils/datetime';
 
 // ---------- 查询 ----------
 const loading = ref(false);

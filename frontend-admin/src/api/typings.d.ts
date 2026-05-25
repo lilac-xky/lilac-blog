@@ -41,6 +41,15 @@ declare namespace API {
     tagIds?: number[];
   };
 
+  type ArticleReviewRequest = {
+    /** 文章id */
+    id?: number;
+    /** 操作类型  (1通过 2拒绝) */
+    action?: number;
+    /** 拒绝理由 */
+    rejectReason?: string;
+  };
+
   type ArticleUpdateRequest = {
     /** id */
     id?: number;
@@ -83,10 +92,16 @@ declare namespace API {
     isTop?: number;
     /** 0草稿，1待审核，2审核 */
     status?: number;
+    /** 审核拒绝原因 */
+    rejectReason?: string;
     /** 创建时间 */
     createTime?: string;
     /** 分类名称 */
     categoryName?: string;
+    /** 作者昵称（后台审核页展示用，前台列表可不填充） */
+    authorName?: string;
+    /** 作者头像 */
+    authorAvatar?: string;
     /** 标签列表 */
     tags?: TagVO[];
   };
@@ -166,6 +181,44 @@ declare namespace API {
     token?: string;
   };
 
+  type MessageQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** 消息类型（可选） */
+    type?: number;
+    /** 是否已读（可选）：0未读 1已读 */
+    isRead?: number;
+  };
+
+  type MessageReadRequest = {
+    /** 要标记已读的消息ID列表；为空表示全部标记已读 */
+    ids?: number[];
+  };
+
+  type MessageVO = {
+    id?: number;
+    /** 接收用户ID */
+    userId?: number;
+    /** 消息类型：1 审核通过, 2 审核驳回, 99 系统通知 */
+    type?: number;
+    /** 消息标题 */
+    title?: string;
+    /** 消息正文 */
+    content?: string;
+    /** 关联业务ID（如文章ID） */
+    refId?: number;
+    /** 关联业务类型：article 等 */
+    refType?: string;
+    /** 0未读 1已读 */
+    isRead?: number;
+    /** 创建时间 */
+    createTime?: string;
+  };
+
   type OrderItem = {
     column?: string;
     asc?: boolean;
@@ -199,6 +252,19 @@ declare namespace API {
 
   type PageCategoryVO = {
     records?: CategoryVO[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageMessageVO = {
+    records?: MessageVO[];
     total?: number;
     size?: number;
     current?: number;
@@ -261,6 +327,12 @@ declare namespace API {
     data?: boolean;
   };
 
+  type ResultInteger = {
+    code?: number;
+    msg?: string;
+    data?: number;
+  };
+
   type ResultLoginUserVO = {
     code?: number;
     msg?: string;
@@ -289,6 +361,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: PageCategoryVO;
+  };
+
+  type ResultPageMessageVO = {
+    code?: number;
+    msg?: string;
+    data?: PageMessageVO;
   };
 
   type ResultPageTag = {

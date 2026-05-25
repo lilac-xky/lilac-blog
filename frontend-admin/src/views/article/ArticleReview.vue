@@ -1,40 +1,18 @@
 <template>
-  <div class="article-manage">
+  <div class="article-review">
     <!-- 搜索面板 -->
     <div class="panel search-panel">
       <div class="panel-header tight">
-        <div class="panel-title small">条件筛选</div>
-        <a-button type="primary" @click="goWrite">
-          <template #icon>
-            <PlusOutlined />
-          </template>
-          写文章
-        </a-button>
+        <div class="panel-title small">待审核文章</div>
       </div>
       <a-form layout="inline" :model="queryForm" class="search-form">
         <a-form-item label="标题">
-          <a-input v-model:value="queryForm.title" placeholder="标题关键词" allow-clear style="width: 180px" />
-        </a-form-item>
-        <a-form-item label="状态">
-          <a-select v-model:value="queryForm.status" placeholder="全部" allow-clear style="width: 120px">
-            <a-select-option :value="0">草稿</a-select-option>
-            <a-select-option :value="1">待审核</a-select-option>
-            <a-select-option :value="2">已发布</a-select-option>
-          </a-select>
+          <a-input v-model:value="queryForm.title" placeholder="标题关键词" allow-clear style="width: 200px"
+            @press-enter="handleSearch" />
         </a-form-item>
         <a-form-item label="分类">
-          <a-select v-model:value="queryForm.categoryId" placeholder="全部" allow-clear style="width: 120px"
+          <a-select v-model:value="queryForm.categoryId" placeholder="全部" allow-clear style="width: 140px"
             :options="categoryOptions.map(c => ({ value: c.id, label: c.categoryName }))" />
-        </a-form-item>
-        <a-form-item label="标签">
-          <a-select v-model:value="filterTagId" placeholder="全部" allow-clear style="width: 120px"
-            :options="tagOptions.map(t => ({ value: t.id, label: t.tagName }))" />
-        </a-form-item>
-        <a-form-item label="置顶">
-          <a-select v-model:value="queryForm.isTop" placeholder="全部" allow-clear style="width: 100px">
-            <a-select-option :value="1">是</a-select-option>
-            <a-select-option :value="0">否</a-select-option>
-          </a-select>
         </a-form-item>
         <a-form-item>
           <a-button type="primary" :loading="loading" @click="handleSearch">
@@ -48,20 +26,20 @@
       </a-form>
     </div>
 
-    <!-- 表格面板 -->
+    <!-- 表格 -->
     <div class="panel table-panel">
       <div class="panel-header tight">
         <div class="panel-title small">
-          文章列表
-          <span class="total-badge">共 {{ total }} 篇文章</span>
+          审核队列
+          <span class="total-badge">共 {{ total }} 篇待处理</span>
         </div>
       </div>
 
       <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="article-table" :scroll="{ x: 1380 }" :show-sorter-tooltip="false"
+        size="middle" class="article-table" :scroll="{ x: 1280 }" :show-sorter-tooltip="false"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
-          <!-- 封面列 -->
+          <!-- 封面 -->
           <template v-if="column.key === 'cover'">
             <div class="cover-wrap">
               <img v-if="record.coverUrl" :src="record.coverUrl" class="cover-thumb" alt="封面" />
@@ -71,12 +49,24 @@
             </div>
           </template>
 
-          <!-- 标题列 -->
+          <!-- 标题 -->
           <template v-else-if="column.key === 'title'">
             <span class="article-title" :title="record.title">{{ record.title || '无标题' }}</span>
           </template>
 
-          <!-- 摘要列 -->
+          <!-- 作者 -->
+          <template v-else-if="column.key === 'author'">
+            <div class="author-cell">
+              <a-avatar :size="24" :src="record.authorAvatar">
+                <template #icon>
+                  <UserOutlined />
+                </template>
+              </a-avatar>
+              <span class="author-name">{{ record.authorName || '匿名' }}</span>
+            </div>
+          </template>
+
+          <!-- 摘要 -->
           <template v-else-if="column.key === 'summary'">
             <a-tooltip v-if="record.summary" :title="record.summary" placement="topLeft"
               :overlay-style="{ maxWidth: '420px' }">
@@ -85,13 +75,13 @@
             <span v-else class="text-muted">—</span>
           </template>
 
-          <!-- 分类列 -->
+          <!-- 分类 -->
           <template v-else-if="column.key === 'categoryName'">
             <a-tag v-if="record.categoryName" color="blue" class="status-tag">{{ record.categoryName }}</a-tag>
             <span v-else class="text-muted">—</span>
           </template>
 
-          <!-- 标签列 -->
+          <!-- 标签 -->
           <template v-else-if="column.key === 'tags'">
             <template v-if="(record.tags ?? []).filter(Boolean).length">
               <a-tag v-for="tag in (record.tags ?? []).filter((t: API.TagVO | null) => !!t && t.id != null)"
@@ -102,81 +92,100 @@
             <span v-else class="text-muted">—</span>
           </template>
 
-          <!-- 状态列 -->
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="statusColor(record.status)" class="status-tag">
-              {{ statusLabel(record.status) }}
-            </a-tag>
-          </template>
-
-          <!-- 置顶列 -->
-          <template v-else-if="column.key === 'isTop'">
-            <a-tag v-if="record.isTop === 1" color="gold" class="status-tag">置顶</a-tag>
-            <span v-else class="text-muted">—</span>
-          </template>
-
-          <!-- 浏览量列 -->
-          <template v-else-if="column.key === 'viewCount'">
-            <span class="view-count">{{ record.viewCount ?? 0 }}</span>
-          </template>
-
-          <!-- 创建时间列 -->
+          <!-- 提交时间 -->
           <template v-else-if="column.key === 'createTime'">
             {{ formatDateTime(record.createTime) }}
           </template>
 
-          <!-- 操作列 -->
+          <!-- 操作 -->
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a-button type="link" size="small" class="action-edit" @click="goEdit(record)">
+              <a-button type="link" size="small" @click="openPreview(record)">
                 <template #icon>
-                  <EditOutlined />
+                  <EyeOutlined />
                 </template>
-                编辑
+                预览
               </a-button>
               <a-divider type="vertical" />
-              <a-button type="link" size="small" danger @click="confirmDelete(record)">
+              <a-button type="link" size="small" class="pass-btn" @click="confirmPass(record)">
                 <template #icon>
-                  <DeleteOutlined />
+                  <CheckCircleOutlined />
                 </template>
-                删除
+                通过
+              </a-button>
+              <a-divider type="vertical" />
+              <a-button type="link" size="small" danger @click="openRejectModal(record)">
+                <template #icon>
+                  <CloseCircleOutlined />
+                </template>
+                驳回
               </a-button>
             </a-space>
           </template>
         </template>
       </a-table>
 
-      <!-- 分页 -->
       <div class="pagination-wrap">
         <a-pagination v-model:current="queryForm.current" v-model:page-size="queryForm.pageSize" :total="total"
           :page-size-options="['10', '20', '50']" show-quick-jumper show-size-changer
           :show-total="(t: number) => `共 ${t} 条`" @change="fetchArticles" @show-size-change="fetchArticles" />
       </div>
     </div>
+
+    <!-- 预览 Modal -->
+    <a-modal v-model:open="previewOpen" :title="previewArticle?.title || '文章预览'" width="900px" :footer="null"
+      class="preview-modal">
+      <div class="preview-meta">
+        <a-space size="middle">
+          <span><strong>作者：</strong>{{ previewArticle?.authorName || '匿名' }}</span>
+          <span><strong>分类：</strong>{{ previewArticle?.categoryName || '—' }}</span>
+          <span><strong>提交时间：</strong>{{ formatDateTime(previewArticle?.createTime) }}</span>
+        </a-space>
+      </div>
+      <div v-if="previewArticle?.summary" class="preview-summary">
+        <strong>摘要：</strong>{{ previewArticle.summary }}
+      </div>
+      <MdPreview v-if="previewArticle?.content" :model-value="previewArticle.content" class="preview-md" />
+      <div v-else class="text-muted" style="text-align:center;padding:24px">（无正文内容）</div>
+    </a-modal>
+
+    <!-- 驳回原因 Modal -->
+    <a-modal v-model:open="rejectOpen" title="驳回文章" :confirm-loading="rejectLoading" ok-text="确认驳回" cancel-text="取消"
+      ok-type="danger" :width="480" @ok="handleReject" @cancel="closeRejectModal">
+      <a-form ref="rejectFormRef" :model="rejectForm" :rules="rejectRules" layout="vertical">
+        <a-form-item label="文章">
+          <span class="text-muted">{{ rejectingArticle?.title || '—' }}</span>
+        </a-form-item>
+        <a-form-item label="驳回原因" name="rejectReason">
+          <a-textarea v-model:value="rejectForm.rejectReason" :rows="4" placeholder="请填写驳回原因（2-200 字），用户可在「我的文章」看到"
+            :maxlength="200" show-count allow-clear />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import type { FormInstance } from 'ant-design-vue';
 import {
   SearchOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
   PictureOutlined,
+  EyeOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  UserOutlined,
 } from '@ant-design/icons-vue';
-import { listArticleByPage, deleteArticle } from '@/api/articleController';
+import { MdPreview } from 'md-editor-v3';
+import 'md-editor-v3/lib/preview.css';
+import { listArticleByPage, reviewArticle } from '@/api/articleController';
 import { listCategoryByPage } from '@/api/categoryController';
-import { listTagByPage } from '@/api/tagController';
 import { formatDateTime } from '@/utils/datetime';
 
-const router = useRouter();
-
-// ---------- 分类/标签选项 ----------
+// ---------- 分类选项 ----------
 const categoryOptions = ref<Array<{ id: number; categoryName: string }>>([]);
-const tagOptions = ref<Array<{ id: number; tagName: string }>>([]);
 
 // ---------- 查询 ----------
 const loading = ref(false);
@@ -187,33 +196,23 @@ const queryForm = reactive<API.ArticleQueryRequest>({
   current: 1,
   pageSize: 10,
   title: undefined,
-  status: undefined,
-  isTop: undefined,
+  // 锁定状态为「待审核」
+  status: 1,
   categoryId: undefined,
-  tagIds: undefined,
-  sortOrder: 'descend',
+  sortOrder: 'ascend',
 });
 
-// 创建时间排序方向（默认降序）
-const sortCreateOrder = ref<'descend' | 'ascend'>('descend');
-
-// tagIds 在 UI 上用单个 tagId 来驱动，转换时包装成数组
-const filterTagId = ref<number | undefined>(undefined);
+const sortCreateOrder = ref<'descend' | 'ascend'>('ascend');
 
 async function fetchArticles() {
   loading.value = true;
   try {
-    const params = {
-      ...queryForm,
-      tagIds: filterTagId.value !== undefined ? [filterTagId.value] : undefined,
-    };
+    const params = { ...queryForm, status: 1 };
     const res = await listArticleByPage(params);
     if (res.data?.data) {
       tableData.value = res.data.data.records ?? [];
       total.value = Number(res.data.data.total ?? 0);
     }
-  } catch {
-    // 错误由 request 拦截器统一提示
   } finally {
     loading.value = false;
   }
@@ -226,18 +225,14 @@ function handleSearch() {
 
 function handleReset() {
   queryForm.title = undefined;
-  queryForm.status = undefined;
-  queryForm.isTop = undefined;
   queryForm.categoryId = undefined;
-  filterTagId.value = undefined;
   queryForm.current = 1;
-  sortCreateOrder.value = 'descend';
-  queryForm.sortOrder = 'descend';
+  sortCreateOrder.value = 'ascend';
+  queryForm.sortOrder = 'ascend';
   fetchArticles();
 }
 
-// 表格变化（仅用于切换创建时间排序方向）
-function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
+function handleTableChange(_p: unknown, _f: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
   if (!sorter) return;
   const key = sorter.columnKey ?? sorter.field;
   if (key !== 'createTime') return;
@@ -247,86 +242,114 @@ function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { co
   fetchArticles();
 }
 
-// ---------- 状态工具 ----------
-function statusLabel(status?: number) {
-  if (status === 0) return '草稿';
-  if (status === 1) return '待审核';
-  if (status === 2) return '已发布';
-  return '未知';
+// ---------- 预览 ----------
+const previewOpen = ref(false);
+const previewArticle = ref<API.ArticleVO | null>(null);
+
+function openPreview(record: API.ArticleVO) {
+  previewArticle.value = record;
+  previewOpen.value = true;
 }
 
-function statusColor(status?: number) {
-  if (status === 0) return 'default';
-  if (status === 1) return 'orange';
-  if (status === 2) return 'green';
-  return 'default';
-}
-
-// ---------- 跳转 ----------
-function goWrite() {
-  router.push('/write-blog');
-}
-
-function goEdit(record: API.ArticleVO) {
-  router.push({ path: '/write-blog', query: { id: record.id } });
-}
-
-// ---------- 删除 ----------
-function confirmDelete(record: API.ArticleVO) {
-  const modal = Modal.confirm({
-    title: '确认删除该文章吗？',
-    content: `「${record.title || '无标题'}」删除后不可恢复`,
-    okText: '确认',
-    okType: 'danger',
+// ---------- 通过 ----------
+function confirmPass(record: API.ArticleVO) {
+  Modal.confirm({
+    title: '确认通过该文章吗？',
+    content: `「${record.title || '无标题'}」通过后将立刻在前台展示`,
+    okText: '确认通过',
     cancelText: '取消',
     async onOk() {
       try {
-        const res = await deleteArticle({ id: record.id });
+        const res = await reviewArticle({ id: record.id, action: 1 });
         if (res.data?.data) {
-          message.success('删除成功');
+          message.success('已通过');
           fetchArticles();
         }
       } catch {
-        modal.destroy();
+        // 错误由 request 拦截器统一提示
       }
     },
   });
 }
 
-// ---------- 表格列定义 ----------
+// ---------- 驳回 ----------
+const rejectOpen = ref(false);
+const rejectLoading = ref(false);
+const rejectingArticle = ref<API.ArticleVO | null>(null);
+const rejectFormRef = ref<FormInstance>();
+const rejectForm = reactive<{ rejectReason: string }>({ rejectReason: '' });
+
+const rejectRules: Record<string, Rule[]> = {
+  rejectReason: [
+    { required: true, message: '请填写驳回原因', trigger: 'blur' },
+    { min: 2, max: 200, message: '驳回原因 2-200 字', trigger: 'blur' },
+  ],
+};
+
+function openRejectModal(record: API.ArticleVO) {
+  rejectingArticle.value = record;
+  rejectForm.rejectReason = '';
+  rejectOpen.value = true;
+}
+
+function closeRejectModal() {
+  rejectOpen.value = false;
+  rejectingArticle.value = null;
+  rejectForm.rejectReason = '';
+}
+
+async function handleReject() {
+  try {
+    await rejectFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  if (!rejectingArticle.value?.id) return;
+  rejectLoading.value = true;
+  try {
+    const res = await reviewArticle({
+      id: rejectingArticle.value.id,
+      action: 2,
+      rejectReason: rejectForm.rejectReason.trim(),
+    });
+    if (res.data?.data) {
+      message.success('已驳回，用户将收到通知');
+      closeRejectModal();
+      fetchArticles();
+    }
+  } finally {
+    rejectLoading.value = false;
+  }
+}
+
+// ---------- 表格列 ----------
 const columns = computed(() => [
   { title: '封面', key: 'cover', width: 80, align: 'center' as const },
-  { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 180 },
+  { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 200 },
+  { title: '作者', key: 'author', width: 130 },
   { title: '摘要', key: 'summary', dataIndex: 'summary', ellipsis: true, width: 200 },
-  { title: '分类', key: 'categoryName', width: 100 },
+  { title: '分类', key: 'categoryName', width: 110 },
   { title: '标签', key: 'tags', width: 160 },
-  { title: '状态', key: 'status', width: 90, align: 'center' as const },
-  { title: '置顶', key: 'isTop', width: 70, align: 'center' as const },
-  { title: '浏览量', key: 'viewCount', width: 80, align: 'center' as const },
   {
-    title: '创建时间',
+    title: '提交时间',
     key: 'createTime',
     width: 160,
     sorter: true,
     sortOrder: sortCreateOrder.value,
     sortDirections: ['descend', 'ascend'] as const,
   },
-  { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
+  { title: '操作', key: 'action', width: 220, align: 'center' as const, fixed: 'right' as const },
 ]);
 
 onMounted(async () => {
-  const [catRes, tagRes] = await Promise.all([
-    listCategoryByPage({ current: 1, pageSize: 200 }),
-    listTagByPage({ current: 1, pageSize: 200 }),
-  ]);
+  const catRes = await listCategoryByPage({ current: 1, pageSize: 200 });
   categoryOptions.value = (catRes.data?.data?.records ?? []) as Array<{ id: number; categoryName: string }>;
-  tagOptions.value = (tagRes.data?.data?.records ?? []) as Array<{ id: number; tagName: string }>;
   fetchArticles();
 });
 </script>
 
 <style scoped>
-.article-manage {
+.article-review {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -372,10 +395,6 @@ onMounted(async () => {
   font-weight: 400;
 }
 
-.search-panel {
-  flex-shrink: 0;
-}
-
 .search-form {
   flex-wrap: wrap;
   gap: 8px 0;
@@ -386,18 +405,6 @@ onMounted(async () => {
   margin-bottom: 0;
 }
 
-:deep(.ant-form-inline .ant-form-item-label) {
-  padding-right: 4px;
-}
-
-:deep(.ant-form-inline .ant-form-item-label > label) {
-  font-size: 13px;
-}
-
-.table-panel {
-  flex-shrink: 0;
-}
-
 .pagination-wrap {
   display: flex;
   justify-content: flex-end;
@@ -406,7 +413,6 @@ onMounted(async () => {
   margin-top: 16px;
 }
 
-/* 封面缩略图 */
 .cover-wrap {
   display: flex;
   align-items: center;
@@ -446,7 +452,17 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: middle;
+}
+
+.author-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.author-name {
+  font-size: 13px;
+  color: var(--text-primary);
 }
 
 .status-tag {
@@ -459,17 +475,34 @@ onMounted(async () => {
   color: var(--text-muted);
 }
 
-.view-count {
+.pass-btn {
+  color: #52c41a !important;
+}
+
+.pass-btn:hover {
+  color: #389e0d !important;
+}
+
+.preview-meta {
+  padding: 8px 0 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 12px;
+}
+
+.preview-summary {
+  background: var(--bg-page);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.action-edit {
-  color: var(--primary) !important;
-}
-
-.action-edit:hover {
-  color: var(--primary-hover) !important;
+.preview-md {
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 :deep(.ant-table-thead > tr > th) {

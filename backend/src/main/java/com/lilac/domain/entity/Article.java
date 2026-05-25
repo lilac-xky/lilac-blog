@@ -64,6 +64,11 @@ public class Article implements Serializable {
     private Integer status;
 
     /**
+     * 审核拒绝原因
+     */
+    private String rejectReason;
+
+    /**
      * 创建时间
      */
     private Date createTime;

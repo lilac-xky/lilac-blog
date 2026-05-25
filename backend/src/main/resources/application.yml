@@ -28,6 +28,7 @@ sa-token:
   is-concurrent: true
   is-share: false
   token-style: uuid
+  is-read-cookie: false
 
 # 文件存储类型: oss | local
 storage:

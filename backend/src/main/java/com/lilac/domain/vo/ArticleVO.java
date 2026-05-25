@@ -63,6 +63,11 @@ public class ArticleVO {
     private Integer status;
 
     /**
+     * 审核拒绝原因
+     */
+    private String rejectReason;
+
+    /**
      * 创建时间
      */
     private Date createTime;
@@ -71,6 +76,16 @@ public class ArticleVO {
      * 分类名称
      */
     private String categoryName;
+
+    /**
+     * 作者昵称（后台审核页展示用，前台列表可不填充）
+     */
+    private String authorName;
+
+    /**
+     * 作者头像
+     */
+    private String authorAvatar;
 
     /**
      * 标签列表

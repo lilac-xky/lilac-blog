@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.domain.dto.article.ArticleAddRequest;
 import com.lilac.domain.dto.article.ArticleQueryRequest;
+import com.lilac.domain.dto.article.ArticleReviewRequest;
 import com.lilac.domain.dto.article.ArticleUpdateRequest;
 import com.lilac.domain.entity.Article;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -64,4 +65,29 @@ public interface ArticleService extends IService<Article> {
      * @return 文章VO
      */
     ArticleVO getArticleVO(Long id);
+
+    /**
+     * 普通用户提交文章（强制 status=1 待审核）
+     */
+    long submitMyArticle(ArticleAddRequest request);
+
+    /**
+     * 普通用户更新自己的文章；若设置 status=1 则进入待审核并清空 rejectReason
+     */
+    Boolean updateMyArticle(ArticleUpdateRequest request);
+
+    /**
+     * 普通用户删除自己的文章
+     */
+    Boolean deleteMyArticle(Long id);
+
+    /**
+     * 分页查询当前登录用户提交的文章（含所有状态）
+     */
+    Page<ArticleVO> listMyArticles(ArticleQueryRequest request);
+
+    /**
+     * 管理员审核文章（通过/驳回），并产生站内消息
+     */
+    Boolean reviewArticle(ArticleReviewRequest request);
 }

@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.common.DeleteRequest;
 import com.lilac.domain.dto.article.ArticleAddRequest;
 import com.lilac.domain.dto.article.ArticleQueryRequest;
+import com.lilac.domain.dto.article.ArticleReviewRequest;
 import com.lilac.domain.dto.article.ArticleUpdateRequest;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.ArticleVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.manager.auth.anotation.SaAdminPermission;
+import com.lilac.manager.auth.anotation.SaUserPermission;
 import com.lilac.service.impl.ArticleService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -109,5 +111,55 @@ public class ArticleController {
     public Result<ArticleVO> getArticle(Long id) {
         ThrowUtils.throwIf(id == null, HttpsCodeEnum.PARAMS_ERROR);
         return Result.success(articleService.getArticleVO(id));
+    }
+
+    /**
+     * 普通用户提交文章（自动进入待审核）
+     */
+    @PostMapping("/user/submit")
+    @SaUserPermission("article:submit")
+    public Result<Long> submitMyArticle(@RequestBody ArticleAddRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        return Result.success(articleService.submitMyArticle(request));
+    }
+
+    /**
+     * 普通用户更新自己的文章
+     */
+    @PostMapping("/user/update")
+    @SaUserPermission("article:submit")
+    public Result<Boolean> updateMyArticle(@RequestBody ArticleUpdateRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        return Result.success(articleService.updateMyArticle(request));
+    }
+
+    /**
+     * 普通用户删除自己的文章
+     */
+    @PostMapping("/user/delete")
+    @SaUserPermission("article:submit")
+    public Result<Boolean> deleteMyArticle(@RequestBody DeleteRequest request) {
+        ThrowUtils.throwIf(request == null || request.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
+        return Result.success(articleService.deleteMyArticle(request.getId()));
+    }
+
+    /**
+     * 分页查询我的文章
+     */
+    @PostMapping("/user/my/page")
+    @SaUserPermission("article:submit")
+    public Result<Page<ArticleVO>> listMyArticles(@RequestBody ArticleQueryRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        return Result.success(articleService.listMyArticles(request));
+    }
+
+    /**
+     * 文章审核（通过 / 驳回）
+     */
+    @PostMapping("/review")
+    @SaAdminPermission("article:review")
+    public Result<Boolean> reviewArticle(@RequestBody ArticleReviewRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        return Result.success(articleService.reviewArticle(request));
     }
 }

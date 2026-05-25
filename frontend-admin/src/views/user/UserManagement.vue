@@ -77,7 +77,7 @@
 
           <!-- 创建时间列 -->
           <template v-else-if="column.key === 'createTime'">
-            {{ record.createTime ? record.createTime.replace('T', ' ').split('.')[0] : '-' }}
+            {{ formatDateTime(record.createTime) }}
           </template>
 
           <!-- 操作列 -->
@@ -196,6 +196,7 @@ import {
 import { listUserVoByPage, updateUser, deleteUser, updateUserStatus } from '@/api/adminController';
 import { uploadFile } from '@/api/fileController';
 import { useUserStore } from '@/stores/user';
+import { formatDateTime } from '@/utils/datetime';
 
 const { loginUser } = useUserStore();
 

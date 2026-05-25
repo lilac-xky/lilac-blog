@@ -105,7 +105,7 @@ async function loadArticle() {
             article.value = null;
             return;
         }
-        const res = await getArticle({ id }, { silentError: true });
+        const res = await getArticle({ id: id as unknown as number }, { silentError: true });
         article.value = res.data?.data ?? null;
     } catch {
         article.value = null;
