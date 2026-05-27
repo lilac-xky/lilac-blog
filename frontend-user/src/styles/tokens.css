@@ -1,0 +1,48 @@
+:root {
+  /* 背景层 */
+  --bg-page: #08070f;
+  --bg-page-rgb: 8, 7, 15;
+  --bg-page-2: #0f0e1a;
+  --bg-card: rgba(22, 18, 42, 0.72);
+  --bg-card-solid: #15122b;
+  --bg-elev: rgba(38, 32, 64, 0.78);
+
+  /* 文字 */
+  --text-primary: #f5f3ff;
+  --text-secondary: rgba(245, 243, 255, 0.65);
+  --text-muted: rgba(245, 243, 255, 0.4);
+
+  /* 边框 */
+  --border-soft: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.22);
+
+  /* 主色（星空青） */
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --accent-rgb: 56, 189, 248;
+  --accent-strong-rgb: 14, 165, 233;
+  --accent-pink: #ec4899;
+  --accent-pink-rgb: 236, 72, 153;
+
+  /* 主色衍生（rgba 透明度变体） */
+  --accent-soft: rgba(var(--accent-rgb), 0.1);
+  --accent-soft-2: rgba(var(--accent-rgb), 0.18);
+  --accent-soft-3: rgba(var(--accent-rgb), 0.35);
+  --accent-soft-hover: rgba(var(--accent-rgb), 0.55);
+  --border-accent: rgba(var(--accent-rgb), 0.22);
+  --border-accent-strong: rgba(var(--accent-rgb), 0.45);
+
+  /* 半透卡片背景（玻璃拟态浅变体） */
+  --bg-card-translucent: rgba(20, 18, 40, 0.28);
+  --bg-card-translucent-strong: rgba(20, 18, 40, 0.42);
+
+  /* 阴影 */
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-hover: 0 14px 40px rgba(14, 165, 233, 0.25);
+
+  /* 圆角 & 模糊 */
+  --radius-card: 20px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+  --blur: 22px;
+}

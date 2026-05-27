@@ -61,7 +61,7 @@ function formatDate(d?: string) {
     display: flex;
     flex-direction: column;
     border-radius: 16px;
-    background: rgba(20, 18, 40, 0.28);
+    background: var(--bg-card-translucent);
     backdrop-filter: blur(var(--blur));
     border: 1px solid rgba(255, 255, 255, 0.06);
     overflow: hidden;
@@ -72,9 +72,9 @@ function formatDate(d?: string) {
 
 .article-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(20, 18, 40, 0.42);
-    box-shadow: 0 10px 30px rgba(56, 189, 248, 0.18);
+    border-color: var(--border-accent-strong);
+    background: var(--bg-card-translucent-strong);
+    box-shadow: 0 10px 30px rgba(var(--accent-rgb), 0.18);
 }
 
 /* 封面：横向宽幅 16:9 */
@@ -115,7 +115,7 @@ function formatDate(d?: string) {
     padding: 2px 9px;
     border-radius: var(--radius-pill);
     font-weight: 600;
-    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.4);
 }
 
 /* 卡片正文：留出统一内边距 */
@@ -164,26 +164,11 @@ function formatDate(d?: string) {
     color: var(--accent);
 }
 
-/* 标签：小巧的紫蓝胶囊 */
+/* 标签：小巧的紫蓝胶囊（.tag-pill 已抽到 styles/utilities.css） */
 .tags {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-}
-
-.tag-pill {
-    font-size: 11.5px;
-    padding: 2px 10px;
-    border-radius: var(--radius-pill);
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    color: var(--accent);
-    transition: all 0.2s;
-}
-
-.tag-pill:hover {
-    background: rgba(56, 189, 248, 0.2);
-    border-color: rgba(56, 189, 248, 0.5);
 }
 
 /* 简介 */

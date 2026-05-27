@@ -192,8 +192,8 @@ onUnmounted(stopAuto);
     align-items: center;
     justify-content: center;
     background:
-        radial-gradient(circle at 20% 30%, rgba(196, 160, 98, 0.08), transparent 45%),
-        radial-gradient(circle at 80% 70%, rgba(26, 35, 50, 0.06), transparent 45%),
+        radial-gradient(circle at 20% 30%, rgba(var(--primary-rgb), 0.08), transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(var(--text-primary-rgb), 0.06), transparent 45%),
         var(--bg-page);
     overflow: auto;
 }
@@ -205,7 +205,7 @@ onUnmounted(stopAuto);
     border: 1px solid var(--border);
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 24px 60px rgba(26, 35, 50, 0.16), 0 8px 20px rgba(26, 35, 50, 0.06);
+    box-shadow: 0 24px 60px rgba(var(--text-primary-rgb), 0.16), 0 8px 20px rgba(var(--text-primary-rgb), 0.06);
     display: grid;
     grid-template-columns: 1.15fr 1fr;
     min-height: 540px;
@@ -226,12 +226,12 @@ onUnmounted(stopAuto);
     width: 500px;
     height: 500px;
     border-radius: 50%;
-    border: 1px solid rgba(196, 160, 98, 0.08);
+    border: 1px solid rgba(var(--primary-rgb), 0.08);
     top: 30%;
     left: -20%;
     box-shadow:
-        0 0 0 40px rgba(196, 160, 98, 0.04),
-        0 0 0 80px rgba(196, 160, 98, 0.02);
+        0 0 0 40px rgba(var(--primary-rgb), 0.04),
+        0 0 0 80px rgba(var(--primary-rgb), 0.02);
     pointer-events: none;
 }
 
@@ -241,7 +241,7 @@ onUnmounted(stopAuto);
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(196, 160, 98, 0.18), transparent 65%);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.18), transparent 65%);
     top: -80px;
     right: -80px;
     pointer-events: none;
@@ -273,7 +273,7 @@ onUnmounted(stopAuto);
     font-weight: 800;
     font-size: 15px;
     letter-spacing: -0.5px;
-    box-shadow: 0 4px 12px rgba(196, 160, 98, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 .hero-slider {
@@ -307,8 +307,8 @@ onUnmounted(stopAuto);
     width: 52px;
     height: 52px;
     border-radius: 12px;
-    background: rgba(196, 160, 98, 0.15);
-    border: 1px solid rgba(196, 160, 98, 0.3);
+    background: rgba(var(--primary-rgb), 0.15);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
     display: flex;
     align-items: center;
     justify-content: center;

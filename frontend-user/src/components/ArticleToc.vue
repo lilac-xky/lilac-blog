@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
 
 .toc-item.active {
     color: var(--accent);
-    background: rgba(56, 189, 248, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
     border-left-color: var(--accent);
     font-weight: 600;
 }
@@ -195,12 +195,12 @@ onBeforeUnmount(() => {
 }
 
 .toc::-webkit-scrollbar-thumb {
-    background: rgba(56, 189, 248, 0.25);
+    background: rgba(var(--accent-rgb), 0.25);
     border-radius: 3px;
 }
 
 .toc::-webkit-scrollbar-thumb:hover {
-    background: rgba(56, 189, 248, 0.45);
+    background: rgba(var(--accent-rgb), 0.45);
 }
 
 @media (max-width: 1280px) {

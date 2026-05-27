@@ -262,7 +262,7 @@ onMounted(fetchList);
 }
 
 .msg-row.unread {
-    border-color: rgba(56, 189, 248, 0.32);
+    border-color: rgba(var(--accent-rgb), 0.32);
 }
 
 .msg-icon {
@@ -287,7 +287,7 @@ onMounted(fetchList);
 }
 
 .icon-system {
-    background: rgba(56, 189, 248, 0.16);
+    background: rgba(var(--accent-rgb), 0.16);
     color: #38bdf8;
 }
 

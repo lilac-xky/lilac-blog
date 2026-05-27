@@ -195,8 +195,8 @@ watch(() => route.params.id, loadArticle);
 .meta-tag {
     padding: 2px 10px;
     border-radius: var(--radius-pill);
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     color: var(--accent);
     font-size: 12px;
     line-height: 1.5;

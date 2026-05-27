@@ -1,0 +1,110 @@
+/* ---------- 通用面板 ---------- */
+.panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panel-header.tight {
+  margin-bottom: 12px;
+}
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title.small {
+  font-size: 14px;
+}
+
+.total-badge {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-page);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 400;
+}
+
+/* ---------- 搜索表单 ---------- */
+.search-form {
+  flex-wrap: wrap;
+  gap: 8px 0;
+}
+
+.ant-form-inline .ant-form-item {
+  margin-right: 12px;
+  margin-bottom: 0;
+}
+
+.ant-form-inline .ant-form-item-label {
+  padding-right: 4px;
+}
+
+.ant-form-inline .ant-form-item-label > label {
+  font-size: 13px;
+}
+
+/* ---------- 分页底部 ---------- */
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+  margin-top: 16px;
+}
+
+/* ---------- 状态/角色 pill 标签 ---------- */
+.status-tag,
+.role-tag {
+  border-radius: var(--radius-pill) !important;
+  border: none !important;
+  font-size: 12px;
+}
+
+/* ---------- 表格内编辑按钮（金色） ---------- */
+.action-edit {
+  color: var(--primary) !important;
+}
+
+.action-edit:hover {
+  color: var(--primary-hover) !important;
+}
+
+/* ---------- Ant Table 统一样式 ----------
+ * 5 个管理页里这些 :deep 规则完全一致，提升为全局。
+ * 个别页面如需 vertical-align 等额外属性，仍可在 scoped 块里追加。
+ */
+.ant-table {
+  background: transparent !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--bg-page) !important;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-soft) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-soft) !important;
+  font-size: 13px;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--bg-page) !important;
+}

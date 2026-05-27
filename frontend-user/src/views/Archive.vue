@@ -384,14 +384,14 @@ onBeforeUnmount(() => {
 
 .pill:hover {
     color: var(--text-primary);
-    border-color: rgba(56, 189, 248, 0.4);
+    border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .pill.active {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
-    box-shadow: 0 4px 18px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 4px 18px rgba(var(--accent-strong-rgb), 0.4);
 }
 
 .pill .count {
@@ -438,7 +438,7 @@ onBeforeUnmount(() => {
 .toggle-btn.active {
     background: var(--accent);
     color: #fff;
-    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.4);
 }
 
 /* 矩阵网格视图：自适应多列 */
@@ -466,8 +466,8 @@ onBeforeUnmount(() => {
     width: 2px;
     transform: translateX(-50%);
     background: linear-gradient(180deg,
-            rgba(56, 189, 248, 0.7),
-            rgba(56, 189, 248, 0.25) 60%,
+            rgba(var(--accent-rgb), 0.7),
+            rgba(var(--accent-rgb), 0.25) 60%,
             transparent);
     pointer-events: none;
 }
@@ -509,7 +509,7 @@ onBeforeUnmount(() => {
     height: 20px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 18px var(--accent), 0 0 0 6px rgba(56, 189, 248, 0.18);
+    box-shadow: 0 0 18px var(--accent), 0 0 0 6px rgba(var(--accent-rgb), 0.18);
     border: 2px solid #0d0a1f;
     z-index: 2;
 }

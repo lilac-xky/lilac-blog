@@ -93,7 +93,7 @@ onUnmounted(() => {
 .bg-mask {
     position: absolute;
     inset: 0;
-    background: rgba(8, 7, 15, 0.32);
+    background: rgba(var(--bg-page-rgb), 0.32);
 }
 
 .bg-glow {
@@ -111,7 +111,7 @@ onUnmounted(() => {
 .glow-a {
     width: 520px;
     height: 520px;
-    background: #0ea5e9;
+    background: var(--accent-strong);
     opacity: 0.28;
     top: -120px;
     left: -80px;
@@ -120,7 +120,7 @@ onUnmounted(() => {
 .glow-b {
     width: 380px;
     height: 380px;
-    background: #ec4899;
+    background: var(--accent-pink);
     opacity: 0.20;
     bottom: -100px;
     right: -60px;

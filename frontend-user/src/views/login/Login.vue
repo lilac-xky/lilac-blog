@@ -133,7 +133,7 @@ async function handleLogin() {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     overflow: hidden;
-    background: rgba(8, 7, 15, 0.35);
+    background: rgba(var(--bg-page-rgb), 0.35);
     color: var(--text-primary);
 }
 
@@ -308,11 +308,11 @@ async function handleLogin() {
     letter-spacing: 2px;
     background: linear-gradient(135deg, var(--accent), var(--accent-pink)) !important;
     border: none !important;
-    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 8px 24px rgba(var(--accent-strong-rgb), 0.4);
 }
 
 .submit-btn:hover {
-    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.55) !important;
+    box-shadow: 0 12px 30px rgba(var(--accent-strong-rgb), 0.55) !important;
     transform: translateY(-1px);
 }
 

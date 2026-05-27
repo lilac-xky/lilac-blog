@@ -414,106 +414,20 @@ onMounted(fetchUsers);
   gap: 16px;
 }
 
-.panel {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  padding: 16px 20px;
-  box-shadow: var(--shadow-card);
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.panel-header.tight {
-  margin-bottom: 12px;
-}
-
-.panel-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.panel-title.small {
-  font-size: 14px;
-}
-
-.total-badge {
-  font-size: 12px;
-  color: var(--text-secondary);
-  background: var(--bg-page);
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  font-weight: 400;
-}
-
-/* 搜索区 */
-.search-panel {
+/* 搜索区 / 表格区 */
+.search-panel,
+.table-panel {
   flex-shrink: 0;
-}
-
-.search-form {
-  flex-wrap: wrap;
-  gap: 8px 0;
-}
-
-:deep(.ant-form-inline .ant-form-item) {
-  margin-right: 12px;
-  margin-bottom: 0;
-}
-
-:deep(.ant-form-inline .ant-form-item-label) {
-  padding-right: 4px;
-}
-
-:deep(.ant-form-inline .ant-form-item-label > label) {
-  font-size: 13px;
 }
 
 :deep(.search-form .ant-input-affix-wrapper) {
   padding: 4px 8px;
 }
 
-/* 表格区 */
-.table-panel {
-  flex-shrink: 0;
-}
-
-.pagination-wrap {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-soft);
-  margin-top: 16px;
-}
-
 /* 头像 */
 .user-avatar {
   background: var(--primary-wash) !important;
   color: var(--primary) !important;
-}
-
-/* 角色标签 */
-.role-tag {
-  border-radius: var(--radius-pill) !important;
-  border: none !important;
-  font-size: 12px;
-}
-
-/* 操作按钮 */
-.action-edit {
-  color: var(--primary) !important;
-}
-
-.action-edit:hover {
-  color: var(--primary-hover) !important;
 }
 
 /* 编辑表单 */
@@ -596,26 +510,5 @@ onMounted(fetchUsers);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 16px;
-}
-
-:deep(.ant-table-thead > tr > th) {
-  background: var(--bg-page) !important;
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border-soft) !important;
-}
-
-:deep(.ant-table-tbody > tr > td) {
-  border-bottom: 1px solid var(--border-soft) !important;
-  font-size: 13px;
-}
-
-:deep(.ant-table-tbody > tr:hover > td) {
-  background: var(--bg-page) !important;
-}
-
-:deep(.ant-table) {
-  background: transparent !important;
 }
 </style>

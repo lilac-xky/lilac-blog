@@ -272,13 +272,13 @@ onMounted(() => {
 .profile-card.glass-card,
 .timeline.glass-card,
 .tagcloud.glass-card {
-    background: rgba(20, 18, 40, 0.28) !important;
+    background: var(--bg-card-translucent) !important;
     border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* 音乐播放器同样透一点（其 scoped 样式由本组件控制，这里通过 :deep 覆写） */
 :deep(.music-player.glass-card) {
-    background: rgba(20, 18, 40, 0.28) !important;
+    background: var(--bg-card-translucent) !important;
     border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
@@ -317,8 +317,8 @@ onMounted(() => {
 }
 
 .search-bar:focus-within {
-    border-color: rgba(56, 189, 248, 0.55);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    border-color: rgba(var(--accent-rgb), 0.55);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
 /* ========== top-grid ========== */
@@ -345,7 +345,7 @@ onMounted(() => {
     inset: auto auto -40% -10%;
     width: 60%;
     height: 60%;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.18), transparent 70%);
+    background: radial-gradient(circle, rgba(var(--accent-pink-rgb), 0.18), transparent 70%);
     pointer-events: none;
 }
 
@@ -367,8 +367,8 @@ onMounted(() => {
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    border: 2px solid rgba(56, 189, 248, 0.5);
-    box-shadow: 0 0 24px rgba(56, 189, 248, 0.32);
+    border: 2px solid rgba(var(--accent-rgb), 0.5);
+    box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.32);
     background: linear-gradient(135deg, #1e3a5f, #2a4a7a);
 }
 
@@ -376,7 +376,7 @@ onMounted(() => {
     position: absolute;
     inset: -8px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(56, 189, 248, 0.45), transparent 70%);
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.45), transparent 70%);
     filter: blur(16px);
     z-index: -1;
     animation: avatar-pulse 4s ease-in-out infinite;
@@ -405,8 +405,8 @@ onMounted(() => {
     display: inline-block;
     padding: 3px 11px;
     border-radius: var(--radius-pill);
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
     color: var(--accent);
     font-size: 12px;
     font-weight: 600;
@@ -471,9 +471,9 @@ onMounted(() => {
 
 .contact-btn:hover {
     color: var(--accent);
-    border-color: rgba(56, 189, 248, 0.55);
-    background: rgba(56, 189, 248, 0.12);
-    box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+    border-color: rgba(var(--accent-rgb), 0.55);
+    background: rgba(var(--accent-rgb), 0.12);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.35);
     transform: translateY(-2px);
 }
 
@@ -580,8 +580,8 @@ onMounted(() => {
     width: 2px;
     transform: translateX(-50%);
     background: linear-gradient(180deg,
-            rgba(56, 189, 248, 0.7),
-            rgba(236, 72, 153, 0.6));
+            rgba(var(--accent-rgb), 0.7),
+            rgba(var(--accent-pink-rgb), 0.6));
     border-radius: 2px;
 }
 
@@ -606,10 +606,10 @@ onMounted(() => {
 }
 
 .tl-card:hover {
-    border-color: rgba(56, 189, 248, 0.5);
-    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(var(--accent-rgb), 0.5);
+    background: rgba(var(--accent-rgb), 0.08);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.2);
 }
 
 .tl-card-link {
@@ -650,7 +650,7 @@ onMounted(() => {
     border-radius: 50%;
     background: var(--bg-page-2);
     border: 2px solid var(--accent);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
     z-index: 2;
     transition: all 0.25s;
 }
@@ -665,7 +665,7 @@ onMounted(() => {
 
 .tl-card:hover .tl-dot {
     background: var(--accent);
-    box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.7);
 }
 
 .tl-date {
@@ -741,9 +741,9 @@ onMounted(() => {
 
 .cloud-tag:hover {
     transform: translateY(-2px) scale(1.05);
-    background: rgba(56, 189, 248, 0.12);
-    border-color: rgba(56, 189, 248, 0.55) !important;
-    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.25);
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.55) !important;
+    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.25);
 }
 
 /* ========== 响应式 ========== */

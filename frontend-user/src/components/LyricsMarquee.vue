@@ -56,10 +56,10 @@ const percentLabel = computed(() =>
     position: absolute;
     inset: 0;
     background: linear-gradient(90deg,
-            rgba(56, 189, 248, 0.06),
+            rgba(var(--accent-rgb), 0.06),
             transparent 25%,
             transparent 75%,
-            rgba(236, 72, 153, 0.06));
+            rgba(var(--accent-pink-rgb), 0.06));
     pointer-events: none;
 }
 
@@ -67,7 +67,7 @@ const percentLabel = computed(() =>
     flex: 0 0 auto;
     color: var(--accent);
     font-size: 18px;
-    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.65));
+    filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.65));
 }
 
 .ly-viewport {

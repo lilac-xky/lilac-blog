@@ -250,12 +250,7 @@ async function save() {
   height: 100%;
 }
 
-.panel {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-}
-
+/* .panel 通用属性继承自 styles/utilities.css，本页只覆盖差异 */
 .title-panel {
   padding: 8px 16px;
   flex-shrink: 0;

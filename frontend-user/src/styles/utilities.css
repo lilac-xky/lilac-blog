@@ -1,0 +1,55 @@
+/* ---------- 玻璃拟态卡片 ---------- */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* 较透明变体（文章列表卡片等） */
+.glass-card-translucent {
+  background: var(--bg-card-translucent);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-card);
+}
+
+/* ---------- hover 抬升 ---------- */
+.hover-lift {
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-accent-strong);
+  background: var(--bg-card-translucent-strong);
+  box-shadow: 0 10px 30px rgba(var(--accent-rgb), 0.18);
+}
+
+/* ---------- accent pill 标签 ---------- */
+.tag-pill {
+  font-size: 11.5px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-accent);
+  color: var(--accent);
+  transition: all 0.2s;
+}
+
+.tag-pill:hover {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+
+/* ---------- 渐变文字（页面大标题用） ---------- */
+.gradient-text {
+  background: linear-gradient(135deg, #f5f3ff, #7dd3fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}

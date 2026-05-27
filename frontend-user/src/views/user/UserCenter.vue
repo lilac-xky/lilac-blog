@@ -175,7 +175,7 @@ const stats = computed(() => [
 
 .profile-cta:hover {
     background: var(--accent-strong);
-    box-shadow: 0 6px 24px rgba(56, 189, 248, 0.4);
+    box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.4);
 }
 
 .stat-grid {

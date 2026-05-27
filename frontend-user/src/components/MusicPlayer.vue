@@ -89,7 +89,7 @@ function onSeek(e: MouseEvent) {
     inset: -40% -10% auto auto;
     width: 60%;
     height: 60%;
-    background: radial-gradient(circle, rgba(56, 189, 248, 0.18), transparent 70%);
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.18), transparent 70%);
     pointer-events: none;
 }
 
@@ -151,7 +151,7 @@ function onSeek(e: MouseEvent) {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #0f0e1a;
+    background: var(--bg-page-2);
     border: 2px solid rgba(255, 255, 255, 0.2);
     transform: translate(-50%, -50%);
     z-index: 2;
@@ -238,7 +238,7 @@ function onSeek(e: MouseEvent) {
     border-radius: 50%;
     background: #fff;
     transform: translate(-50%, 0);
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.7);
     transition: left 0.25s linear;
 }
 
@@ -268,8 +268,8 @@ function onSeek(e: MouseEvent) {
 
 .ctrl-btn:hover {
     color: var(--accent);
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--border-accent-strong);
+    background: var(--accent-soft);
     transform: translateY(-1px);
 }
 
@@ -280,12 +280,12 @@ function onSeek(e: MouseEvent) {
     border: none;
     color: var(--accent);
     background: transparent;
-    box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+    box-shadow: 0 0 22px var(--accent-soft-3);
 }
 
 .ctrl-btn.play-btn:hover {
     color: var(--accent-pink);
-    box-shadow: 0 0 28px rgba(236, 72, 153, 0.45);
+    box-shadow: 0 0 28px rgba(var(--accent-pink-rgb), 0.45);
     transform: scale(1.06);
 }
 

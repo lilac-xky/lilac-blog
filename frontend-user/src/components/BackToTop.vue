@@ -61,7 +61,7 @@ onBeforeUnmount(() => {
 
 .back-to-top:hover {
     color: var(--accent);
-    border-color: rgba(56, 189, 248, 0.45);
+    border-color: var(--border-accent-strong);
     transform: translateY(-2px);
     box-shadow: 0 12px 28px rgba(14, 165, 233, 0.25);
 }

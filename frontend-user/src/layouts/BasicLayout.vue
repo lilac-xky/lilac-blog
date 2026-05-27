@@ -200,9 +200,9 @@ async function handleMenu({ key }: { key: string }) {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(20, 18, 40, 0.28);
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
+    background: var(--bg-card-translucent);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
     border-bottom: 1px solid var(--border-soft);
 }
 
@@ -309,7 +309,7 @@ async function handleMenu({ key }: { key: string }) {
 
 .btn-primary:hover {
     background: var(--accent-strong);
-    box-shadow: 0 6px 22px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 6px 22px rgba(var(--accent-strong-rgb), 0.4);
 }
 
 .user-chip {
@@ -331,7 +331,7 @@ async function handleMenu({ key }: { key: string }) {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(56, 189, 248, 0.12);
+    background: rgba(var(--accent-rgb), 0.12);
     color: var(--accent) !important;
     font-size: 16px;
     transition: all 0.2s;
@@ -340,11 +340,11 @@ async function handleMenu({ key }: { key: string }) {
 .write-shortcut:hover {
     background: var(--accent);
     color: #fff !important;
-    box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.5);
 }
 
 .user-chip:hover {
-    border-color: rgba(56, 189, 248, 0.4);
+    border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .user-name {

@@ -1,0 +1,63 @@
+/* Ant Design 组件统一圆角 */
+.ant-card {
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border) !important;
+}
+
+.ant-btn {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500;
+}
+
+.ant-btn-primary {
+  background: var(--primary) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.28);
+}
+
+.ant-btn-primary:hover {
+  background: var(--primary-hover) !important;
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.36);
+}
+
+.ant-input:not(.ant-input-affix-wrapper .ant-input),
+.ant-input-affix-wrapper {
+  border-radius: var(--radius-sm) !important;
+}
+
+.ant-input-affix-wrapper .ant-input {
+  border-radius: 0 !important;
+}
+
+.ant-input-affix-wrapper:focus-within,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-wash) !important;
+}
+
+.ant-input-affix-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.ant-input-affix-wrapper .ant-input-prefix,
+.ant-input-affix-wrapper .ant-input-suffix {
+  margin: 0 !important;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.ant-input-affix-wrapper input {
+  flex: 1 1 auto !important;
+  align-self: stretch !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+.ant-menu-light.ant-menu-inline {
+  border-inline-end: none !important;
+}

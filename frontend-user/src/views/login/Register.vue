@@ -42,7 +42,7 @@
 
                 <a-form :model="formState" :rules="rules" layout="vertical" @finish="handleRegister">
                     <a-form-item label="账号" name="userAccount">
-                        <a-input v-model:value="formState.userAccount" placeholder="请输入账号" size="large" allow-clear>
+                        <a-input v-model:value="formState.userAccount" placeholder="请输入用户名" size="large" allow-clear>
                             <template #prefix>
                                 <UserOutlined />
                             </template>
@@ -55,6 +55,18 @@
                                 <MailOutlined />
                             </template>
                         </a-input>
+                    </a-form-item>
+
+                    <a-form-item label="验证码" name="code">
+                        <div class="code-row">
+                            <a-input v-model:value="formState.code" placeholder="请输入邮箱验证码" size="large" allow-clear
+                                class="code-input">
+                            </a-input>
+                            <a-button size="large" class="code-btn" :disabled="sendingCode || countdown > 0"
+                                :loading="sendingCode" @click="handleSendCode">
+                                {{ countdown > 0 ? `${countdown}s 后重试` : '发送验证码' }}
+                            </a-button>
+                        </div>
                     </a-form-item>
 
                     <a-form-item label="密码" name="password">
@@ -73,21 +85,6 @@
                                 <SafetyOutlined />
                             </template>
                         </a-input-password>
-                    </a-form-item>
-
-                    <a-form-item label="验证码" name="code">
-                        <div class="code-row">
-                            <a-input v-model:value="formState.code" placeholder="请输入邮箱验证码" size="large" allow-clear
-                                class="code-input">
-                                <template #prefix>
-                                    <NumberOutlined />
-                                </template>
-                            </a-input>
-                            <a-button size="large" class="code-btn" :disabled="sendingCode || countdown > 0"
-                                :loading="sendingCode" @click="handleSendCode">
-                                {{ countdown > 0 ? `${countdown}s 后重试` : '发送验证码' }}
-                            </a-button>
-                        </div>
                     </a-form-item>
 
                     <a-form-item name="agree" :rules="[{ validator: validateAgree }]">
@@ -125,7 +122,6 @@ import {
     LockOutlined,
     MailOutlined,
     SafetyOutlined,
-    NumberOutlined,
 } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { register, sendRegisterCode } from '@/api/userController';
@@ -259,7 +255,7 @@ async function handleRegister() {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     overflow: hidden;
-    background: rgba(8, 7, 15, 0.35);
+    background: rgba(var(--bg-page-rgb), 0.35);
     color: var(--text-primary);
 }
 
@@ -339,8 +335,8 @@ async function handleRegister() {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(56, 189, 248, 0.15);
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    background: rgba(var(--accent-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -348,7 +344,7 @@ async function handleRegister() {
     font-size: 14px;
     color: var(--accent);
     backdrop-filter: blur(6px);
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3);
 }
 
 .step-text {
@@ -415,11 +411,11 @@ async function handleRegister() {
     letter-spacing: 2px;
     background: linear-gradient(135deg, var(--accent), var(--accent-pink)) !important;
     border: none !important;
-    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 8px 24px rgba(var(--accent-strong-rgb), 0.4);
 }
 
 .submit-btn:hover {
-    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.55) !important;
+    box-shadow: 0 12px 30px rgba(var(--accent-strong-rgb), 0.55) !important;
     transform: translateY(-1px);
 }
 
@@ -463,13 +459,13 @@ async function handleRegister() {
     flex-shrink: 0;
     min-width: 120px;
     border-radius: var(--radius-pill) !important;
-    background: rgba(56, 189, 248, 0.12) !important;
-    border-color: rgba(56, 189, 248, 0.4) !important;
+    background: rgba(var(--accent-rgb), 0.12) !important;
+    border-color: rgba(var(--accent-rgb), 0.4) !important;
     color: var(--accent) !important;
 }
 
 .code-btn:hover:not(:disabled) {
-    background: rgba(56, 189, 248, 0.2) !important;
+    background: rgba(var(--accent-rgb), 0.2) !important;
     color: #fff !important;
 }
 

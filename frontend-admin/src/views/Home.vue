@@ -377,21 +377,16 @@ const todos = [
   min-height: 0;
 }
 
+/* .panel 通用属性继承自 styles/utilities.css，本页加上独立排版需求 */
 .panel {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
   padding: 18px 20px;
-  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
 .panel-header {
-  display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 14px;
 }
 
 .panel-header.tight {
@@ -399,14 +394,10 @@ const todos = [
   align-items: center;
 }
 
+/* Home 页 panel-title 与管理页样式不同：单文本块，无 flex 布局 */
 .panel-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.panel-title.small {
-  font-size: 14px;
+  display: block;
+  gap: 0;
 }
 
 .panel-desc {
@@ -614,7 +605,7 @@ const todos = [
 }
 
 .greet-avatar {
-  background: rgba(196, 160, 98, 0.22) !important;
+  background: rgba(var(--primary-rgb), 0.22) !important;
   position: relative;
   z-index: 1;
 }

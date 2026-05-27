@@ -1,0 +1,116 @@
+/* ----- Ant Design 全局覆写 ----- */
+
+.ant-card {
+  border-radius: var(--radius-card) !important;
+  background: var(--bg-card) !important;
+  backdrop-filter: blur(var(--blur)) !important;
+  -webkit-backdrop-filter: blur(var(--blur)) !important;
+  border: 1px solid var(--border-soft) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.ant-btn {
+  border-radius: var(--radius-pill) !important;
+  font-weight: 500;
+}
+
+.ant-btn-primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+}
+
+.ant-btn-primary:hover {
+  background: var(--accent-strong) !important;
+  border-color: var(--accent-strong) !important;
+}
+
+.ant-input,
+.ant-input-affix-wrapper {
+  border-radius: var(--radius-pill) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-soft-2) !important;
+}
+
+.ant-input::placeholder,
+.ant-input-affix-wrapper input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* prefix/clear 与光标的间距修复（沿用旧规则） */
+.ant-input-affix-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-inline: 14px !important;
+}
+
+.ant-input-affix-wrapper.ant-input-affix-wrapper-lg {
+  padding-block: 8px !important;
+  padding-inline: 16px !important;
+}
+
+.ant-input-affix-wrapper .ant-input-prefix,
+.ant-input-affix-wrapper .ant-input-suffix {
+  margin: 0 !important;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.ant-input-affix-wrapper input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-form-item-label > label {
+  color: var(--text-secondary) !important;
+}
+
+.ant-checkbox-wrapper {
+  color: var(--text-secondary) !important;
+}
+
+.ant-pagination .ant-pagination-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-soft);
+}
+
+.ant-pagination .ant-pagination-item a {
+  color: var(--text-secondary);
+}
+
+.ant-pagination .ant-pagination-item-active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: #fff;
+}
+
+.ant-dropdown-menu {
+  background: var(--bg-card-solid) !important;
+  border: 1px solid var(--border-soft) !important;
+  backdrop-filter: blur(var(--blur));
+}
+
+.ant-dropdown-menu-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: rgba(var(--accent-rgb), 0.12) !important;
+  color: var(--text-primary) !important;
+}
