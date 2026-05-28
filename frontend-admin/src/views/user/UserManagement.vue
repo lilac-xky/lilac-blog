@@ -1,308 +1,199 @@
 <template>
-  <div class="user-manage">
-    <!-- 搜索面板 -->
-    <div class="panel search-panel">
-      <div class="panel-header tight">
-        <div class="panel-title small">条件筛选</div>
-      </div>
-      <a-form layout="inline" :model="queryForm" class="search-form">
-        <a-form-item label="账号">
-          <a-input v-model:value="queryForm.userAccount" placeholder="账号" allow-clear style="width: 140px" />
-        </a-form-item>
-        <a-form-item label="昵称">
-          <a-input v-model:value="queryForm.username" placeholder="昵称" allow-clear style="width: 140px" />
-        </a-form-item>
-        <a-form-item label="邮箱">
-          <a-input v-model:value="queryForm.email" placeholder="邮箱" allow-clear style="width: 180px" />
-        </a-form-item>
-        <a-form-item label="角色">
-          <a-select v-model:value="queryForm.role" placeholder="全部" allow-clear style="width: 120px">
-            <a-select-option value="admin">管理员</a-select-option>
-            <a-select-option value="user">普通用户</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="状态">
-          <a-select v-model:value="queryForm.status" placeholder="全部" allow-clear style="width: 100px">
-            <a-select-option :value="1">正常</a-select-option>
-            <a-select-option :value="0">异常</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" :loading="loading" @click="handleSearch">
-            <template #icon>
-              <SearchOutlined />
-            </template>
-            搜索
-          </a-button>
-          <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
-        </a-form-item>
-      </a-form>
-    </div>
+  <TableCRUD title="用户列表" total-unit="名用户" :columns="columns" :table-data="tableData" :total="total" :loading="loading"
+    :query-form="queryForm" :search-schema="searchSchema" :scroll="{ x: 900 }" :show-add="false"
+    :switch-loading-id="statusLoadingId" @search="handleSearch" @reset="handleReset"
+    @edit="(record: any) => openEdit(record)" @delete="(record: any) => confirmDelete(record)"
+    @table-change="handleTableChange" @page-change="fetchData">
+    <template #column-role="{ record }">
+      <a-tag :color="record.role === 'admin' ? 'gold' : 'blue'" class="role-tag">
+        {{ record.role === 'admin' ? '管理员' : '普通用户' }}
+      </a-tag>
+    </template>
+  </TableCRUD>
 
-    <!-- 表格面板 -->
-    <div class="panel table-panel">
-      <div class="panel-header tight">
-        <div class="panel-title small">
-          用户列表
-          <span class="total-badge">共 {{ total }} 名用户</span>
-        </div>
-      </div>
-
-      <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="user-table" :scroll="{ x: 900 }" :show-sorter-tooltip="false"
-        @change="handleTableChange">
-        <!-- 头像列 -->
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'avatar'">
-            <a-avatar :src="getAvatarSrc(record.avatar)" :size="36" class="user-avatar">
+  <!-- 编辑弹窗（结构较定制，保留原 DOM） -->
+  <a-modal v-model:open="modalVisible" title="编辑用户" :confirm-loading="modalLoading" ok-text="保存" cancel-text="取消"
+    :width="520" @ok="onModalOk" @cancel="onModalCancel">
+    <a-form ref="editFormRef" :model="formData" :rules="editRules" layout="vertical" class="edit-form">
+      <!-- 头像区域 -->
+      <div class="edit-avatar-section">
+        <a-upload :show-upload-list="false" accept="image/png,image/jpeg,image/jpg,image/webp"
+          :custom-request="handleAvatarUpload" :before-upload="beforeAvatarUpload">
+          <div class="avatar-uploader-wrap">
+            <a-avatar :src="getAvatarSrc(formData.avatar)" :size="80" class="edit-preview-avatar">
               <template #icon>
                 <UserOutlined />
               </template>
             </a-avatar>
-          </template>
-
-          <!-- 角色列 -->
-          <template v-else-if="column.key === 'role'">
-            <a-tag :color="record.role === 'admin' ? 'gold' : 'blue'" class="role-tag">
-              {{ record.role === 'admin' ? '管理员' : '普通用户' }}
-            </a-tag>
-          </template>
-
-          <!-- 状态列 -->
-          <template v-else-if="column.key === 'status'">
-            <a-switch :checked="record.status === 1" :loading="statusLoadingId === record.id"
-              :disabled="record.id === loginUser?.id" checked-children="正常" un-checked-children="异常"
-              @change="(val: boolean) => handleStatusChange(record, val)" />
-          </template>
-
-          <!-- 创建时间列 -->
-          <template v-else-if="column.key === 'createTime'">
-            {{ formatDateTime(record.createTime) }}
-          </template>
-
-          <!-- 操作列 -->
-          <template v-else-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" class="action-edit" @click="openEditModal(record)">
-                <template #icon>
-                  <EditOutlined />
-                </template>
-                编辑
-              </a-button>
-              <a-divider type="vertical" />
-              <a-button type="link" size="small" danger @click="confirmDelete(record)">
-                <template #icon>
-                  <DeleteOutlined />
-                </template>
-                删除
-              </a-button>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-
-      <!-- 分页 -->
-      <div class="pagination-wrap">
-        <a-pagination v-model:current="queryForm.current" v-model:page-size="queryForm.pageSize" :total="total"
-          :page-size-options="['10', '20', '50']" show-quick-jumper show-size-changer
-          :show-total="(total: number) => `共 ${total} 条`" @change="fetchUsers" @show-size-change="fetchUsers" />
-      </div>
-    </div>
-
-    <!-- 编辑弹窗 -->
-    <a-modal v-model:open="editVisible" title="编辑用户" :confirm-loading="editLoading" ok-text="保存" cancel-text="取消"
-      :width="520" @ok="handleEditOk" @cancel="handleEditCancel">
-      <a-form ref="editFormRef" :model="editForm" :rules="editRules" layout="vertical" class="edit-form">
-
-        <!-- 头像区域 -->
-        <div class="edit-avatar-section">
-          <a-upload :show-upload-list="false" accept="image/png,image/jpeg,image/jpg,image/webp"
-            :custom-request="handleAvatarUpload" :before-upload="beforeAvatarUpload">
-            <div class="avatar-uploader-wrap">
-              <a-avatar :src="getAvatarSrc(editForm.avatar)" :size="80" class="edit-preview-avatar">
-                <template #icon>
-                  <UserOutlined />
-                </template>
-              </a-avatar>
-              <div class="avatar-upload-mask">
-                <LoadingOutlined v-if="avatarUploading" />
-                <CameraOutlined v-else />
-                <span class="mask-text">更换头像</span>
-              </div>
+            <div class="avatar-upload-mask">
+              <LoadingOutlined v-if="avatarUploading" />
+              <CameraOutlined v-else />
+              <span class="mask-text">更换头像</span>
             </div>
-          </a-upload>
-          <a-form-item name="avatar" class="avatar-input-item">
-            <a-input v-model:value="editForm.avatar" placeholder="或输入图片链接" allow-clear size="small" />
+          </div>
+        </a-upload>
+        <a-form-item name="avatar" class="avatar-input-item">
+          <a-input v-model:value="formData.avatar" placeholder="或输入图片链接" allow-clear size="small" />
+        </a-form-item>
+      </div>
+
+      <a-divider class="edit-divider" />
+
+      <!-- 基本信息 -->
+      <div class="form-section">
+        <div class="form-section-label">基本信息</div>
+        <div class="form-row-2">
+          <a-form-item label="账号" name="userAccount">
+            <a-input v-model:value="formData.userAccount" placeholder="账号" allow-clear />
+          </a-form-item>
+          <a-form-item label="昵称" name="username">
+            <a-input v-model:value="formData.username" placeholder="昵称" allow-clear />
           </a-form-item>
         </div>
+        <a-form-item label="邮箱" name="email" style="margin-bottom: 0">
+          <a-input v-model:value="formData.email" placeholder="邮箱" allow-clear />
+        </a-form-item>
+      </div>
 
-        <a-divider class="edit-divider" />
+      <a-divider class="edit-divider" />
 
-        <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="form-section-label">基本信息</div>
-          <div class="form-row-2">
-            <a-form-item label="账号" name="userAccount">
-              <a-input v-model:value="editForm.userAccount" placeholder="账号" allow-clear />
-            </a-form-item>
-            <a-form-item label="昵称" name="username">
-              <a-input v-model:value="editForm.username" placeholder="昵称" allow-clear />
-            </a-form-item>
-          </div>
-          <a-form-item label="邮箱" name="email" style="margin-bottom: 0">
-            <a-input v-model:value="editForm.email" placeholder="邮箱" allow-clear />
+      <!-- 权限设置 -->
+      <div class="form-section">
+        <div class="form-section-label">权限设置</div>
+        <div class="form-row-2" style="margin-bottom: 0">
+          <a-form-item label="角色" name="role" style="margin-bottom: 0">
+            <a-select v-model:value="formData.role" style="width: 100%">
+              <a-select-option value="admin">管理员</a-select-option>
+              <a-select-option value="user">普通用户</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item label="状态" name="status" style="margin-bottom: 0">
+            <a-select v-model:value="formData.status" style="width: 100%">
+              <a-select-option :value="1">正常</a-select-option>
+              <a-select-option :value="0">异常</a-select-option>
+            </a-select>
           </a-form-item>
         </div>
-
-        <a-divider class="edit-divider" />
-
-        <!-- 权限设置 -->
-        <div class="form-section">
-          <div class="form-section-label">权限设置</div>
-          <div class="form-row-2" style="margin-bottom: 0">
-            <a-form-item label="角色" name="role" style="margin-bottom: 0">
-              <a-select v-model:value="editForm.role" style="width: 100%">
-                <a-select-option value="admin">管理员</a-select-option>
-                <a-select-option value="user">普通用户</a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="状态" name="status" style="margin-bottom: 0">
-              <a-select v-model:value="editForm.status" style="width: 100%">
-                <a-select-option :value="1">正常</a-select-option>
-                <a-select-option :value="0">异常</a-select-option>
-              </a-select>
-            </a-form-item>
-          </div>
-        </div>
-
-      </a-form>
-    </a-modal>
-  </div>
+      </div>
+    </a-form>
+  </a-modal>
 </template>
 
+<!--
+  UserManagement：后台「用户管理」页
+  不开放「新增」（注册由用户自己完成）；编辑弹窗结构较定制（含头像上传 + 分组表单），保留原 DOM 没走 FormModal。
+  状态切换走 switch 列内置渲染器，禁用当前登录管理员对自己的状态切换。
+-->
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
-import { message, Modal } from 'ant-design-vue';
+import { computed, onMounted, ref } from 'vue';
+import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import {
   UserOutlined,
-  SearchOutlined,
-  EditOutlined,
-  DeleteOutlined,
   CameraOutlined,
   LoadingOutlined,
 } from '@ant-design/icons-vue';
+import TableCRUD from '@/components/crud/TableCRUD.vue';
+import type { CrudColumn, SearchField } from '@/components/crud/types';
+import { usePaginationQuery } from '@/composables/usePaginationQuery';
+import { useModalForm } from '@/composables/useModalForm';
+import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import { listUserVoByPage, updateUser, deleteUser, updateUserStatus } from '@/api/adminController';
 import { uploadFile } from '@/api/fileController';
 import { useUserStore } from '@/stores/user';
-import { formatDateTime } from '@/utils/datetime';
 
 const { loginUser } = useUserStore();
 
-// ---------- 查询 ----------
-const loading = ref(false);
-const total = ref(0);
-const tableData = ref<API.UserVO[]>([]);
+const { loading, total, tableData, queryForm, sortOrder, fetchData, handleSearch, handleReset, handleTableChange } =
+  usePaginationQuery<API.UserQueryRequest, API.UserVO>({
+    initialQuery: {
+      current: 1,
+      pageSize: 10,
+      userAccount: undefined,
+      username: undefined,
+      email: undefined,
+      role: undefined,
+      status: undefined,
+      sortOrder: 'descend',
+    },
+    async fetcher(q) {
+      const res = await listUserVoByPage(q);
+      return {
+        records: res.data?.data?.records ?? [],
+        total: (res.data?.data?.total as unknown as number) ?? 0,
+      };
+    },
+  });
 
-const queryForm = reactive<API.UserQueryRequest>({
-  current: 1,
-  pageSize: 10,
-  userAccount: undefined,
-  username: undefined,
-  email: undefined,
-  role: undefined,
-  status: undefined,
-  sortOrder: 'descend',
-});
-
-// 创建时间排序方向（默认降序）
-const sortCreateOrder = ref<'descend' | 'ascend'>('descend');
-
-async function fetchUsers() {
-  loading.value = true;
-  try {
-    const res = await listUserVoByPage({ ...queryForm });
-    if (res.data?.data) {
-      tableData.value = res.data.data.records ?? [];
-      total.value = Number(res.data.data.total ?? 0);
-    }
-  } catch {
-    // 错误由 request 拦截器统一弹出提示
-  } finally {
-    loading.value = false;
-  }
-}
-
-function handleSearch() {
-  queryForm.current = 1;
-  fetchUsers();
-}
-
-function handleReset() {
-  queryForm.userAccount = undefined;
-  queryForm.username = undefined;
-  queryForm.email = undefined;
-  queryForm.role = undefined;
-  queryForm.status = undefined;
-  queryForm.current = 1;
-  sortCreateOrder.value = 'descend';
-  queryForm.sortOrder = 'descend';
-  fetchUsers();
-}
-
-// 表格变化（仅用于切换创建时间排序方向）
-function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
-  if (!sorter) return;
-  const key = sorter.columnKey ?? sorter.field;
-  if (key !== 'createTime') return;
-  sortCreateOrder.value = sortCreateOrder.value === 'descend' ? 'ascend' : 'descend';
-  queryForm.sortOrder = sortCreateOrder.value;
-  queryForm.current = 1;
-  fetchUsers();
-}
-
-// ---------- 状态切换 ----------
-const statusLoadingId = ref<number | undefined>(undefined);
-
+// 状态切换
+const statusLoadingId = ref<any>(null);
 async function handleStatusChange(record: API.UserVO, val: boolean) {
-  statusLoadingId.value = record.id as number;
+  statusLoadingId.value = record.id;
   const newStatus = val ? 1 : 0;
   try {
-    const res = await updateUserStatus({ id: record.id as number, status: newStatus });
+    const res = await updateUserStatus({ id: record.id as any, status: newStatus });
     if (res.data?.data) {
       record.status = newStatus;
       message.success(val ? '已启用' : '已禁用');
     }
   } finally {
-    statusLoadingId.value = undefined;
+    statusLoadingId.value = null;
   }
 }
 
-// ---------- 删除 ----------
-function confirmDelete(record: API.UserVO) {
-  const modal = Modal.confirm({
-    title: '确认删除该用户吗？',
-    okText: '确认',
-    okType: 'danger',
-    cancelText: '取消',
-    async onOk() {
-      try {
-        const res = await deleteUser({ id: record.id });
-        if (res.data?.data) {
-          message.success('删除成功');
-          fetchUsers();
-        }
-      } catch {
-        modal.destroy();
-      }
-    },
-  });
+// 删除
+const { confirmDelete } = useConfirmDelete<API.UserVO>({
+  titleOf: () => '确认删除该用户吗？',
+  deleteApi: (params) => deleteUser(params),
+  onSuccess: fetchData,
+});
+
+// 编辑弹窗
+const editFormRef = ref<FormInstance>();
+const editRules: Record<string, Rule[]> = {
+  userAccount: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
+};
+
+const {
+  visible: modalVisible,
+  loading: modalLoading,
+  formData,
+  openEdit,
+  handleOk,
+} = useModalForm<API.UserUpdateRequest, API.UserVO>({
+  defaultForm: () => ({}),
+  updateApi: (form) => updateUser(form),
+  pickEditForm: (record) => ({
+    id: record.id,
+    userAccount: record.userAccount,
+    username: record.username,
+    email: record.email,
+    avatar: record.avatar,
+    role: record.role,
+    status: record.status,
+  }),
+  onSuccess: fetchData,
+});
+
+async function onModalOk() {
+  try {
+    await editFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  await handleOk();
 }
 
-// ---------- 头像上传 ----------
+function onModalCancel() {
+  editFormRef.value?.resetFields();
+}
+
+// 头像上传
 const avatarUploading = ref(false);
 
+// OSS 头像统一加 webp + 200 宽缩放参数，未带参数时拼一次；非 OSS 链接原样返回
 function getAvatarSrc(url?: string): string | undefined {
   if (!url) return undefined;
   if (!url.includes('.aliyuncs.com')) return url;
@@ -329,7 +220,7 @@ async function handleAvatarUpload({ file }: { file: File }) {
     const res = await uploadFile({ type: 'avatar' }, {}, file);
     const url = res.data?.data?.url;
     if (url) {
-      editForm.avatar = url;
+      formData.avatar = url;
       message.success('头像上传成功');
     }
   } finally {
@@ -337,95 +228,85 @@ async function handleAvatarUpload({ file }: { file: File }) {
   }
 }
 
-// ---------- 编辑 ----------
-const editVisible = ref(false);
-const editLoading = ref(false);
-const editFormRef = ref<FormInstance>();
-const editForm = reactive<API.UserUpdateRequest>({});
+// 搜索 schema
+const searchSchema: SearchField[] = [
+  { name: 'userAccount', label: '账号', type: 'input', placeholder: '账号', width: 140 },
+  { name: 'username', label: '昵称', type: 'input', placeholder: '昵称', width: 140 },
+  { name: 'email', label: '邮箱', type: 'input', placeholder: '邮箱', width: 180 },
+  {
+    name: 'role',
+    label: '角色',
+    type: 'select',
+    width: 120,
+    options: [
+      { label: '管理员', value: 'admin' },
+      { label: '普通用户', value: 'user' },
+    ],
+  },
+  {
+    name: 'status',
+    label: '状态',
+    type: 'select',
+    width: 100,
+    options: [
+      { label: '正常', value: 1 },
+      { label: '异常', value: 0 },
+    ],
+  },
+];
 
-const editRules: Record<string, Rule[]> = {
-  userAccount: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
-};
-
-function openEditModal(record: API.UserVO) {
-  Object.assign(editForm, {
-    id: record.id,
-    userAccount: record.userAccount,
-    username: record.username,
-    email: record.email,
-    avatar: record.avatar,
-    role: record.role,
-    status: record.status,
-  });
-  editVisible.value = true;
-}
-
-async function handleEditOk() {
-  try {
-    await editFormRef.value?.validate();
-  } catch {
-    return;
-  }
-  editLoading.value = true;
-  try {
-    const res = await updateUser({ ...editForm });
-    if (res.data?.data) {
-      message.success('更新成功');
-      editVisible.value = false;
-      fetchUsers();
-    }
-  } finally {
-    editLoading.value = false;
-  }
-}
-
-function handleEditCancel() {
-  editFormRef.value?.resetFields();
-}
-
-// ---------- 表格列定义 ----------
-const columns = computed(() => [
-  { title: '头像', key: 'avatar', width: 60, align: 'center' as const },
+// 列定义
+const columns = computed<CrudColumn[]>(() => [
+  {
+    title: '头像',
+    key: 'avatar',
+    dataIndex: 'avatar',
+    width: 60,
+    align: 'center' as const,
+    renderer: { type: 'avatar', size: 36 },
+  },
   { title: 'ID', dataIndex: 'id', key: 'id', width: 120, ellipsis: true },
   { title: '账号', dataIndex: 'userAccount', key: 'userAccount', width: 110, ellipsis: true },
   { title: '昵称', dataIndex: 'username', key: 'username', width: 110, ellipsis: true },
   { title: '邮箱', dataIndex: 'email', key: 'email', width: 160, ellipsis: true },
   { title: '角色', key: 'role', width: 90, align: 'center' as const },
-  { title: '状态', key: 'status', width: 100, align: 'center' as const },
+  {
+    title: '状态',
+    key: 'status',
+    dataIndex: 'status',
+    width: 100,
+    align: 'center' as const,
+    renderer: {
+      type: 'switch',
+      getChecked: (r: API.UserVO) => r.status === 1,
+      onChange: handleStatusChange,
+      // 禁止管理员把自己禁用，避免锁死后台入口
+      disabled: (r: API.UserVO) => r.id === loginUser?.id,
+    },
+  },
   {
     title: '创建时间',
     key: 'createTime',
+    dataIndex: 'createTime',
     width: 160,
     sorter: true,
-    sortOrder: sortCreateOrder.value,
+    sortOrder: sortOrder.value,
     sortDirections: ['descend', 'ascend'] as const,
+    renderer: { type: 'datetime' },
   },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
 ]);
 
-onMounted(fetchUsers);
+onMounted(fetchData);
 </script>
 
 <style scoped>
-.user-manage {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* 搜索区 / 表格区 */
-.search-panel,
-.table-panel {
-  flex-shrink: 0;
-}
-
 :deep(.search-form .ant-input-affix-wrapper) {
   padding: 4px 8px;
 }
 
 /* 头像 */
-.user-avatar {
+:deep(.ant-avatar) {
   background: var(--primary-wash) !important;
   color: var(--primary) !important;
 }

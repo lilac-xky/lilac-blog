@@ -1,3 +1,9 @@
+/*
+ * 前台通用样式工具类
+ * 把页面里高频复用的玻璃卡、hover 抬升、pill 标签、渐变文字、PageHeader 骨架、
+ * 列表空态/加载态等样式收敛到此处，业务页只通过类名复用，避免散落复制
+ */
+
 /* ---------- 玻璃拟态卡片 ---------- */
 .glass-card {
   background: var(--bg-card);
@@ -52,4 +58,45 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+}
+
+/* ---------- 页面头部（标题 + 副标题 + 高亮圆点）默认骨架样式 ---------- */
+.page-head h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.page-head .subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-head .dot-glow {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* ---------- 列表空态 / 加载态 ---------- */
+.list-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.list-empty .anticon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+
+.list-loading {
+  text-align: center;
+  padding: 60px 0;
 }

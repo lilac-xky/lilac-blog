@@ -1,118 +1,103 @@
 <template>
-    <div class="auth-page">
-        <StarrySky />
-        <!-- 左侧品牌区 -->
-        <div class="auth-hero">
-            <div class="hero-content">
-                <div class="hero-logo">
-                    <img src="https://lilacs.oss-cn-beijing.aliyuncs.com/lilac-blog/avatar/2026/05/15/2026-05-15AokvgcjLCxWBMW9v.png?x-oss-process=image/resize,m_fill,h_100,w_100"
-                        alt="logo" />
-                    <span>lilac-blog</span>
+    <AuthLayout hero-title="加入我们" form-title="创建账号" form-subtitle="只需几步，即可开始使用 lilac-blog" :show-deco1="false"
+        form-padding="32px" class="register-page">
+        <template #hero-desc>
+            创建一个账号，打造属于你自己的博客空间。<br />
+            在这里记录成长、分享见解、连接世界。
+        </template>
+        <template #hero-extras>
+            <div class="hero-steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">填写账号信息</div>
                 </div>
-                <h1 class="hero-title">加入我们</h1>
-                <p class="hero-desc">
-                    创建一个账号，打造属于你自己的博客空间。<br />
-                    在这里记录成长、分享见解、连接世界。
-                </p>
-                <div class="hero-steps">
-                    <div class="step">
-                        <div class="step-num">1</div>
-                        <div class="step-text">填写账号信息</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">2</div>
-                        <div class="step-text">设置安全密码</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">3</div>
-                        <div class="step-text">开启创作之旅</div>
-                    </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">设置安全密码</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">开启创作之旅</div>
                 </div>
             </div>
-            <div class="hero-deco hero-deco-2"></div>
-        </div>
+        </template>
 
-        <!-- 右侧表单区 -->
-        <div class="auth-form-wrap">
-            <div class="auth-form">
-                <div class="form-header">
-                    <h2>创建账号</h2>
-                    <p>只需几步，即可开始使用 lilac-blog</p>
+        <a-form :model="formState" :rules="rules" layout="vertical" @finish="handleRegister">
+            <a-form-item label="账号" name="userAccount">
+                <a-input v-model:value="formState.userAccount" placeholder="请输入用户名" size="large" allow-clear>
+                    <template #prefix>
+                        <UserOutlined />
+                    </template>
+                </a-input>
+            </a-form-item>
+
+            <a-form-item label="邮箱" name="email">
+                <a-input v-model:value="formState.email" placeholder="请输入邮箱" size="large" allow-clear>
+                    <template #prefix>
+                        <MailOutlined />
+                    </template>
+                </a-input>
+            </a-form-item>
+
+            <a-form-item label="验证码" name="code">
+                <div class="code-row">
+                    <a-input v-model:value="formState.code" placeholder="请输入邮箱验证码" size="large" allow-clear
+                        class="code-input">
+                    </a-input>
+                    <a-button size="large" class="code-btn" :disabled="sendingCode || countdown > 0"
+                        :loading="sendingCode" @click="handleSendCode">
+                        {{ countdown > 0 ? `${countdown}s 后重试` : '发送验证码' }}
+                    </a-button>
                 </div>
+            </a-form-item>
 
-                <a-form :model="formState" :rules="rules" layout="vertical" @finish="handleRegister">
-                    <a-form-item label="账号" name="userAccount">
-                        <a-input v-model:value="formState.userAccount" placeholder="请输入用户名" size="large" allow-clear>
-                            <template #prefix>
-                                <UserOutlined />
-                            </template>
-                        </a-input>
-                    </a-form-item>
+            <a-form-item label="密码" name="password">
+                <a-input-password v-model:value="formState.password" placeholder="6-20 位密码" size="large" allow-clear>
+                    <template #prefix>
+                        <LockOutlined />
+                    </template>
+                </a-input-password>
+            </a-form-item>
 
-                    <a-form-item label="邮箱" name="email">
-                        <a-input v-model:value="formState.email" placeholder="请输入邮箱" size="large" allow-clear>
-                            <template #prefix>
-                                <MailOutlined />
-                            </template>
-                        </a-input>
-                    </a-form-item>
+            <a-form-item label="确认密码" name="checkPassword">
+                <a-input-password v-model:value="formState.checkPassword" placeholder="请再次输入密码" size="large"
+                    allow-clear>
+                    <template #prefix>
+                        <SafetyOutlined />
+                    </template>
+                </a-input-password>
+            </a-form-item>
 
-                    <a-form-item label="验证码" name="code">
-                        <div class="code-row">
-                            <a-input v-model:value="formState.code" placeholder="请输入邮箱验证码" size="large" allow-clear
-                                class="code-input">
-                            </a-input>
-                            <a-button size="large" class="code-btn" :disabled="sendingCode || countdown > 0"
-                                :loading="sendingCode" @click="handleSendCode">
-                                {{ countdown > 0 ? `${countdown}s 后重试` : '发送验证码' }}
-                            </a-button>
-                        </div>
-                    </a-form-item>
+            <a-form-item name="agree" :rules="[{ validator: validateAgree }]">
+                <a-checkbox v-model:checked="agree">
+                    我已阅读并同意
+                    <a class="auth-link-primary">《服务协议》</a>
+                    和
+                    <a class="auth-link-primary">《隐私政策》</a>
+                </a-checkbox>
+            </a-form-item>
 
-                    <a-form-item label="密码" name="password">
-                        <a-input-password v-model:value="formState.password" placeholder="6-20 位密码" size="large"
-                            allow-clear>
-                            <template #prefix>
-                                <LockOutlined />
-                            </template>
-                        </a-input-password>
-                    </a-form-item>
+            <a-form-item>
+                <a-button type="primary" html-type="submit" size="large" block :loading="loading"
+                    class="auth-submit-btn">
+                    注 册
+                </a-button>
+            </a-form-item>
 
-                    <a-form-item label="确认密码" name="checkPassword">
-                        <a-input-password v-model:value="formState.checkPassword" placeholder="请再次输入密码" size="large"
-                            allow-clear>
-                            <template #prefix>
-                                <SafetyOutlined />
-                            </template>
-                        </a-input-password>
-                    </a-form-item>
-
-                    <a-form-item name="agree" :rules="[{ validator: validateAgree }]">
-                        <a-checkbox v-model:checked="agree">
-                            我已阅读并同意
-                            <a class="link-primary">《服务协议》</a>
-                            和
-                            <a class="link-primary">《隐私政策》</a>
-                        </a-checkbox>
-                    </a-form-item>
-
-                    <a-form-item>
-                        <a-button type="primary" html-type="submit" size="large" block :loading="loading"
-                            class="submit-btn">
-                            注 册
-                        </a-button>
-                    </a-form-item>
-
-                    <div class="form-footer">
-                        已有账号？
-                        <router-link to="/login" class="link-primary">直接登录</router-link>
-                    </div>
-                </a-form>
+            <div class="auth-form-footer">
+                已有账号？
+                <router-link to="/login" class="auth-link-primary">直接登录</router-link>
             </div>
-        </div>
-    </div>
+        </a-form>
+    </AuthLayout>
 </template>
 
+<!--
+  Register：前台注册页
+  - 复用 AuthLayout 外壳
+  - 强制邮箱验证码注册，60 秒重发倒计时
+  - 必须勾选服务协议方可提交（走自定义校验器）
+-->
 <script setup lang="ts">
 import { reactive, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -125,7 +110,7 @@ import {
 } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { register, sendRegisterCode } from '@/api/userController';
-import StarrySky from '@/components/StarrySky.vue';
+import AuthLayout from '@/components/AuthLayout.vue';
 
 const router = useRouter();
 const loading = ref(false);
@@ -248,77 +233,6 @@ async function handleRegister() {
 </script>
 
 <style scoped>
-.auth-page {
-    position: relative;
-    height: 100vh;
-    width: 100vw;
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    overflow: hidden;
-    background: rgba(var(--bg-page-rgb), 0.35);
-    color: var(--text-primary);
-}
-
-.auth-page>.auth-hero,
-.auth-page>.auth-form-wrap {
-    position: relative;
-    z-index: 1;
-}
-
-.auth-hero {
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
-    border-right: 1px solid var(--border-soft);
-}
-
-.hero-content {
-    position: relative;
-    z-index: 2;
-    color: var(--text-primary);
-    max-width: 440px;
-}
-
-.hero-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 40px;
-}
-
-.hero-logo img {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-}
-
-.hero-logo span {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-
-.hero-title {
-    font-size: 44px;
-    font-weight: 800;
-    line-height: 1.2;
-    margin-bottom: 16px;
-    background: linear-gradient(135deg, #f5f3ff 0%, #7dd3fc 60%, #ec4899 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.hero-desc {
-    font-size: 15px;
-    color: var(--text-secondary);
-    line-height: 1.8;
-    margin-bottom: 40px;
-}
-
 .hero-steps {
     display: flex;
     flex-direction: column;
@@ -352,100 +266,6 @@ async function handleRegister() {
     color: var(--text-secondary);
 }
 
-.hero-deco {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.5;
-}
-
-.hero-deco-2 {
-    width: 280px;
-    height: 280px;
-    background: #ec4899;
-    bottom: -80px;
-    left: -60px;
-    opacity: 0.35;
-}
-
-.auth-form-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 32px;
-    overflow-y: auto;
-}
-
-.auth-form {
-    width: 100%;
-    max-width: 400px;
-    padding: 32px;
-    background: var(--bg-card);
-    backdrop-filter: blur(var(--blur));
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-}
-
-.form-header {
-    margin-bottom: 24px;
-}
-
-.form-header h2 {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-
-.form-header p {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.submit-btn {
-    height: 46px !important;
-    border-radius: var(--radius-pill) !important;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-pink)) !important;
-    border: none !important;
-    box-shadow: 0 8px 24px rgba(var(--accent-strong-rgb), 0.4);
-}
-
-.submit-btn:hover {
-    box-shadow: 0 12px 30px rgba(var(--accent-strong-rgb), 0.55) !important;
-    transform: translateY(-1px);
-}
-
-.form-footer {
-    text-align: center;
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-top: 8px;
-}
-
-.link-primary {
-    color: var(--accent);
-    font-weight: 600;
-    margin: 0 2px;
-}
-
-.link-primary:hover {
-    color: var(--accent-pink);
-    text-decoration: underline;
-}
-
-:deep(.ant-form-item-label > label) {
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-:deep(.ant-form-item) {
-    margin-bottom: 18px;
-}
-
 .code-row {
     display: flex;
     gap: 10px;
@@ -469,13 +289,12 @@ async function handleRegister() {
     color: #fff !important;
 }
 
-@media (max-width: 900px) {
-    .auth-page {
-        grid-template-columns: 1fr;
-    }
+/* 注册表单字段较多，间距收紧；标题区间距同原设计 */
+:deep(.ant-form-item) {
+    margin-bottom: 18px;
+}
 
-    .auth-hero {
-        display: none;
-    }
+:deep(.form-header) {
+    margin-bottom: 24px;
 }
 </style>

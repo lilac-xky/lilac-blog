@@ -1,268 +1,153 @@
 <template>
-  <div class="article-manage">
-    <!-- 搜索面板 -->
-    <div class="panel search-panel">
-      <div class="panel-header tight">
-        <div class="panel-title small">条件筛选</div>
-        <a-button type="primary" @click="goWrite">
-          <template #icon>
-            <PlusOutlined />
-          </template>
-          写文章
-        </a-button>
-      </div>
-      <a-form layout="inline" :model="queryForm" class="search-form">
-        <a-form-item label="标题">
-          <a-input v-model:value="queryForm.title" placeholder="标题关键词" allow-clear style="width: 180px" />
-        </a-form-item>
-        <a-form-item label="状态">
-          <a-select v-model:value="queryForm.status" placeholder="全部" allow-clear style="width: 120px">
-            <a-select-option :value="0">草稿</a-select-option>
-            <a-select-option :value="1">待审核</a-select-option>
-            <a-select-option :value="2">已发布</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="分类">
-          <a-select v-model:value="queryForm.categoryId" placeholder="全部" allow-clear style="width: 120px"
-            :options="categoryOptions.map(c => ({ value: c.id, label: c.categoryName }))" />
-        </a-form-item>
-        <a-form-item label="标签">
-          <a-select v-model:value="filterTagId" placeholder="全部" allow-clear style="width: 120px"
-            :options="tagOptions.map(t => ({ value: t.id, label: t.tagName }))" />
-        </a-form-item>
-        <a-form-item label="置顶">
-          <a-select v-model:value="queryForm.isTop" placeholder="全部" allow-clear style="width: 100px">
-            <a-select-option :value="1">是</a-select-option>
-            <a-select-option :value="0">否</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" :loading="loading" @click="handleSearch">
-            <template #icon>
-              <SearchOutlined />
-            </template>
-            搜索
-          </a-button>
-          <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
-        </a-form-item>
-      </a-form>
-    </div>
+  <TableCRUD :columns="columns" :table-data="tableData" :total="total" :loading="loading" :query-form="queryForm"
+    :search-schema="searchSchema" :scroll="{ x: 1380 }" title="文章列表" total-unit="篇文章" add-button-text="写文章"
+    @search="handleSearch" @reset="onReset" @add="goWrite" @table-change="handleTableChange" @page-change="fetchData">
+    <!-- 标签搜索字段：UI 单选 -->
+    <template #search-tagId="{ model }">
+      <a-select v-model:value="model.tagId" placeholder="全部" allow-clear style="width: 120px"
+        :options="tagOptions.map(t => ({ value: t.id, label: t.tagName }))" />
+    </template>
 
-    <!-- 表格面板 -->
-    <div class="panel table-panel">
-      <div class="panel-header tight">
-        <div class="panel-title small">
-          文章列表
-          <span class="total-badge">共 {{ total }} 篇文章</span>
+    <!-- 封面 -->
+    <template #column-cover="{ record }">
+      <div class="cover-wrap">
+        <img v-if="record.coverUrl" :src="record.coverUrl" class="cover-thumb" alt="封面" />
+        <div v-else class="cover-placeholder">
+          <PictureOutlined />
         </div>
       </div>
+    </template>
 
-      <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false" row-key="id"
-        size="middle" class="article-table" :scroll="{ x: 1380 }" :show-sorter-tooltip="false"
-        @change="handleTableChange">
-        <template #bodyCell="{ column, record }">
-          <!-- 封面列 -->
-          <template v-if="column.key === 'cover'">
-            <div class="cover-wrap">
-              <img v-if="record.coverUrl" :src="record.coverUrl" class="cover-thumb" alt="封面" />
-              <div v-else class="cover-placeholder">
-                <PictureOutlined />
-              </div>
-            </div>
+    <!-- 标题 -->
+    <template #column-title="{ record }">
+      <span class="article-title" :title="record.title">{{ record.title || '无标题' }}</span>
+    </template>
+
+    <!-- 摘要 -->
+    <template #column-summary="{ record }">
+      <a-tooltip v-if="record.summary" :title="record.summary" placement="topLeft"
+        :overlay-style="{ maxWidth: '420px' }">
+        <span class="article-summary">{{ record.summary }}</span>
+      </a-tooltip>
+      <span v-else class="text-muted">—</span>
+    </template>
+
+    <!-- 分类 -->
+    <template #column-categoryName="{ record }">
+      <a-tag v-if="record.categoryName" color="blue" class="status-tag">{{ record.categoryName }}</a-tag>
+      <span v-else class="text-muted">—</span>
+    </template>
+
+    <!-- 标签 -->
+    <template #column-tags="{ record }">
+      <template v-if="(record.tags ?? []).filter(Boolean).length">
+        <a-tag v-for="tag in (record.tags ?? []).filter((t: API.TagVO | null) => !!t && t.id != null)" :key="tag.id"
+          class="status-tag" style="margin-bottom: 2px">
+          {{ tag.tagName }}
+        </a-tag>
+      </template>
+      <span v-else class="text-muted">—</span>
+    </template>
+
+    <!-- 置顶 -->
+    <template #column-isTop="{ record }">
+      <a-tag v-if="record.isTop === 1" color="gold" class="status-tag">置顶</a-tag>
+      <span v-else class="text-muted">—</span>
+    </template>
+
+    <!-- 浏览量 -->
+    <template #column-viewCount="{ record }">
+      <span class="view-count">{{ record.viewCount ?? 0 }}</span>
+    </template>
+
+    <!-- 操作列（编辑跳转，不开弹窗） -->
+    <template #action="{ record }">
+      <a-space>
+        <a-button type="link" size="small" class="action-edit" @click="goEdit(record)">
+          <template #icon>
+            <EditOutlined />
           </template>
-
-          <!-- 标题列 -->
-          <template v-else-if="column.key === 'title'">
-            <span class="article-title" :title="record.title">{{ record.title || '无标题' }}</span>
+          编辑
+        </a-button>
+        <a-divider type="vertical" />
+        <a-button type="link" size="small" danger @click="confirmDelete(record)">
+          <template #icon>
+            <DeleteOutlined />
           </template>
-
-          <!-- 摘要列 -->
-          <template v-else-if="column.key === 'summary'">
-            <a-tooltip v-if="record.summary" :title="record.summary" placement="topLeft"
-              :overlay-style="{ maxWidth: '420px' }">
-              <span class="article-summary">{{ record.summary }}</span>
-            </a-tooltip>
-            <span v-else class="text-muted">—</span>
-          </template>
-
-          <!-- 分类列 -->
-          <template v-else-if="column.key === 'categoryName'">
-            <a-tag v-if="record.categoryName" color="blue" class="status-tag">{{ record.categoryName }}</a-tag>
-            <span v-else class="text-muted">—</span>
-          </template>
-
-          <!-- 标签列 -->
-          <template v-else-if="column.key === 'tags'">
-            <template v-if="(record.tags ?? []).filter(Boolean).length">
-              <a-tag v-for="tag in (record.tags ?? []).filter((t: API.TagVO | null) => !!t && t.id != null)"
-                :key="tag.id" class="status-tag" style="margin-bottom: 2px">
-                {{ tag.tagName }}
-              </a-tag>
-            </template>
-            <span v-else class="text-muted">—</span>
-          </template>
-
-          <!-- 状态列 -->
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="statusColor(record.status)" class="status-tag">
-              {{ statusLabel(record.status) }}
-            </a-tag>
-          </template>
-
-          <!-- 置顶列 -->
-          <template v-else-if="column.key === 'isTop'">
-            <a-tag v-if="record.isTop === 1" color="gold" class="status-tag">置顶</a-tag>
-            <span v-else class="text-muted">—</span>
-          </template>
-
-          <!-- 浏览量列 -->
-          <template v-else-if="column.key === 'viewCount'">
-            <span class="view-count">{{ record.viewCount ?? 0 }}</span>
-          </template>
-
-          <!-- 创建时间列 -->
-          <template v-else-if="column.key === 'createTime'">
-            {{ formatDateTime(record.createTime) }}
-          </template>
-
-          <!-- 操作列 -->
-          <template v-else-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" class="action-edit" @click="goEdit(record)">
-                <template #icon>
-                  <EditOutlined />
-                </template>
-                编辑
-              </a-button>
-              <a-divider type="vertical" />
-              <a-button type="link" size="small" danger @click="confirmDelete(record)">
-                <template #icon>
-                  <DeleteOutlined />
-                </template>
-                删除
-              </a-button>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-
-      <!-- 分页 -->
-      <div class="pagination-wrap">
-        <a-pagination v-model:current="queryForm.current" v-model:page-size="queryForm.pageSize" :total="total"
-          :page-size-options="['10', '20', '50']" show-quick-jumper show-size-changer
-          :show-total="(t: number) => `共 ${t} 条`" @change="fetchArticles" @show-size-change="fetchArticles" />
-      </div>
-    </div>
-  </div>
+          删除
+        </a-button>
+      </a-space>
+    </template>
+  </TableCRUD>
 </template>
 
+<!--
+  ArticleManagement：后台「文章管理」页
+  列出所有文章（含草稿/待审核/已发布），支持按标题/状态/分类/标签/置顶筛选。
+  编辑走「写文章」整页路由，不走弹窗；删除走二次确认。
+-->
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { message, Modal } from 'ant-design-vue';
-import {
-  SearchOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  PictureOutlined,
-} from '@ant-design/icons-vue';
+import { EditOutlined, DeleteOutlined, PictureOutlined } from '@ant-design/icons-vue';
+import TableCRUD from '@/components/crud/TableCRUD.vue';
+import type { CrudColumn, SearchField } from '@/components/crud/types';
+import { usePaginationQuery } from '@/composables/usePaginationQuery';
+import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import { listArticleByPage, deleteArticle } from '@/api/articleController';
 import { listCategoryByPage } from '@/api/categoryController';
 import { listTagByPage } from '@/api/tagController';
-import { formatDateTime } from '@/utils/datetime';
 
 const router = useRouter();
 
-// ---------- 分类/标签选项 ----------
 const categoryOptions = ref<Array<{ id: number; categoryName: string }>>([]);
 const tagOptions = ref<Array<{ id: number; tagName: string }>>([]);
 
-// ---------- 查询 ----------
-const loading = ref(false);
-const total = ref(0);
-const tableData = ref<API.ArticleVO[]>([]);
+// UI 上只允许选一个标签，但后端按 tagIds 数组接收
+// transformQuery 里会把 tagId 转成 tagIds: [tagId]，所以这里扩出 UI 专用字段
+type ArticleQueryUI = API.ArticleQueryRequest & { tagId?: number };
 
-const queryForm = reactive<API.ArticleQueryRequest>({
+const initialQuery: ArticleQueryUI = reactive({
   current: 1,
   pageSize: 10,
   title: undefined,
   status: undefined,
   isTop: undefined,
   categoryId: undefined,
-  tagIds: undefined,
+  tagId: undefined,
   sortOrder: 'descend',
 });
 
-// 创建时间排序方向（默认降序）
-const sortCreateOrder = ref<'descend' | 'ascend'>('descend');
+const { loading, total, tableData, queryForm, sortOrder, fetchData, handleSearch, handleReset, handleTableChange } =
+  usePaginationQuery<ArticleQueryUI, API.ArticleVO>({
+    initialQuery: { ...initialQuery },
+    transformQuery: (q) => ({
+      ...q,
+      tagIds: q.tagId !== undefined ? [q.tagId] : undefined,
+      tagId: undefined,
+    }),
+    async fetcher(q) {
+      const res = await listArticleByPage(q);
+      return {
+        records: res.data?.data?.records ?? [],
+        total: (res.data?.data?.total as unknown as number) ?? 0,
+      };
+    },
+  });
 
-// tagIds 在 UI 上用单个 tagId 来驱动，转换时包装成数组
-const filterTagId = ref<number | undefined>(undefined);
-
-async function fetchArticles() {
-  loading.value = true;
-  try {
-    const params = {
-      ...queryForm,
-      tagIds: filterTagId.value !== undefined ? [filterTagId.value] : undefined,
-    };
-    const res = await listArticleByPage(params);
-    if (res.data?.data) {
-      tableData.value = res.data.data.records ?? [];
-      total.value = Number(res.data.data.total ?? 0);
-    }
-  } catch {
-    // 错误由 request 拦截器统一提示
-  } finally {
-    loading.value = false;
-  }
+function onReset() {
+  handleReset();
 }
 
-function handleSearch() {
-  queryForm.current = 1;
-  fetchArticles();
-}
+// 删除
+const { confirmDelete } = useConfirmDelete<API.ArticleVO>({
+  titleOf: () => '确认删除该文章吗？',
+  contentOf: (r) => `「${r.title || '无标题'}」删除后不可恢复`,
+  deleteApi: (params) => deleteArticle(params),
+  onSuccess: fetchData,
+});
 
-function handleReset() {
-  queryForm.title = undefined;
-  queryForm.status = undefined;
-  queryForm.isTop = undefined;
-  queryForm.categoryId = undefined;
-  filterTagId.value = undefined;
-  queryForm.current = 1;
-  sortCreateOrder.value = 'descend';
-  queryForm.sortOrder = 'descend';
-  fetchArticles();
-}
-
-// 表格变化（仅用于切换创建时间排序方向）
-function handleTableChange(_pagination: unknown, _filters: unknown, sorter: { columnKey?: string; field?: string } | undefined) {
-  if (!sorter) return;
-  const key = sorter.columnKey ?? sorter.field;
-  if (key !== 'createTime') return;
-  sortCreateOrder.value = sortCreateOrder.value === 'descend' ? 'ascend' : 'descend';
-  queryForm.sortOrder = sortCreateOrder.value;
-  queryForm.current = 1;
-  fetchArticles();
-}
-
-// ---------- 状态工具 ----------
-function statusLabel(status?: number) {
-  if (status === 0) return '草稿';
-  if (status === 1) return '待审核';
-  if (status === 2) return '已发布';
-  return '未知';
-}
-
-function statusColor(status?: number) {
-  if (status === 0) return 'default';
-  if (status === 1) return 'orange';
-  if (status === 2) return 'green';
-  return 'default';
-}
-
-// ---------- 跳转 ----------
+// 跳转
 function goWrite() {
   router.push('/write-blog');
 }
@@ -271,45 +156,73 @@ function goEdit(record: API.ArticleVO) {
   router.push({ path: '/write-blog', query: { id: record.id } });
 }
 
-// ---------- 删除 ----------
-function confirmDelete(record: API.ArticleVO) {
-  const modal = Modal.confirm({
-    title: '确认删除该文章吗？',
-    content: `「${record.title || '无标题'}」删除后不可恢复`,
-    okText: '确认',
-    okType: 'danger',
-    cancelText: '取消',
-    async onOk() {
-      try {
-        const res = await deleteArticle({ id: record.id });
-        if (res.data?.data) {
-          message.success('删除成功');
-          fetchArticles();
-        }
-      } catch {
-        modal.destroy();
-      }
-    },
-  });
-}
+// 搜索 schema（tagId 字段走自定义插槽）
+const searchSchema = computed<SearchField[]>(() => [
+  { name: 'title', label: '标题', type: 'input', placeholder: '标题关键词', width: 180 },
+  {
+    name: 'status',
+    label: '状态',
+    type: 'select',
+    width: 120,
+    options: [
+      { label: '草稿', value: 0 },
+      { label: '待审核', value: 1 },
+      { label: '已发布', value: 2 },
+    ],
+  },
+  {
+    name: 'categoryId',
+    label: '分类',
+    type: 'select',
+    width: 120,
+    options: categoryOptions.value.map((c) => ({ label: c.categoryName, value: c.id })),
+  },
+  { name: 'tagId', label: '标签', type: 'select', width: 120, options: [] },
+  {
+    name: 'isTop',
+    label: '置顶',
+    type: 'select',
+    width: 100,
+    options: [
+      { label: '是', value: 1 },
+      { label: '否', value: 0 },
+    ],
+  },
+]);
 
-// ---------- 表格列定义 ----------
-const columns = computed(() => [
+// 列
+const columns = computed<CrudColumn[]>(() => [
   { title: '封面', key: 'cover', width: 80, align: 'center' as const },
   { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true, width: 180 },
   { title: '摘要', key: 'summary', dataIndex: 'summary', ellipsis: true, width: 200 },
   { title: '分类', key: 'categoryName', width: 100 },
   { title: '标签', key: 'tags', width: 160 },
-  { title: '状态', key: 'status', width: 90, align: 'center' as const },
+  {
+    title: '状态',
+    key: 'status',
+    dataIndex: 'status',
+    width: 90,
+    align: 'center' as const,
+    renderer: {
+      type: 'statusTag',
+      map: {
+        0: { label: '草稿', color: 'default' },
+        1: { label: '待审核', color: 'orange' },
+        2: { label: '已发布', color: 'green' },
+      },
+    },
+  },
   { title: '置顶', key: 'isTop', width: 70, align: 'center' as const },
   { title: '浏览量', key: 'viewCount', width: 80, align: 'center' as const },
   {
     title: '创建时间',
     key: 'createTime',
+    dataIndex: 'createTime',
     width: 160,
     sorter: true,
-    sortOrder: sortCreateOrder.value,
+    sortOrder: sortOrder.value,
     sortDirections: ['descend', 'ascend'] as const,
+    renderer: { type: 'datetime' },
   },
   { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
 ]);
@@ -321,23 +234,11 @@ onMounted(async () => {
   ]);
   categoryOptions.value = (catRes.data?.data?.records ?? []) as Array<{ id: number; categoryName: string }>;
   tagOptions.value = (tagRes.data?.data?.records ?? []) as Array<{ id: number; tagName: string }>;
-  fetchArticles();
+  fetchData();
 });
 </script>
 
 <style scoped>
-.article-manage {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.search-panel,
-.table-panel {
-  flex-shrink: 0;
-}
-
-/* 封面缩略图 */
 .cover-wrap {
   display: flex;
   align-items: center;

@@ -1,12 +1,8 @@
 <template>
     <div class="my-articles">
-        <header class="page-head">
-            <h1>我的文章</h1>
-            <p class="subtitle">
-                <span class="dot-glow"></span>
-                共 {{ total }} 篇，{{ activeTabLabel }}
-            </p>
-        </header>
+        <PageHeader title="我的文章">
+            共 {{ total }} 篇，{{ activeTabLabel }}
+        </PageHeader>
 
         <div class="action-bar glass-card">
             <a-tabs v-model:active-key="activeTab" @change="onTabChange" class="status-tabs">
@@ -21,7 +17,7 @@
             </router-link>
         </div>
 
-        <div v-if="loading && !records.length" class="loading">
+        <div v-if="loading && !records.length" class="loading list-loading">
             <a-spin />
         </div>
 
@@ -70,11 +66,14 @@
             </article>
         </div>
 
-        <div v-else class="empty glass-card">
-            <FileSearchOutlined />
-            <p>暂无文章</p>
-            <router-link to="/user/write" class="empty-cta">去写一篇</router-link>
-        </div>
+        <ListEmpty v-else text="暂无文章">
+            <template #icon>
+                <FileSearchOutlined />
+            </template>
+            <template #extra>
+                <router-link to="/user/write" class="empty-cta">去写一篇</router-link>
+            </template>
+        </ListEmpty>
 
         <div v-if="total > pageSize" class="pagination-wrap">
             <a-pagination v-model:current="current" :total="total" :page-size="pageSize" show-quick-jumper
@@ -83,8 +82,14 @@
     </div>
 </template>
 
+<!--
+  MyArticles：前台「我的文章」
+  - 按状态 Tab 切换（全部/草稿/待审核/已发布）
+  - 被驳回的草稿（status=0 且有 rejectReason）会在卡片内嵌红色提示条，提醒用户改完重提
+  - 已发布文章不可在前台编辑，需联系管理员（点击查看跳详情页）
+-->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import {
@@ -96,19 +101,30 @@ import {
     FileSearchOutlined,
     ExclamationCircleOutlined,
 } from '@ant-design/icons-vue';
-import dayjs from 'dayjs';
 import { listMyArticles, deleteMyArticle } from '@/api/articleController';
+import PageHeader from '@/components/PageHeader.vue';
+import ListEmpty from '@/components/ListEmpty.vue';
+import { useListPagination } from '@/composables/useListPagination';
+import { useDateFormat } from '@/composables/useDateFormat';
 
 const router = useRouter();
+const { formatDate } = useDateFormat();
 
-const records = ref<API.ArticleVO[]>([]);
-const total = ref(0);
-const current = ref(1);
-const pageSize = 10;
-const loading = ref(false);
-
-// '0' '1' '2' 'all'
-const activeTab = ref<string>('all');
+const { records, total, current, pageSize, loading, activeTab, fetchList, onTabChange } =
+    useListPagination<API.ArticleVO, API.ArticleQueryRequest>({
+        pageSize: 10,
+        buildQuery: ({ tab, current, pageSize }) => ({
+            current,
+            pageSize,
+            status: tab === 'all' ? undefined : Number(tab),
+            sortOrder: 'descend',
+        }),
+        fetcher: async (query) => {
+            const res = await listMyArticles(query);
+            const data = res.data?.data;
+            return { records: data?.records ?? [], total: Number(data?.total ?? 0) };
+        },
+    });
 
 const activeTabLabel = computed(() => {
     if (activeTab.value === '0') return '草稿';
@@ -131,6 +147,7 @@ function statusColor(s?: number) {
     return 'default';
 }
 
+// 被驳回回到草稿态时，rejectReason 仍保留，用作页面提示
 function hasReject(a: API.ArticleVO) {
     return a.status === 0 && !!a.rejectReason?.trim();
 }
@@ -140,33 +157,7 @@ function canEdit(a: API.ArticleVO) {
     return a.status === 0 || a.status === 1;
 }
 
-function formatDate(d?: string) {
-    return d ? dayjs(d).format('YYYY-MM-DD HH:mm') : '';
-}
-
-async function fetchList() {
-    loading.value = true;
-    try {
-        const status = activeTab.value === 'all' ? undefined : Number(activeTab.value);
-        const res = await listMyArticles({
-            current: current.value,
-            pageSize,
-            status,
-            sortOrder: 'descend',
-        });
-        const data = res.data?.data;
-        records.value = data?.records ?? [];
-        total.value = Number(data?.total ?? 0);
-    } finally {
-        loading.value = false;
-    }
-}
-
-function onTabChange() {
-    current.value = 1;
-    fetchList();
-}
-
+// 已发布文章看详情页；草稿/待审核「查看」实际等同于编辑
 function goDetail(a: API.ArticleVO) {
     if (a.status === 2) {
         router.push(`/article/${a.id}`);
@@ -200,7 +191,7 @@ function confirmDelete(a: API.ArticleVO) {
     });
 }
 
-onMounted(fetchList);
+fetchList();
 </script>
 
 <style scoped>
@@ -208,28 +199,6 @@ onMounted(fetchList);
     display: flex;
     flex-direction: column;
     gap: 18px;
-}
-
-.page-head h1 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.dot-glow {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
 }
 
 .action-bar {
@@ -273,11 +242,6 @@ onMounted(fetchList);
 
 .write-btn:hover {
     background: var(--accent-strong);
-}
-
-.loading {
-    text-align: center;
-    padding: 60px 0;
 }
 
 .article-list {
@@ -383,18 +347,6 @@ onMounted(fetchList);
     display: flex;
     justify-content: center;
     margin-top: 10px;
-}
-
-.empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-}
-
-.empty :deep(.anticon) {
-    font-size: 48px;
-    margin-bottom: 12px;
-    color: var(--text-muted);
 }
 
 .empty-cta {

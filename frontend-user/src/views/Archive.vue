@@ -1,12 +1,8 @@
 <template>
     <div class="archive-page" ref="archivePageEl">
-        <header class="page-head">
-            <h1>归档与探索</h1>
-            <p class="subtitle">
-                <span class="dot-glow"></span>
-                总计 {{ totalAll }} 篇研究记录
-            </p>
-        </header>
+        <PageHeader title="归档与探索">
+            总计 {{ totalAll }} 篇研究记录
+        </PageHeader>
 
         <!-- 搜索框：按标题模糊搜索 -->
         <div class="search-wrap">
@@ -86,6 +82,12 @@
     </div>
 </template>
 
+<!--
+  Archive：前台「归档」页
+  - 支持按标题模糊搜索 + 按分类/标签筛选
+  - 两种视图：中枢链路（锯齿时间轴）/ 矩阵网格
+  - 通过 ResizeObserver 监听容器宽度自适应每页条数（按目标行数 × 列数计算）
+-->
 <script setup lang="ts">
 import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -99,6 +101,7 @@ import { listArticleVoByPage } from '@/api/articleController';
 import { listCategoryByPageVo } from '@/api/categoryController';
 import { listTagByPageVo } from '@/api/tagController';
 import ArticleCard from '@/components/ArticleCard.vue';
+import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute();
 
@@ -107,7 +110,7 @@ const records = ref<API.ArticleVO[]>([]);
 const total = ref(0);
 const totalAll = ref(0);
 const current = ref(1);
-// 矩阵网格的卡片尺寸
+// 矩阵网格自适应参数：最小卡片宽度、列间距、目标行数。computePageSize 据此推断每页条数
 const GRID_CARD_MIN = 260;
 const GRID_GAP = 22;
 const GRID_TARGET_ROWS = 3;
@@ -242,7 +245,7 @@ watch(() => route.query, () => {
     loadList();
 });
 
-// 根据容器宽度计算每页条数
+// 按容器宽度反推「列数 × 行数」作为每页条数，保证视觉上始终填满 3 行
 function computePageSize(): number {
     const el = archivePageEl.value;
     const w = el?.clientWidth ?? 0;
@@ -254,6 +257,7 @@ function computePageSize(): number {
 let resizeObserver: ResizeObserver | null = null;
 let resizeTimer: number | null = null;
 
+// 监听宽度变化重算每页条数，200ms 防抖避免缩放窗口时疯狂请求
 function observeResize() {
     if (!archivePageEl.value || typeof ResizeObserver === 'undefined') return;
     resizeObserver = new ResizeObserver(() => {
@@ -298,7 +302,7 @@ onBeforeUnmount(() => {
     padding: 20px 0 8px;
 }
 
-.page-head h1 {
+:deep(.page-head h1) {
     font-size: 38px;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -309,20 +313,8 @@ onBeforeUnmount(() => {
     margin-bottom: 12px;
 }
 
-.subtitle {
+:deep(.page-head .subtitle) {
     display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-secondary);
-    font-size: 13px;
-}
-
-.dot-glow {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
 }
 
 .search-wrap {

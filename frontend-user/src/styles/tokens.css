@@ -1,3 +1,8 @@
+/*
+ * 前台设计令牌（CSS 变量）
+ * 暗色星空主题，覆盖背景/文字/边框/主色/阴影/圆角/动画/层级/渐变等基础变量
+ * 修改色彩主题只需调整此文件，其它样式均通过 var(--xxx) 引用
+ */
 :root {
   /* 背景层 */
   --bg-page: #08070f;
@@ -45,4 +50,18 @@
   --radius-sm: 12px;
   --radius-pill: 999px;
   --blur: 22px;
+
+  /* 动画时长 */
+  --duration-fast: 0.2s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.5s;
+
+  /* z-index 层级 */
+  --z-header: 50;
+  --z-modal: 100;
+
+  /* 渐变 */
+  --gradient-card-default: linear-gradient(135deg, #1e3a5f, #2a4a7a);
+  --gradient-hero: linear-gradient(135deg, #f5f3ff 0%, #7dd3fc 60%, #ec4899 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent-pink));
 }

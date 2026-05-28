@@ -1,12 +1,8 @@
 <template>
     <div class="write-article">
-        <header class="page-head">
-            <h1>{{ isEdit ? '编辑文章' : '写文章' }}</h1>
-            <p class="subtitle">
-                <span class="dot-glow"></span>
-                保存草稿随时改，提交后由管理员审核，通过后将在首页与归档展示
-            </p>
-        </header>
+        <PageHeader :title="isEdit ? '编辑文章' : '写文章'">
+            保存草稿随时改，提交后由管理员审核，通过后将在首页与归档展示
+        </PageHeader>
 
         <!-- 驳回提示条（仅编辑被驳回的草稿时出现） -->
         <div v-if="rejectReason" class="reject-banner glass-card">
@@ -82,6 +78,13 @@
     </div>
 </template>
 
+<!--
+  WriteArticle：前台「写文章 / 编辑文章」
+  - 同一页面通过 query.id 区分新建/编辑
+  - 已发布的文章不允许前台再编辑（直接跳走）
+  - 「保存草稿」与「提交审核」共用同一接口，仅 status 不同（0 / 1）
+  - 封面、正文图片均走文件上传接口，封面后端会返回 thumbnailUrl
+-->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -104,6 +107,7 @@ import {
 import { listCategoryByPageVo } from '@/api/categoryController';
 import { listTagByPageVo } from '@/api/tagController';
 import { uploadFile } from '@/api/fileController';
+import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -138,6 +142,7 @@ const tagOptions = ref<Array<{ id: number; tagName: string }>>([]);
 
 const saving = ref(false);
 
+// 编辑态需要先把已有内容回填到 form；新建态只拉分类/标签下拉
 onMounted(async () => {
     const [catRes, tagRes] = await Promise.all([
         listCategoryByPageVo({ current: 1, pageSize: 200 }, { silentError: true }),
@@ -179,6 +184,7 @@ function triggerCoverUpload() {
     coverInputRef.value?.click();
 }
 
+// 上传封面：优先使用后端生成的缩略图地址（thumbnailUrl），节省列表页图片流量
 async function onCoverChange(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -197,6 +203,7 @@ async function onCoverChange(e: Event) {
         }
     } finally {
         coverUploading.value = false;
+        // 清空 input 值，否则同一文件不会再次触发 change
         if (coverInputRef.value) coverInputRef.value.value = '';
     }
 }
@@ -216,6 +223,7 @@ async function onUploadImg(files: File[], callback: (urls: string[]) => void) {
 }
 
 // ---------- 保存 / 提交 ----------
+// targetStatus: 0=草稿（无字段校验，标题可空），1=提交审核（强制标题+正文非空）
 async function save(targetStatus: 0 | 1) {
     if (targetStatus === 1) {
         if (!form.title.trim()) {
@@ -272,26 +280,10 @@ async function save(targetStatus: 0 | 1) {
     gap: 14px;
 }
 
-.page-head h1 {
+:deep(.page-head h1) {
     font-size: 26px;
     font-weight: 700;
     margin-bottom: 6px;
-}
-
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.dot-glow {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
 }
 
 .reject-banner {
@@ -498,11 +490,11 @@ async function save(targetStatus: 0 | 1) {
 
 /* ≤768：标题与按钮收窄 */
 @media (max-width: 768px) {
-    .page-head h1 {
+    :deep(.page-head h1) {
         font-size: 22px;
     }
 
-    .subtitle {
+    :deep(.page-head .subtitle) {
         font-size: 12px;
     }
 
@@ -544,7 +536,7 @@ async function save(targetStatus: 0 | 1) {
         min-height: 320px;
     }
 
-    .page-head h1 {
+    :deep(.page-head h1) {
         font-size: 20px;
     }
 

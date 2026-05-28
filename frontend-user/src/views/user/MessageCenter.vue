@@ -1,15 +1,11 @@
 <template>
     <div class="message-center">
-        <header class="page-head">
-            <h1>消息中心</h1>
-            <p class="subtitle">
-                <span class="dot-glow"></span>
-                共 {{ total }} 条消息，其中 {{ unreadCount }} 条未读
-            </p>
-        </header>
+        <PageHeader title="消息中心">
+            共 {{ total }} 条消息，其中 {{ unreadCount }} 条未读
+        </PageHeader>
 
         <div class="action-bar glass-card">
-            <a-tabs v-model:active-key="filterTab" @change="onTabChange" class="msg-tabs">
+            <a-tabs v-model:active-key="activeTab" @change="onTabChange" class="msg-tabs">
                 <a-tab-pane key="all" tab="全部" />
                 <a-tab-pane key="unread" tab="未读" />
                 <a-tab-pane key="1" tab="审核通过" />
@@ -20,7 +16,7 @@
             </a-button>
         </div>
 
-        <div v-if="loading && !records.length" class="loading">
+        <div v-if="loading && !records.length" class="loading list-loading">
             <a-spin />
         </div>
 
@@ -42,10 +38,7 @@
             </article>
         </div>
 
-        <div v-else class="empty glass-card">
-            <InboxOutlined />
-            <p>暂无消息</p>
-        </div>
+        <ListEmpty v-else text="暂无消息" />
 
         <div v-if="total > pageSize" class="pagination-wrap">
             <a-pagination v-model:current="current" :total="total" :page-size="pageSize" show-quick-jumper
@@ -54,8 +47,14 @@
     </div>
 </template>
 
+<!--
+  MessageCenter：前台「消息中心」
+  - 按 Tab 切换全部/未读/审核通过/审核驳回
+  - 点击消息条目自动标记已读，审核类消息跳转至「我的文章」
+  - 支持一键全部已读
+-->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import {
@@ -63,52 +62,40 @@ import {
     CheckCircleOutlined,
     CloseCircleOutlined,
     BellOutlined,
-    InboxOutlined,
 } from '@ant-design/icons-vue';
-import dayjs from 'dayjs';
 import {
     listMyMessageByPage,
     markRead,
     getUnreadCount,
 } from '@/api/messageController';
+import PageHeader from '@/components/PageHeader.vue';
+import ListEmpty from '@/components/ListEmpty.vue';
+import { useListPagination } from '@/composables/useListPagination';
+import { useDateFormat } from '@/composables/useDateFormat';
 
 const router = useRouter();
-
-const records = ref<API.MessageVO[]>([]);
-const total = ref(0);
-const current = ref(1);
-const pageSize = 15;
-const loading = ref(false);
+const { formatDate } = useDateFormat();
 const unreadCount = ref(0);
 
-const filterTab = ref<string>('all');
-
-function onTabChange() {
-    current.value = 1;
-    fetchList();
-}
-
-async function fetchList() {
-    loading.value = true;
-    try {
-        const body: API.MessageQueryRequest = {
-            current: current.value,
-            pageSize,
-        };
-        if (filterTab.value === '1' || filterTab.value === '2') {
-            body.type = Number(filterTab.value);
-        } else if (filterTab.value === 'unread') {
-            body.isRead = 0;
-        }
-        const res = await listMyMessageByPage(body);
-        const data = res.data?.data;
-        records.value = data?.records ?? [];
-        total.value = Number(data?.total ?? 0);
-    } finally {
-        loading.value = false;
-    }
-    fetchUnread();
-}
+const { records, total, current, pageSize, loading, activeTab, fetchList, onTabChange } =
+    useListPagination<API.MessageVO, API.MessageQueryRequest>({
+        pageSize: 15,
+        buildQuery: ({ tab, current, pageSize }) => {
+            const body: API.MessageQueryRequest = { current, pageSize };
+            if (tab === '1' || tab === '2') {
+                body.type = Number(tab);
+            } else if (tab === 'unread') {
+                body.isRead = 0;
+            }
+            return body;
+        },
+        fetcher: async (body) => {
+            const res = await listMyMessageByPage(body);
+            const data = res.data?.data;
+            return { records: data?.records ?? [], total: Number(data?.total ?? 0) };
+        },
+        onAfterFetch: () => fetchUnread(),
+    });
 
 async function fetchUnread() {
     try {
@@ -129,7 +116,7 @@ async function openMessage(m: API.MessageVO) {
             // ignore
         }
     }
-    // 审核类消息跳转「我的文章」
+    // 审核类消息（type 1 通过 / 2 驳回）联动跳到我的文章页面查看
     if ((m.type === 1 || m.type === 2) && m.refType === 'article') {
         router.push('/user/articles');
     }
@@ -173,11 +160,7 @@ function iconClass(t?: number) {
     return 'icon-system';
 }
 
-function formatDate(d?: string) {
-    return d ? dayjs(d).format('YYYY-MM-DD HH:mm') : '';
-}
-
-onMounted(fetchList);
+fetchList();
 </script>
 
 <style scoped>
@@ -185,28 +168,6 @@ onMounted(fetchList);
     display: flex;
     flex-direction: column;
     gap: 18px;
-}
-
-.page-head h1 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.dot-glow {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
 }
 
 .action-bar {
@@ -235,11 +196,6 @@ onMounted(fetchList);
 
 :deep(.msg-tabs .ant-tabs-ink-bar) {
     background: var(--accent);
-}
-
-.loading {
-    text-align: center;
-    padding: 60px 0;
 }
 
 .msg-list {
@@ -333,18 +289,6 @@ onMounted(fetchList);
 .msg-time {
     color: var(--text-muted);
     font-size: 12px;
-}
-
-.empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-}
-
-.empty :deep(.anticon) {
-    font-size: 48px;
-    margin-bottom: 12px;
-    color: var(--text-muted);
 }
 
 .pagination-wrap {
