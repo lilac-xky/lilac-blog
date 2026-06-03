@@ -1,4 +1,11 @@
 declare namespace API {
+  type AdminResetPasswordRequest = {
+    /** id */
+    id?: number;
+    /** 新密码 */
+    newPassword?: string;
+  };
+
   type ArticleAddRequest = {
     /** 标题 */
     title?: string;
@@ -156,6 +163,17 @@ declare namespace API {
   type DeleteRequest = {
     /** id */
     id?: number;
+  };
+
+  type ForgotPasswordRequest = {
+    /** 邮箱 */
+    email?: string;
+    /** 验证码 */
+    code?: string;
+    /** 新密码 */
+    newPassword?: string;
+    /** 确认密码 */
+    checkPassword?: string;
   };
 
   type getArticleParams = {
@@ -398,6 +416,11 @@ declare namespace API {
     email: string;
   };
 
+  type sendResetCodeParams = {
+    /** 邮箱 */
+    email: string;
+  };
+
   type Tag = {
     /** 标签id */
     id?: number;
@@ -443,6 +466,15 @@ declare namespace API {
     id?: number;
     /** 标签名称 */
     tagName?: string;
+  };
+
+  type UpdatePasswordRequest = {
+    /** 旧密码 */
+    oldPassword?: string;
+    /** 新密码 */
+    newPassword?: string;
+    /** 确认密码 */
+    checkPassword?: string;
   };
 
   type uploadByUrlParams = {

@@ -31,7 +31,7 @@
 
             <div class="form-row">
                 <a-checkbox v-model:checked="remember">记住我</a-checkbox>
-                <a class="link-forgot">忘记密码？</a>
+                <router-link to="/forgot-password" class="link-forgot">忘记密码？</router-link>
             </div>
 
             <a-form-item>

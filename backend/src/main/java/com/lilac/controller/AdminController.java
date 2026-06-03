@@ -2,6 +2,7 @@ package com.lilac.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.common.DeleteRequest;
+import com.lilac.domain.dto.user.AdminResetPasswordRequest;
 import com.lilac.domain.dto.user.UserLoginRequest;
 import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.dto.user.UserStatusRequest;
@@ -78,6 +79,20 @@ public class AdminController {
     public Result<Boolean> updateUserStatus(@RequestBody UserStatusRequest userStatusRequest) {
         ThrowUtils.throwIf(userStatusRequest == null || userStatusRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean result = userService.updateUserStatus(userStatusRequest);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        return Result.success(true);
+    }
+
+    /**
+     * 管理员重置用户密码
+     *
+     * @param adminResetPasswordRequest 重置密码请求
+     * @return 重置结果
+     */
+    @PostMapping("/resetPassword")
+    public Result<Boolean> resetPassword(@RequestBody AdminResetPasswordRequest adminResetPasswordRequest) {
+        ThrowUtils.throwIf(adminResetPasswordRequest == null || adminResetPasswordRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
+        boolean result = userService.adminResetPassword(adminResetPasswordRequest.getId(), adminResetPasswordRequest.getNewPassword());
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }

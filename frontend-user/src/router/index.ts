@@ -5,6 +5,7 @@ import Archive from '@/views/Archive.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'
 import Login from '@/views/login/Login.vue'
 import Register from '@/views/login/Register.vue'
+import ForgotPassword from '@/views/login/ForgotPassword.vue'
 import { useUserStore } from '@/stores/user'
 import { message } from 'ant-design-vue'
 
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/register',
       name: 'register',
       component: Register,
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPassword,
     },
     {
       path: '/',

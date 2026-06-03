@@ -33,7 +33,7 @@ public class SaTokenConfigure implements WebMvcConfigurer{
                     .check(r -> StpKit.ADMIN.checkLogin());
             // 对于 /user/** 路径，强制校验 user 登录
             SaRouter.match("/user/**")
-                    .notMatch("/user/login", "/user/register", "/user/logout", "/user/sendCode")
+                    .notMatch("/user/login", "/user/register", "/user/logout", "/user/sendCode", "/user/sendResetCode", "/user/resetPassword")
                     .notMatch("file/upload")
                     .check(r -> StpKit.USER.checkLogin());
         })).addPathPatterns("/**");

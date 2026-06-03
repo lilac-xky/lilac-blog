@@ -60,16 +60,43 @@
                     <div class="entry-desc">用 Markdown 撰写并提交审核</div>
                 </div>
             </router-link>
+            <!-- 修改密码：点击打开弹窗，通过旧密码校验后修改 -->
+            <div class="entry-card glass-card" @click="openPasswordModal">
+                <LockOutlined class="entry-icon" />
+                <div>
+                    <div class="entry-title">修改密码</div>
+                    <div class="entry-desc">通过旧密码验证后设置新密码</div>
+                </div>
+            </div>
         </section>
+
+        <!-- 修改密码弹窗 -->
+        <a-modal v-model:open="passwordModalOpen" title="修改密码" :confirm-loading="passwordLoading" ok-text="确认修改"
+            cancel-text="取消" @ok="handleUpdatePassword" @cancel="resetPasswordForm">
+            <a-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" layout="vertical">
+                <a-form-item label="旧密码" name="oldPassword">
+                    <a-input-password v-model:value="passwordForm.oldPassword" placeholder="请输入当前密码" allow-clear />
+                </a-form-item>
+                <a-form-item label="新密码" name="newPassword">
+                    <a-input-password v-model:value="passwordForm.newPassword" placeholder="6-20 位新密码" allow-clear />
+                </a-form-item>
+                <a-form-item label="确认新密码" name="checkPassword">
+                    <a-input-password v-model:value="passwordForm.checkPassword" placeholder="请再次输入新密码" allow-clear />
+                </a-form-item>
+            </a-form>
+        </a-modal>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, h } from 'vue';
+import { computed, onMounted, reactive, ref, h } from 'vue';
+import { message } from 'ant-design-vue';
+import type { FormInstance, Rule } from 'ant-design-vue/es/form';
 import {
     UserOutlined,
     MailOutlined,
     EditOutlined,
+    LockOutlined,
     FileTextOutlined,
     MessageOutlined,
     CheckCircleOutlined,
@@ -79,8 +106,78 @@ import {
 import { useUserStore } from '@/stores/user';
 import { listMyArticles } from '@/api/articleController';
 import { getUnreadCount } from '@/api/messageController';
+import { updatePassword } from '@/api/userController';
 
 const userStore = useUserStore();
+
+// 修改密码弹窗状态
+const passwordModalOpen = ref(false);
+const passwordLoading = ref(false);
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+    oldPassword: '',
+    newPassword: '',
+    checkPassword: '',
+});
+
+// 确认新密码校验：必须与新密码一致
+const validateCheckPassword = async (_rule: Rule, value: string) => {
+    if (!value) {
+        return Promise.reject('请再次输入新密码');
+    }
+    if (value !== passwordForm.newPassword) {
+        return Promise.reject('两次输入的密码不一致');
+    }
+    return Promise.resolve();
+};
+
+const passwordRules: Record<string, Rule[]> = {
+    oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+    newPassword: [
+        { required: true, message: '请输入新密码', trigger: 'blur' },
+        { min: 6, max: 20, message: '密码长度需在 6-20 个字符之间', trigger: 'blur' },
+    ],
+    checkPassword: [{ required: true, validator: validateCheckPassword, trigger: 'blur' }],
+};
+
+// 重置并关闭弹窗
+function resetPasswordForm() {
+    passwordForm.oldPassword = '';
+    passwordForm.newPassword = '';
+    passwordForm.checkPassword = '';
+    passwordFormRef.value?.clearValidate();
+}
+
+function openPasswordModal() {
+    resetPasswordForm();
+    passwordModalOpen.value = true;
+}
+
+// 提交修改密码
+async function handleUpdatePassword() {
+    try {
+        await passwordFormRef.value?.validate();
+    } catch {
+        return;
+    }
+    passwordLoading.value = true;
+    try {
+        const res = await updatePassword({
+            oldPassword: passwordForm.oldPassword,
+            newPassword: passwordForm.newPassword,
+            checkPassword: passwordForm.checkPassword,
+        });
+        if (res.data?.data) {
+            message.success('密码修改成功');
+            passwordModalOpen.value = false;
+            resetPasswordForm();
+        }
+    } catch (err) {
+        // 错误提示已由请求拦截器统一处理
+    } finally {
+        passwordLoading.value = false;
+    }
+}
 
 const draftCount = ref(0);
 const auditCount = ref(0);

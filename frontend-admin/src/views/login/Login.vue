@@ -64,7 +64,6 @@
 
                         <div class="form-row">
                             <a-checkbox v-model:checked="remember">记住我</a-checkbox>
-                            <a class="link-forgot">忘记密码？</a>
                         </div>
 
                         <a-form-item>
@@ -451,17 +450,6 @@ onUnmounted(stopAuto);
     margin: 6px 0 20px;
     font-size: 13px;
     color: var(--text-secondary);
-}
-
-.link-forgot {
-    color: var(--primary-hover);
-    cursor: pointer;
-    font-weight: 500;
-    transition: color 0.2s;
-}
-
-.link-forgot:hover {
-    color: var(--primary);
 }
 
 .submit-btn {

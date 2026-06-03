@@ -63,6 +63,21 @@ export async function logout(options?: { [key: string]: any }) {
   });
 }
 
+/** 管理员重置用户密码 POST /api/admin/resetPassword */
+export async function resetPassword(
+  body: API.AdminResetPasswordRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/admin/resetPassword", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 更新用户信息 POST /api/admin/update */
 export async function updateUser(
   body: API.UserUpdateRequest,

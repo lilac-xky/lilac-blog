@@ -52,11 +52,48 @@ public interface UserService extends IService<User> {
     boolean logout();
 
     /**
+     * 已登录用户修改密码
+     *
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @param checkPassword 确认密码
+     * @return 修改结果
+     */
+    boolean updatePassword(String oldPassword, String newPassword, String checkPassword);
+
+    /**
      * 发送注册验证码
      *
      * @param email 邮箱
      */
     void sendRegisterCode(String email);
+
+    /**
+     * 发送重置密码验证码
+     *
+     * @param email 邮箱
+     */
+    void sendResetCode(String email);
+
+    /**
+     * 通过邮箱验证码重置密码
+     *
+     * @param email 邮箱
+     * @param code 验证码
+     * @param newPassword 新密码
+     * @param checkPassword 确认密码
+     * @return 重置结果
+     */
+    boolean resetPassword(String email, String code, String newPassword, String checkPassword);
+
+    /**
+     * 管理员重置用户密码
+     *
+     * @param userId 用户 ID
+     * @param newPassword 新密码
+     * @return 重置结果
+     */
+    boolean adminResetPassword(Long userId, String newPassword);
 
     /**
      * 获取当前登录用户

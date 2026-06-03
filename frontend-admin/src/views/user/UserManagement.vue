@@ -1,6 +1,6 @@
 <template>
   <TableCRUD title="用户列表" total-unit="名用户" :columns="columns" :table-data="tableData" :total="total" :loading="loading"
-    :query-form="queryForm" :search-schema="searchSchema" :scroll="{ x: 900 }" :show-add="false"
+    :query-form="queryForm" :search-schema="searchSchema" :scroll="{ x: 1150 }" :show-add="false"
     :switch-loading-id="statusLoadingId" @search="handleSearch" @reset="handleReset"
     @edit="(record: any) => openEdit(record)" @delete="(record: any) => confirmDelete(record)"
     @table-change="handleTableChange" @page-change="fetchData">
@@ -8,6 +8,16 @@
       <a-tag :color="record.role === 'admin' ? 'gold' : 'blue'" class="role-tag">
         {{ record.role === 'admin' ? '管理员' : '普通用户' }}
       </a-tag>
+    </template>
+    <!-- 行操作追加「重置密码」按钮 -->
+    <template #extra-actions="{ record }">
+      <a-divider type="vertical" />
+      <a-button type="link" size="small" @click="openResetModal(record)">
+        <template #icon>
+          <KeyOutlined />
+        </template>
+        重置密码
+      </a-button>
     </template>
   </TableCRUD>
 
@@ -77,6 +87,21 @@
       </div>
     </a-form>
   </a-modal>
+
+  <!-- 重置密码弹窗：管理员手动为用户设置新密码 -->
+  <a-modal v-model:open="resetModalVisible" title="重置用户密码" :confirm-loading="resetLoading" ok-text="确认重置"
+    cancel-text="取消" :width="420" @ok="onResetOk" @cancel="onResetCancel">
+    <a-alert v-if="resetTargetName" :message="`正在为用户「${resetTargetName}」重置密码`" type="info" show-icon
+      style="margin-bottom: 16px" />
+    <a-form ref="resetFormRef" :model="resetForm" :rules="resetRules" layout="vertical">
+      <a-form-item label="新密码" name="newPassword">
+        <a-input-password v-model:value="resetForm.newPassword" placeholder="6-20 位新密码" allow-clear />
+      </a-form-item>
+      <a-form-item label="确认新密码" name="checkPassword" style="margin-bottom: 0">
+        <a-input-password v-model:value="resetForm.checkPassword" placeholder="请再次输入新密码" allow-clear />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <!--
@@ -85,7 +110,7 @@
   状态切换走 switch 列内置渲染器，禁用当前登录管理员对自己的状态切换。
 -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -93,13 +118,14 @@ import {
   UserOutlined,
   CameraOutlined,
   LoadingOutlined,
+  KeyOutlined,
 } from '@ant-design/icons-vue';
 import TableCRUD from '@/components/crud/TableCRUD.vue';
 import type { CrudColumn, SearchField } from '@/components/crud/types';
 import { usePaginationQuery } from '@/composables/usePaginationQuery';
 import { useModalForm } from '@/composables/useModalForm';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
-import { listUserVoByPage, updateUser, deleteUser, updateUserStatus } from '@/api/adminController';
+import { listUserVoByPage, updateUser, deleteUser, updateUserStatus, resetPassword } from '@/api/adminController';
 import { uploadFile } from '@/api/fileController';
 import { useUserStore } from '@/stores/user';
 
@@ -228,6 +254,69 @@ async function handleAvatarUpload({ file }: { file: File }) {
   }
 }
 
+// 重置密码弹窗：管理员手动输入新密码
+const resetModalVisible = ref(false);
+const resetLoading = ref(false);
+const resetFormRef = ref<FormInstance>();
+const resetTargetId = ref<number | string | undefined>();
+const resetTargetName = ref('');
+const resetForm = reactive({
+  newPassword: '',
+  checkPassword: '',
+});
+
+// 确认新密码校验：必须与新密码一致
+const validateResetCheck = async (_rule: Rule, value: string) => {
+  if (!value) {
+    return Promise.reject('请再次输入新密码');
+  }
+  if (value !== resetForm.newPassword) {
+    return Promise.reject('两次输入的密码不一致');
+  }
+  return Promise.resolve();
+};
+
+const resetRules: Record<string, Rule[]> = {
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度需在 6-20 个字符之间', trigger: 'blur' },
+  ],
+  checkPassword: [{ required: true, validator: validateResetCheck, trigger: 'blur' }],
+};
+
+function openResetModal(record: API.UserVO) {
+  resetTargetId.value = record.id;
+  resetTargetName.value = record.username || record.userAccount || '';
+  resetForm.newPassword = '';
+  resetForm.checkPassword = '';
+  resetFormRef.value?.clearValidate();
+  resetModalVisible.value = true;
+}
+
+async function onResetOk() {
+  try {
+    await resetFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  if (resetTargetId.value == null) return;
+  resetLoading.value = true;
+  try {
+    // 雪花 ID 为 Long，必须以字符串透传，禁止用 Number() 转换（会丢精度）
+    const res = await resetPassword({ id: resetTargetId.value as any, newPassword: resetForm.newPassword });
+    if (res.data?.data) {
+      message.success('密码重置成功');
+      resetModalVisible.value = false;
+    }
+  } finally {
+    resetLoading.value = false;
+  }
+}
+
+function onResetCancel() {
+  resetFormRef.value?.resetFields();
+}
+
 // 搜索 schema
 const searchSchema: SearchField[] = [
   { name: 'userAccount', label: '账号', type: 'input', placeholder: '账号', width: 140 },
@@ -294,7 +383,7 @@ const columns = computed<CrudColumn[]>(() => [
     sortDirections: ['descend', 'ascend'] as const,
     renderer: { type: 'datetime' },
   },
-  { title: '操作', key: 'action', width: 130, align: 'center' as const, fixed: 'right' as const },
+  { title: '操作', key: 'action', width: 240, align: 'center' as const, fixed: 'right' as const },
 ]);
 
 onMounted(fetchData);

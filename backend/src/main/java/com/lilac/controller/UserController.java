@@ -3,6 +3,8 @@ package com.lilac.controller;
 import cn.hutool.core.util.StrUtil;
 import com.lilac.common.DeleteRequest;
 import com.lilac.constant.UserConstant;
+import com.lilac.domain.dto.user.ForgotPasswordRequest;
+import com.lilac.domain.dto.user.UpdatePasswordRequest;
 import com.lilac.domain.dto.user.UserEditRequest;
 import com.lilac.domain.dto.user.UserLoginRequest;
 import com.lilac.domain.dto.user.UserRegisterRequest;
@@ -12,6 +14,7 @@ import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
 import com.lilac.manager.auth.StpKit;
+import com.lilac.manager.auth.anotation.SaUserCheckLogin;
 import com.lilac.service.impl.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
@@ -83,6 +86,51 @@ public class UserController {
         ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
         userService.sendRegisterCode(email);
         return Result.success(true);
+    }
+
+    /**
+     * 发送重置密码验证码
+     *
+     * @param email 邮箱
+     * @return 发送结果
+     */
+    @GetMapping("/sendResetCode")
+    public Result<Boolean> sendResetCode(@RequestParam String email) {
+        ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
+        userService.sendResetCode(email);
+        return Result.success(true);
+    }
+
+    /**
+     * 通过邮箱验证码重置密码
+     *
+     * @param forgotPasswordRequest 重置密码请求
+     * @return 重置结果
+     */
+    @PostMapping("/resetPassword")
+    public Result<Boolean> resetPassword(@RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        ThrowUtils.throwIf(forgotPasswordRequest == null, HttpsCodeEnum.PARAMS_ERROR);
+        boolean result = userService.resetPassword(forgotPasswordRequest.getEmail(),
+                forgotPasswordRequest.getCode(),
+                forgotPasswordRequest.getNewPassword(),
+                forgotPasswordRequest.getCheckPassword());
+        return Result.success(result);
+    }
+
+    /**
+     * 已登录用户修改密码
+     *
+     * @param updatePasswordRequest 修改密码请求
+     * @return 修改结果
+     */
+    @SaUserCheckLogin
+    @PostMapping("/updatePassword")
+    public Result<Boolean> updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest) {
+        ThrowUtils.throwIf(updatePasswordRequest == null, HttpsCodeEnum.PARAMS_ERROR);
+        boolean result = userService.updatePassword(updatePasswordRequest.getOldPassword(),
+                updatePasswordRequest.getNewPassword(),
+                updatePasswordRequest.getCheckPassword());
+        return Result.success(result);
     }
 
     /**

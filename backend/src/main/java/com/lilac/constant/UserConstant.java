@@ -36,4 +36,24 @@ public interface UserConstant {
      * 用户注册错误次数缓存key
      */
     String USER_REGISTER_CODE_ERROR_KEY = "user:register:error:";
+
+    /**
+     * 用户重置密码验证码缓存key
+     */
+    String USER_RESET_CODE_KEY = "user:reset:code:";
+
+    /**
+     * 用户重置密码限制缓存key
+     */
+    String USER_RESET_LIMIT_KEY = "user:reset:limit:";
+
+    /**
+     * 用户重置密码验证码缓存时间
+     */
+    long USER_RESET_CODE_TTL = 5L;
+
+    /**
+     * 用户重置密码错误次数缓存key
+     */
+    String USER_RESET_CODE_ERROR_KEY = "user:reset:error:";
 }

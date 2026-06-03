@@ -201,6 +201,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
+     * 已登录用户修改密码
+     *
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @param checkPassword 确认密码
+     * @return 更新结果
+     */
+    @Override
+    public boolean updatePassword(String oldPassword, String newPassword, String checkPassword) {
+        // 参数校验
+        if (StrUtil.hasBlank(oldPassword, newPassword, checkPassword)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "参数不能为空");
+        }
+        if (newPassword.length() < 6 || newPassword.length() > 20) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
+        }
+        if (!newPassword.equals(checkPassword)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码不一致");
+        }
+        if (newPassword.equals(oldPassword)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "新密码不能与旧密码相同");
+        }
+        // 获取登录用户
+        User loginUser = getLoginUser();
+        if (loginUser == null) {
+            throw new BusinessException(HttpsCodeEnum.NEED_LOGIN);
+        }
+        User user = this.getById(loginUser.getId());
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR);
+        }
+        if (!user.getPassword().equals(getEncodedPassword(oldPassword))) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "原密码错误");
+        }
+        // 更新密码
+        User update = new User();
+        update.setId(user.getId());
+        update.setPassword(getEncodedPassword(newPassword));
+        boolean result = this.updateById(update);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        return true;
+    }
+
+    /**
      * 发送注册验证码
      *
      * @param email 邮箱
@@ -241,6 +285,134 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String content = "您的注册验证码为：" + code + "，有效期5分钟。";
         mailService.sendSimpleMail(email, subject, content);
         log.info("发送验证码请求已提交，邮箱: {}", email);
+    }
+
+    /**
+     * 发送重置密码验证码
+     *
+     * @param email 邮箱
+     */
+    @Override
+    public void sendResetCode(String email) {
+        // 参数验证
+        if (StrUtil.isBlank(email)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱不能为空");
+        }
+        if (!Validator.isEmail(email)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱格式不正确");
+        }
+        if (email.length() > 100) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱长度超过限制");
+        }
+        // 与注册相反：邮箱必须已注册才能重置
+        long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, email));
+        if (count == 0) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "该邮箱未注册");
+        }
+        // 防刷校验：检查是否发送过于频繁（1分钟内不准重复发送）
+        String limitKey = UserConstant.USER_RESET_LIMIT_KEY + email;
+        if (stringRedisTemplate.hasKey(limitKey)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "发送过于频繁，请稍后再试");
+        }
+        // 随机生成6位验证码
+        String code = RandomUtil.randomNumbers(6);
+        String codeKey = UserConstant.USER_RESET_CODE_KEY + email;
+        // 存入 Redis 并设置过期时间 (5分钟)
+        stringRedisTemplate.opsForValue().set(codeKey, code, UserConstant.USER_RESET_CODE_TTL, TimeUnit.MINUTES);
+        // 设置限流标识 (60秒过期)
+        stringRedisTemplate.opsForValue().set(limitKey, "1", 1, TimeUnit.MINUTES);
+        String subject = "【Lilac】重置密码验证码";
+        String content = "您正在重置密码，验证码为：" + code + "，有效期5分钟。如非本人操作请忽略。";
+        mailService.sendSimpleMail(email, subject, content);
+        log.info("发送重置密码验证码请求已提交，邮箱: {}", email);
+    }
+
+    /**
+     * 通过邮箱验证码重置密码
+     *
+     * @param email 邮箱
+     * @param code 验证码
+     * @param newPassword 新密码
+     * @param checkPassword 确认密码
+     * @return 重置结果
+     */
+    @Override
+    public boolean resetPassword(String email, String code, String newPassword, String checkPassword) {
+        // 参数验证
+        if (StrUtil.hasBlank(email, code, newPassword, checkPassword)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "参数不能为空");
+        }
+        if (newPassword.length() < 6 || newPassword.length() > 20) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
+        }
+        if (!newPassword.equals(checkPassword)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码不一致");
+        }
+        // 验证码验证
+        String redisKey = UserConstant.USER_RESET_CODE_KEY + email;
+        String errorCountKey = UserConstant.USER_RESET_CODE_ERROR_KEY + email;
+        String captcha = stringRedisTemplate.opsForValue().get(redisKey);
+        if (captcha == null) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码已过期或未发送");
+        }
+        // 验证码错误次数限制
+        String errorCountStr = stringRedisTemplate.opsForValue().get(errorCountKey);
+        int errorCount = errorCountStr == null ? 0 : Integer.parseInt(errorCountStr);
+        if (errorCount >= 5) {
+            stringRedisTemplate.delete(redisKey);
+            stringRedisTemplate.delete(errorCountKey);
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码错误次数过多，请重新获取");
+        }
+        // 验证码校验
+        if (!captcha.equals(code)) {
+            stringRedisTemplate.opsForValue().increment(errorCountKey);
+            // 设置错误次数标识 (5分钟后过期)
+            stringRedisTemplate.expire(errorCountKey, UserConstant.USER_RESET_CODE_TTL, TimeUnit.MINUTES);
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码错误");
+        }
+        // 验证码正确
+        stringRedisTemplate.delete(errorCountKey);
+        User user = this.baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getEmail, email));
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "该邮箱未注册");
+        }
+        // 更新密码
+        User update = new User();
+        update.setId(user.getId());
+        update.setPassword(getEncodedPassword(newPassword));
+        boolean result = this.updateById(update);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        stringRedisTemplate.delete(redisKey);
+        return true;
+    }
+
+    /**
+     * 管理员重置用户密码
+     *
+     * @param userId 用户 ID
+     * @param newPassword 新密码
+     * @return 重置结果
+     */
+    @Override
+    public boolean adminResetPassword(Long userId, String newPassword) {
+        // 参数验证
+        if (userId == null || StrUtil.isBlank(newPassword)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "参数不能为空");
+        }
+        if (newPassword.length() < 6 || newPassword.length() > 20) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码长度错误");
+        }
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
+        }
+        // 更新密码
+        User update = new User();
+        update.setId(userId);
+        update.setPassword(getEncodedPassword(newPassword));
+        boolean result = this.updateById(update);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        return true;
     }
 
     /**
