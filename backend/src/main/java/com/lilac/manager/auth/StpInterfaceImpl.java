@@ -27,7 +27,7 @@ public class StpInterfaceImpl implements StpInterface {
         // 获取权限列表
         List<String> permissions = new ArrayList<>();
         // 管理端体系
-        if ("admin".equals(loginType)) {
+        if (UserConstant.ADMIN_ROLE.equals(loginType)) {
             User user = userService.getById(Long.valueOf(loginId.toString()));
             if (UserConstant.ADMIN_ROLE.equals(user.getRole())) {
                 permissions.add("*");
@@ -38,7 +38,7 @@ public class StpInterfaceImpl implements StpInterface {
         }
 
         // 用户端体系
-        else if ("user".equals(loginType)) {
+        else if (UserConstant.USER_ROLE.equals(loginType)) {
             permissions.add("article:submit");
             permissions.add("comment:add");
         }

@@ -2,7 +2,11 @@
     <footer class="blog-footer">
         <span>© {{ year }} lilac-blog · 在星海中记录代码与思考</span>
         <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="beian-link">
-            蜀ICP备2025159235号-1
+            蜀ICP备2025159235号-2
+        </a>
+        <a href="https://beian.mps.gov.cn/" target="_blank" rel="noopener noreferrer" class="beian-link gongan-link">
+            <img src="/beian-gongan.png" alt="公安备案图标" class="gongan-icon" />
+            川公网安备51090002000173号
         </a>
     </footer>
 </template>
@@ -34,5 +38,18 @@ const year = new Date().getFullYear();
 
 .beian-link:hover {
     color: var(--accent);
+}
+
+/* 公安备案：图标与文字横向对齐 */
+.gongan-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gongan-icon {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
 }
 </style>

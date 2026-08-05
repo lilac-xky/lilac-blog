@@ -5,8 +5,10 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.lilac.config.OSSClientConfig;
 import com.lilac.domain.dto.file.UploadPictureResult;
+import com.lilac.domain.entity.User;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
+import com.lilac.service.impl.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,9 +28,10 @@ public abstract class PictureUploadTemplate<S> {
 
     @Resource
     protected OssManager ossManager;
-
     @Resource
     protected OSSClientConfig ossClientConfig;
+    @Resource
+    private UserService userService;
 
     /**
      * 上传图片
@@ -46,8 +49,10 @@ public abstract class PictureUploadTemplate<S> {
         String suffix = FileUtil.getSuffix(originalFilename);
         String uuid = RandomUtil.randomString(16);
         String uploadFileName = String.format("%s%s.%s", DateUtil.formatDate(new Date()), uuid, suffix);
-        String objectName = String.format(PROJECT_NAME + "/%s/%s/%s", uploadPathPrefix,
-                DateUtil.format(new Date(), "yyyy/MM/dd"), uploadFileName);
+        User loginUser = userService.getLoginUser();
+        String userId = loginUser.getId().toString();
+        String objectName = String.format(PROJECT_NAME + "/%s/%s/%s/%s", uploadPathPrefix,
+                DateUtil.format(new Date(), "yyyy/MM/dd"), userId,uploadFileName);
 
         // 上传图片
         File tempFile = null;

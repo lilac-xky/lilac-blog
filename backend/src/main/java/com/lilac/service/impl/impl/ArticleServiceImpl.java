@@ -19,6 +19,7 @@ import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.ArticleVO;
 import com.lilac.domain.vo.TagVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.manager.redis.RedisService;
 import com.lilac.service.impl.ArticleService;
 import com.lilac.mapper.ArticleMapper;
 import com.lilac.service.impl.ArticleTagService;
@@ -36,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +56,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private TagService tagService;
     @Resource
     private MessageService messageService;
+    @Resource
+    private RedisService redisService;
 
     /**
      * 添加文章
@@ -112,6 +116,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 articleQueryRequest.getPageSize()), getQueryWrapper(articleQueryRequest));
         Page<ArticleVO> articleVOPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
         articleVOPage.setRecords(articlePage.getRecords().stream().map(ArticleVO::objToVo).toList());
+        fillLatestViewCounts(articleVOPage.getRecords());
         fillArticleNames(articleVOPage.getRecords());
         return articleVOPage;
     }
@@ -130,6 +135,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 getQueryWrapper(articleQueryRequest));
         Page<ArticleVO> articleVOPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
         articleVOPage.setRecords(articlePage.getRecords().stream().map(ArticleVO::objToVo).toList());
+        fillLatestViewCounts(articleVOPage.getRecords());
         fillArticleNames(articleVOPage.getRecords());
         return articleVOPage;
     }
@@ -368,8 +374,24 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Page<Article> articlePage = this.page(new Page<>(request.getCurrent(), request.getPageSize()), getQueryWrapper(request));
         Page<ArticleVO> voPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
         voPage.setRecords(articlePage.getRecords().stream().map(ArticleVO::objToVo).toList());
+        fillLatestViewCounts(voPage.getRecords());
         fillArticleNames(voPage.getRecords());
         return voPage;
+    }
+
+    /**
+     * 填充浏览量
+     */
+    private void fillLatestViewCounts(List<ArticleVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        records.forEach(vo -> {
+            Long viewCount = redisService.getLong(ArticleConstant.VIEW_COUNT_KEY + vo.getId());
+            if (viewCount != null) {
+                vo.setViewCount(viewCount.intValue());
+            }
+        });
     }
 
     /**
@@ -413,5 +435,60 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             ThrowUtils.throwIf(true, HttpsCodeEnum.PARAMS_ERROR, "未知的审核动作");
         }
         return true;
+    }
+
+    /**
+     * 获取文章详情并增加浏览量
+     * @param id 文章id
+     * @return 文章详情
+     */
+    @Override
+    public ArticleVO getArticleVOWithView(Long id) {
+        // 查询文章
+        Article article = this.getById(id);
+        ThrowUtils.throwIf(article == null, HttpsCodeEnum.NOT_FOUND_ERROR);
+
+        // 获取key
+        String viewKey = ArticleConstant.VIEW_COUNT_KEY + id;
+        Long redisViews = redisService.getLong(viewKey);
+        if (redisViews == null) {
+            // 如果 Redis 没有，用数据库值回填
+            int databaseViews = article.getViewCount() == null ? 0 : article.getViewCount();
+            redisService.setIfAbsent(viewKey, String.valueOf(databaseViews), 4, TimeUnit.HOURS);
+            redisViews = redisService.getLong(viewKey);
+            if (redisViews == null) {
+                redisViews = (long) databaseViews;
+            }
+        }
+
+        // 只有审核通过的文章才增加浏览量
+        if (Objects.equals(article.getStatus(), ArticleConstant.STATUS_PUBLISH)) {
+            Long newCount = redisService.increment(viewKey);
+            article.setViewCount(newCount.intValue());
+        } else {
+            // 未发布文章不增加，直接使用现有值
+            article.setViewCount(redisViews.intValue());
+        }
+
+        // 转换 VO 并填充其他信息（分类、标签、作者）
+        ArticleVO articleVO = ArticleVO.objToVo(article);
+        fillArticleNames(List.of(articleVO));
+        return articleVO;
+    }
+
+    /**
+     * 获取文章总浏览量
+     */
+    @Override
+    public long getTotalViewCount() {
+        List<Article> publishedArticles = this.list(new LambdaQueryWrapper<Article>()
+                .select(Article::getId, Article::getViewCount)
+                .eq(Article::getStatus, ArticleConstant.STATUS_PUBLISH));
+        long total = 0L;
+        for (Article article : publishedArticles) {
+            Long viewCount = redisService.getLong(ArticleConstant.VIEW_COUNT_KEY + article.getId());
+            total += viewCount != null ? viewCount : (article.getViewCount() == null ? 0L : article.getViewCount());
+        }
+        return total;
     }
 }

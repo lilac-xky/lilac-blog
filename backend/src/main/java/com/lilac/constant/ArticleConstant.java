@@ -19,4 +19,6 @@ public interface ArticleConstant {
      * 审核通过
      */
     Integer STATUS_PUBLISH = 2;
+
+    String VIEW_COUNT_KEY = "lilacBlog:post:view:";
 }

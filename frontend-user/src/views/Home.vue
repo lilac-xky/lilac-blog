@@ -34,7 +34,7 @@
                         </div>
                         <div class="stat-divider"></div>
                         <div class="stat">
-                            <div class="num num-pink">{{ totalViews.toLocaleString() }}</div>
+                            <div class="num num-pink">{{ stats.totalViews.toLocaleString() }}</div>
                             <div class="label">总浏览</div>
                         </div>
                     </div>
@@ -145,7 +145,7 @@ import {
     MailOutlined,
     EyeOutlined,
 } from '@ant-design/icons-vue';
-import { listArticleVoByPage } from '@/api/articleController';
+import { getTotalViewCount, listArticleVoByPage } from '@/api/articleController';
 import { listCategoryByPageVo } from '@/api/categoryController';
 import { listTagByPageVo } from '@/api/tagController';
 import MusicPlayer from '@/components/MusicPlayer.vue';
@@ -160,11 +160,7 @@ const contacts = {
     email: 'lilac-thc@qq.com',
 };
 
-// === MOCK START === // TODO: 接入真实总浏览数后删除
-const totalViews = 12345;
-// === MOCK END ===
-
-const stats = reactive({ articles: 0 });
+const stats = reactive({ articles: 0, totalViews: 0 });
 const latest = ref<API.ArticleVO[]>([]);
 const latestLeft = computed(() => latest.value.filter((_, i) => i % 2 === 0));
 const latestRight = computed(() => latest.value.filter((_, i) => i % 2 === 1));
@@ -188,11 +184,15 @@ async function copyQQ() {
 
 async function loadStats() {
     try {
-        const a = await listArticleVoByPage(
-            { current: 1, pageSize: 1, status: 2 },
-            { silentError: true }
-        );
+        const [a, views] = await Promise.all([
+            listArticleVoByPage(
+                { current: 1, pageSize: 1, status: 2 },
+                { silentError: true }
+            ),
+            getTotalViewCount({ silentError: true }),
+        ]);
         stats.articles = a.data?.data?.total ?? 0;
+        stats.totalViews = views.data?.data ?? 0;
     } catch {
         /* ignore */
     }

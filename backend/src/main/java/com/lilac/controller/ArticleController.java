@@ -102,7 +102,7 @@ public class ArticleController {
     }
 
     /**
-     * 获取文章详情
+     * 获取文章详情并增加浏览量
      *
      * @param id 文章id
      * @return 文章
@@ -110,7 +110,18 @@ public class ArticleController {
     @GetMapping("/get")
     public Result<ArticleVO> getArticle(Long id) {
         ThrowUtils.throwIf(id == null, HttpsCodeEnum.PARAMS_ERROR);
-        return Result.success(articleService.getArticleVO(id));
+        ArticleVO vo = articleService.getArticleVOWithView(id);
+        return Result.success(vo);
+    }
+
+    /**
+     * 获取文章总浏览量
+     *
+     * @return 总浏览量
+     */
+    @GetMapping("/view-count")
+    public Result<Long> getTotalViewCount() {
+        return Result.success(articleService.getTotalViewCount());
     }
 
     /**

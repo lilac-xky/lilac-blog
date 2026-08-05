@@ -68,26 +68,54 @@ public interface ArticleService extends IService<Article> {
 
     /**
      * 普通用户提交文章（强制 status=1 待审核）
+     *
+     * @param request 提交参数
+     * @return 文章id
      */
     long submitMyArticle(ArticleAddRequest request);
 
     /**
      * 普通用户更新自己的文章；若设置 status=1 则进入待审核并清空 rejectReason
+     *
+     * @param request 更新参数
      */
     Boolean updateMyArticle(ArticleUpdateRequest request);
 
     /**
      * 普通用户删除自己的文章
+     *
+     * @param id 文章ID
+     * @return 删除结果
      */
     Boolean deleteMyArticle(Long id);
 
     /**
      * 分页查询当前登录用户提交的文章（含所有状态）
+     *
+     * @param request 查询参数
+     * @return 文章列表
      */
     Page<ArticleVO> listMyArticles(ArticleQueryRequest request);
 
     /**
      * 管理员审核文章（通过/驳回），并产生站内消息
+     *
+     * @param request 审核参数
+     * @return 审核结果
      */
     Boolean reviewArticle(ArticleReviewRequest request);
+
+    /**
+     * 获取文章详情并增加浏览量
+     * @param id 文章ID
+     * @return ArticleVO
+     */
+    ArticleVO getArticleVOWithView(Long id);
+
+    /**
+     * 获取文章总浏览量
+     *
+     * @return 总浏览量
+     */
+    long getTotalViewCount();
 }
