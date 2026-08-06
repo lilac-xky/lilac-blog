@@ -40,7 +40,7 @@ onBeforeUnmount(() => {
 .back-to-top {
     position: fixed;
     right: 28px;
-    bottom: 32px;
+    bottom: 136px;
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
 @media (max-width: 720px) {
     .back-to-top {
         right: 18px;
-        bottom: 22px;
+        bottom: 112px;
         width: 40px;
         height: 40px;
         font-size: 16px;
