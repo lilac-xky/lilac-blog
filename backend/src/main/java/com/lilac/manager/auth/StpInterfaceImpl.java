@@ -29,14 +29,13 @@ public class StpInterfaceImpl implements StpInterface {
         // 管理端体系
         if (UserConstant.ADMIN_ROLE.equals(loginType)) {
             User user = userService.getById(Long.valueOf(loginId.toString()));
-            if (UserConstant.ADMIN_ROLE.equals(user.getRole())) {
+            if (UserConstant.SUPER_ROLE.equals(user.getRole())) {
                 permissions.add("*");
             } else {
                 // 如果是其他类型的管理员（如审核员），增加权限
                 permissions.add("article:review");
             }
         }
-
         // 用户端体系
         else if (UserConstant.USER_ROLE.equals(loginType)) {
             permissions.add("article:submit");

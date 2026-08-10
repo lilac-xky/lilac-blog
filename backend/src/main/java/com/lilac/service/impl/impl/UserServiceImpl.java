@@ -13,6 +13,7 @@ import com.lilac.constant.UserConstant;
 import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
+import com.lilac.domain.entity.Role;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
@@ -20,6 +21,7 @@ import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
 import com.lilac.manager.auth.StpKit;
 import com.lilac.manager.email.MailService;
+import com.lilac.service.impl.RoleService;
 import com.lilac.service.impl.UserService;
 import com.lilac.mapper.UserMapper;
 import com.lilac.utils.ThrowUtils;
@@ -44,6 +46,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private MailService mailService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private RoleService roleService;
 
     /**
      * 用户注册
@@ -112,6 +116,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUsername(UserConstant.USER_DEFAULT_NAME);
         user.setRole(UserConstant.USER_DEFAULT_ROLE);
         user.setStatus(1);
+        // 角色id
+        Role role = roleService.getRoleByName(UserConstant.USER_DEFAULT_ROLE);
+        user.setRoleId(role.getId());
         try {
             boolean save = this.save(user);
             ThrowUtils.throwIf(!save, HttpsCodeEnum.SYSTEM_ERROR, "注册失败");

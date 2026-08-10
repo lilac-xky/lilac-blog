@@ -9,6 +9,8 @@ import * as articleController from "./articleController";
 import * as tagController from "./tagController";
 import * as categoryController from "./categoryController";
 import * as messageController from "./messageController";
+import * as roleController from "./roleController";
+import * as permissionController from "./permissionController";
 export default {
   userController,
   adminController,
@@ -17,4 +19,6 @@ export default {
   tagController,
   categoryController,
   messageController,
+  roleController,
+  permissionController,
 };

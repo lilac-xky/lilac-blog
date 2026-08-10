@@ -54,6 +54,16 @@ const router = createRouter({
           name: 'tagManage',
           component: () => import('@/views/tag/TagManagement.vue'),
         },
+        {
+          path: 'role',
+          name: 'roleManage',
+          component: () => import('@/views/auth/RoleManagement.vue'),
+        },
+        {
+          path: 'permission',
+          name: 'permissionManage',
+          component: () => import('@/views/auth/PermissionManagement.vue'),
+        }
       ],
     },
   ],

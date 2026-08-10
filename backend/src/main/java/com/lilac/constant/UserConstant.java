@@ -17,6 +17,9 @@ public interface UserConstant {
 
     String USER_ROLE = "user";
 
+    // 超级管理员角色标识
+    String SUPER_ROLE = "super-admin";
+
     /**
      * 用户注册验证码缓存key
      */

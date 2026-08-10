@@ -43,6 +43,11 @@ public class UserUpdateRequest implements Serializable {
     private String role;
 
     /**
+     * 角色id
+     */
+    private Long roleId;
+
+    /**
      * 1正常，0异常
      */
     private Integer status;

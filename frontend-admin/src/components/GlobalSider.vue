@@ -70,6 +70,16 @@ const fixedMenuItems = [
                 label: '用户管理',
             },
             {
+                key: '/role',
+                icon: () => h(TeamOutlined),
+                label: '角色管理',
+            },
+            {
+                key: '/permission',
+                icon: () => h(MessageOutlined),
+                label: '权限管理',
+            },
+            {
                 key: '/blog/category',
                 icon: () => h(FolderOutlined),
                 label: '分类管理',
