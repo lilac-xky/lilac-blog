@@ -7,7 +7,7 @@ import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.MessageVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.manager.auth.anotation.SaUserPermission;
-import com.lilac.service.impl.MessageService;
+import com.lilac.service.MessageService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;

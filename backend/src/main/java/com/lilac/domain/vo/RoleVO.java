@@ -25,6 +25,11 @@ public class RoleVO implements Serializable {
     private String name;
 
     /**
+     * 登录类型
+     */
+    private String loginType;
+
+    /**
      * 角色描述
      */
     private String description;

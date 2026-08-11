@@ -8,7 +8,7 @@ import com.lilac.domain.dto.file.UploadPictureResult;
 import com.lilac.domain.entity.User;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
-import com.lilac.service.impl.UserService;
+import com.lilac.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 

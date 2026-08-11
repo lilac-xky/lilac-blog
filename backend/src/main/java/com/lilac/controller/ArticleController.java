@@ -11,7 +11,7 @@ import com.lilac.domain.vo.ArticleVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.manager.auth.anotation.SaAdminPermission;
 import com.lilac.manager.auth.anotation.SaUserPermission;
-import com.lilac.service.impl.ArticleService;
+import com.lilac.service.ArticleService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;

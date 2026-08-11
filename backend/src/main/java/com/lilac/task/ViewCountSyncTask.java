@@ -2,9 +2,8 @@ package com.lilac.task;
 
 import com.lilac.constant.ArticleConstant;
 import com.lilac.domain.entity.Article;
-import com.lilac.manager.redis.RedisService;
 import com.lilac.mapper.ArticleMapper;
-import com.lilac.service.impl.ArticleService;
+import com.lilac.service.ArticleService;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;

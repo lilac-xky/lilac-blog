@@ -41,6 +41,7 @@ const { loading, total, tableData, queryForm, sortOrder, fetchData, handleSearch
       pageSize: 10,
       roleKey: '',
       name: '',
+      loginType: '',
       sortOrder: 'descend',
     },
     async fetcher(q) {
@@ -56,19 +57,21 @@ interface RoleForm {
   id?: string;
   roleKey: string;
   name: string;
+  loginType: string;
   description?: string;
 }
 
 const { visible: modalVisible, loading: modalLoading, mode, formData, rules, openAdd, openEdit, handleOk, handleCancel, } = useModalForm<RoleForm, API.Role>({
-  defaultForm: () => ({ id: undefined, roleKey: '', name: '' }),
+  defaultForm: () => ({ id: undefined, roleKey: '', name: '', loginType: '', description: '' }),
   rules: {
     roleKey: [{ required: true, message: '请输入角色标识', trigger: 'blur' }],
     name: [{ required: true, message: '请输入角色名', trigger: 'blur' }],
+    loginType: [{ required: true, message: '请选择登录类型', trigger: 'blur' }],
     description: [{ required: false, message: '请输入描述', trigger: 'blur' }],
   },
-  addApi: (form) => addRole({ roleKey: form.roleKey, name: form.name }),
-  updateApi: (form) => updateRole({ id: form.id as any, roleKey: form.roleKey, name: form.name, description: form.description } as any),
-  pickEditForm: (record) => ({ id: record.id as any, roleKey: record.roleKey ?? '', name: record.name ?? '' }),
+  addApi: (form) => addRole({ roleKey: form.roleKey, name: form.name, loginType: form.loginType }),
+  updateApi: (form) => updateRole({ id: form.id as any, roleKey: form.roleKey, name: form.name, loginType: form.loginType, description: form.description } as any),
+  pickEditForm: (record) => ({ id: record.id as any, roleKey: record.roleKey ?? '', name: record.name ?? '', loginType: record.loginType ?? '', description: record.description ?? '' }),
   onSuccess: fetchData,
 });
 
@@ -94,11 +97,32 @@ const handlePermissionSuccess = () => {
 const searchSchema: SearchField[] = [
   { name: 'roleKey', label: '角色标识', type: 'input', placeholder: '角色标识关键词', width: 200 },
   { name: 'name', label: '角色名', type: 'input', placeholder: '角色名关键词', width: 200 },
+  {
+    name: 'loginType',
+    label: '登录类型',
+    type: 'select',
+    placeholder: '请选择登录类型',
+    options: [
+      { label: '管理员', value: 'admin' },
+      { label: '普通用户', value: 'user' }
+    ],
+    width: 200
+  },
 ];
 
 const formFields: FormField[] = [
   { name: 'roleKey', label: '角色标识', type: 'input', placeholder: '请输入角色标识' },
   { name: 'name', label: '角色名', type: 'input', placeholder: '请输入角色名' },
+  {
+    name: 'loginType',
+    label: '登录类型',
+    type: 'select',
+    placeholder: '请选择登录类型',
+    options: [
+      { label: '管理员', value: 'admin' },
+      { label: '普通用户', value: 'user' }
+    ]
+  },
   { name: 'description', label: '描述', type: 'input', placeholder: '请输入描述' },
 ];
 

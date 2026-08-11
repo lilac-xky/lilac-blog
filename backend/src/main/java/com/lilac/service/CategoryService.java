@@ -1,9 +1,8 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.lilac.domain.dto.category.CategoryAddRequest;
 import com.lilac.domain.dto.category.CategoryQueryRequest;
-import com.lilac.domain.dto.category.CategoryUpdateRequest;
 import com.lilac.domain.entity.Category;
 import com.baomidou.mybatisplus.extension.service.IService;
 

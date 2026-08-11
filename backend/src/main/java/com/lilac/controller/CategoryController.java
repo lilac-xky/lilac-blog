@@ -10,7 +10,7 @@ import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.CategoryVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.manager.auth.anotation.SaAdminPermission;
-import com.lilac.service.impl.CategoryService;
+import com.lilac.service.CategoryService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;

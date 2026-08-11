@@ -15,7 +15,7 @@ import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
 import com.lilac.manager.auth.StpKit;
 import com.lilac.manager.auth.anotation.SaUserCheckLogin;
-import com.lilac.service.impl.UserService;
+import com.lilac.service.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;

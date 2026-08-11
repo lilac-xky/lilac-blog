@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
@@ -20,13 +20,9 @@ import com.lilac.domain.vo.ArticleVO;
 import com.lilac.domain.vo.TagVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.manager.redis.RedisService;
-import com.lilac.service.impl.ArticleService;
+import com.lilac.service.*;
 import com.lilac.mapper.ArticleMapper;
-import com.lilac.service.impl.ArticleTagService;
-import com.lilac.service.impl.CategoryService;
-import com.lilac.service.impl.MessageService;
-import com.lilac.service.impl.TagService;
-import com.lilac.service.impl.UserService;
+import com.lilac.service.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;

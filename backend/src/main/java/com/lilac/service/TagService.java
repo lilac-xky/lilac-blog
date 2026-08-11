@@ -1,9 +1,8 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.lilac.domain.dto.tag.TagAddRequest;
 import com.lilac.domain.dto.tag.TagQueryRequest;
-import com.lilac.domain.dto.tag.TagUpdateRequest;
 import com.lilac.domain.entity.Tag;
 import com.baomidou.mybatisplus.extension.service.IService;
 

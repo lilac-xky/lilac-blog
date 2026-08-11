@@ -1,9 +1,10 @@
 <template>
-  <a-modal v-model:open="visible" title="配置权限" width="800px" :confirm-loading="loading" @ok="handleOk"
+  <a-modal v-model:open="visible" title="配置权限" width="1200px" :confirm-loading="loading" @ok="handleOk"
     @cancel="handleCancel">
     <a-spin :spinning="loading">
       <a-transfer v-model:target-keys="targetKeys" :data-source="dataSource" :titles="['可用权限', '已分配权限']"
-        :render="(item: TransferItem) => item.title" show-search :filter-option="filterOption" :locale="{
+        :render="(item: TransferItem) => item.title" show-search :filter-option="filterOption"
+        :list-style="{ width: '45%', height: '500px' }" :locale="{
           itemUnit: '项',
           itemsUnit: '项',
           searchPlaceholder: '搜索权限',
@@ -66,7 +67,7 @@ const loadData = async () => {
   try {
     const [allPermissionsRes, rolePermissionsRes] = await Promise.all([
       getPermissionList({ current: 1, pageSize: 1000 }),
-      getRolePermissions({ roleId: Number(props.roleId) })
+      getRolePermissions({ roleId: props.roleId as any })
     ]);
 
     const allPermissions = allPermissionsRes.data?.data?.records ?? [];
@@ -116,8 +117,8 @@ const handleOk = async () => {
     if (toAdd.length > 0) {
       promises.push(
         batchAddPermissions({
-          roleId: Number(props.roleId),
-          permissionIds: toAdd.map(id => Number(id))
+          roleId: props.roleId as any,
+          permissionIds: toAdd as any
         })
       );
     }
@@ -125,8 +126,8 @@ const handleOk = async () => {
     if (toRemove.length > 0) {
       promises.push(
         batchRemovePermissions({
-          roleId: Number(props.roleId),
-          permissionIds: toRemove.map(id => Number(id))
+          roleId: props.roleId as any,
+          permissionIds: toRemove as any
         })
       );
     }

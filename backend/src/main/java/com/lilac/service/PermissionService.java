@@ -1,4 +1,4 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.lilac.common.DeleteRequest;

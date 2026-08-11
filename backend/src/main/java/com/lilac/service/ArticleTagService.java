@@ -1,4 +1,4 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.lilac.domain.entity.ArticleTag;
 import com.baomidou.mybatisplus.extension.service.IService;

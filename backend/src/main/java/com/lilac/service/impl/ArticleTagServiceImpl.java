@@ -1,8 +1,8 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.domain.entity.ArticleTag;
-import com.lilac.service.impl.ArticleTagService;
+import com.lilac.service.ArticleTagService;
 import com.lilac.mapper.ArticleTagMapper;
 import org.springframework.stereotype.Service;
 

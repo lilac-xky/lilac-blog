@@ -193,10 +193,16 @@ declare namespace API {
     avatar?: string;
     /** 角色(admin管理,user普通用户) */
     role?: string;
+    /** 角色id */
+    roleId?: number;
     /** 1正常，0异常 */
     status?: number;
     /** token */
     token?: string;
+    /** 权限列表 */
+    permissions?: string[];
+    /** 角色列表 */
+    roles?: string[];
   };
 
   type MessageQueryRequest = {
@@ -510,6 +516,8 @@ declare namespace API {
     roleKey?: string;
     /** 角色名 */
     name?: string;
+    /** 登录类型 */
+    loginType?: string;
     /** 角色描述 */
     description?: string;
     /** 创建时间 */
@@ -534,6 +542,8 @@ declare namespace API {
     roleKey?: string;
     /** 角色名 */
     name?: string;
+    /** 登录类型 */
+    loginType?: string;
     /** 角色描述 */
     description?: string;
   };
@@ -570,6 +580,8 @@ declare namespace API {
     roleKey?: string;
     /** 角色名 */
     name?: string;
+    /** 登录类型 */
+    loginType?: string;
   };
 
   type RoleRemovePermissionRequest = {
@@ -586,6 +598,8 @@ declare namespace API {
     roleKey?: string;
     /** 角色名 */
     name?: string;
+    /** 登录类型 */
+    loginType?: string;
     /** 角色描述 */
     description?: string;
   };
@@ -686,8 +700,6 @@ declare namespace API {
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
     /** 1正常，0异常 */
     status?: number;
   };
@@ -714,8 +726,6 @@ declare namespace API {
     email?: string;
     /** 昵称 */
     username?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
     /** 角色id */
     roleId?: number;
     /** 1正常，0异常 */
@@ -752,8 +762,6 @@ declare namespace API {
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
     /** 角色id */
     roleId?: number;
     /** 1正常，0异常 */
@@ -770,8 +778,8 @@ declare namespace API {
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
+    /** 角色id */
+    roleId?: number;
     /** 1正常，0异常 */
     status?: number;
     /** 创建时间 */

@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
@@ -10,9 +10,9 @@ import com.lilac.domain.dto.tag.TagQueryRequest;
 import com.lilac.domain.entity.ArticleTag;
 import com.lilac.domain.entity.Tag;
 import com.lilac.enums.HttpsCodeEnum;
-import com.lilac.service.impl.ArticleTagService;
-import com.lilac.service.impl.TagService;
+import com.lilac.service.ArticleTagService;
 import com.lilac.mapper.TagMapper;
+import com.lilac.service.TagService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 * 标签Service实现
 */
 @Service
-public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagService{
+public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagService {
 
     @Resource
     private ArticleTagService articleTagService;

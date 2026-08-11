@@ -38,11 +38,6 @@ public class UserUpdateRequest implements Serializable {
     private String avatar;
 
     /**
-     * 角色(admin管理,user普通用户)
-     */
-    private String role;
-
-    /**
      * 角色id
      */
     private Long roleId;

@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Validator;
@@ -13,6 +13,7 @@ import com.lilac.constant.UserConstant;
 import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
+import com.lilac.domain.entity.Permission;
 import com.lilac.domain.entity.Role;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.LoginUserVO;
@@ -21,8 +22,9 @@ import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
 import com.lilac.manager.auth.StpKit;
 import com.lilac.manager.email.MailService;
-import com.lilac.service.impl.RoleService;
-import com.lilac.service.impl.UserService;
+import com.lilac.service.RolePermissionService;
+import com.lilac.service.RoleService;
+import com.lilac.service.UserService;
 import com.lilac.mapper.UserMapper;
 import com.lilac.utils.ThrowUtils;
 import cn.dev33.satoken.session.SaSession;
@@ -33,7 +35,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 用户服务实现类
@@ -48,6 +53,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private RoleService roleService;
+    @Resource
+    private RolePermissionService rolePermissionService;
 
     /**
      * 用户注册
@@ -114,7 +121,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setEmail(email);
         user.setPassword(encodedPassword);
         user.setUsername(UserConstant.USER_DEFAULT_NAME);
-        user.setRole(UserConstant.USER_DEFAULT_ROLE);
         user.setStatus(1);
         // 角色id
         Role role = roleService.getRoleByName(UserConstant.USER_DEFAULT_ROLE);
@@ -147,15 +153,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "账号或密码错误");
         }
-        if(!UserConstant.ADMIN_ROLE.equals(user.getRole())){
-            throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "非管理员无法登录");
+        Role role = roleService.getById(user.getRoleId());
+        if (role == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "角色不存在");
+        }
+        if (!UserConstant.ADMIN_ROLE.equals(role.getLoginType())) {
+            throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "非管理员账号，请使用用户端登录");
         }
         if(user.getStatus() != 1){
             throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "用户状态异常");
         }
         // 登录
         StpKit.ADMIN.login(user.getId());
-        LoginUserVO loginUserVO = this.getLoginUserVO(user);
+        LoginUserVO loginUserVO = this.getLoginUserVO(user, role);
         loginUserVO.setToken(StpKit.ADMIN.getTokenValue());
         StpKit.ADMIN.getSession().set(UserConstant.ADMIN_LOGIN_STATE, loginUserVO);
         return loginUserVO;
@@ -181,9 +191,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(user.getStatus() != 1){
             throw new BusinessException(HttpsCodeEnum.UNAUTHORIZED, "用户状态异常");
         }
+        Role role = roleService.getById(user.getRoleId());
         // 登录
         StpKit.USER.login(user.getId());
-        LoginUserVO loginUserVO = this.getLoginUserVO(user);
+        LoginUserVO loginUserVO = this.getLoginUserVO(user, role);
         loginUserVO.setToken(StpKit.USER.getTokenValue());
         StpKit.USER.getSession().set(UserConstant.USER_LOGIN_STATE, loginUserVO);
         return loginUserVO;
@@ -471,11 +482,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public void refreshUserSession(Long userId) {
         User user = this.getById(userId);
         if (user == null) return;
-        LoginUserVO freshVO = getLoginUserVO(user);
-        if(freshVO.getRole().equals(UserConstant.ADMIN_ROLE)){
+        Role role = roleService.getById(user.getRoleId());
+        if (role == null) return;
+        LoginUserVO freshVO = getLoginUserVO(user, role);
+        if(role.getLoginType().equals(UserConstant.ADMIN_ROLE)){
             refreshSession(StpKit.ADMIN, UserConstant.ADMIN_LOGIN_STATE, userId, freshVO);
         }
-        if(freshVO.getRole().equals(UserConstant.USER_DEFAULT_ROLE)){
+        if(role.getLoginType().equals(UserConstant.USER_DEFAULT_ROLE)){
             refreshSession(StpKit.USER, UserConstant.USER_LOGIN_STATE, userId, freshVO);
         }
     }
@@ -491,7 +504,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Long id = userUpdateRequest.getId();
         String userAccount = userUpdateRequest.getUserAccount();
         String email = userUpdateRequest.getEmail();
-        String role = userUpdateRequest.getRole();
+        Long newRoleId = userUpdateRequest.getRoleId();
         Integer status = userUpdateRequest.getStatus();
         // 排除自身后检查用户名是否被其他用户占用
         if (StrUtil.isNotBlank(userAccount)) {
@@ -512,9 +525,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         // 不能更改自己角色
-        // todo 增加新角色需要更改权限
-        if (StrUtil.isNotBlank(role)) {
-            if(id.equals(getLoginUser().getId()) && !role.equals(getLoginUser().getRole())){
+        if (newRoleId != null) {
+            // 不能更改自己的角色
+            if (id.equals(getLoginUser().getId())) {
                 throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "不能更改自己的角色");
             }
         }
@@ -563,7 +576,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public boolean isAdmin() {
         User loginUser = getLoginUser();
-        return loginUser.getRole().equals(UserConstant.ADMIN_ROLE);
+        if (loginUser == null) return false;
+        Role role = roleService.getById(loginUser.getRoleId());
+        return role != null && UserConstant.ADMIN_ROLE.equals(role.getLoginType());
     }
 
     /**
@@ -602,7 +617,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String userAccount = userQueryRequest.getUserAccount();
         String email = userQueryRequest.getEmail();
         String username = userQueryRequest.getUsername();
-        String role = userQueryRequest.getRole();
+        Long roleId = userQueryRequest.getRoleId();
         Integer status = userQueryRequest.getStatus();
         String sortOrder = userQueryRequest.getSortOrder();
         // 拼装条件
@@ -610,7 +625,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.like(StrUtil.isNotBlank(userAccount), User::getUserAccount, userAccount);
         queryWrapper.like(StrUtil.isNotBlank(email), User::getEmail, email);
         queryWrapper.like(StrUtil.isNotBlank(username), User::getUsername, username);
-        queryWrapper.eq(StrUtil.isNotBlank(role), User::getRole, role);
+        queryWrapper.eq(ObjUtil.isNotEmpty(roleId), User::getRoleId, roleId);
         queryWrapper.eq(ObjUtil.isNotEmpty(status), User::getStatus, status);
         boolean isAsc = "ascend".equalsIgnoreCase(sortOrder);
         queryWrapper.orderBy(true, isAsc, User::getCreateTime);
@@ -639,12 +654,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param user 用户
      * @return userVO
      */
-    private LoginUserVO getLoginUserVO(User user) {
-        if (user == null) {
-            return null;
-        }
+    private LoginUserVO getLoginUserVO(User user, Role role) {
+        if (user == null) return null;
         LoginUserVO loginUserVO = new LoginUserVO();
         BeanUtil.copyProperties(user, loginUserVO);
+        if(role != null){
+            loginUserVO.setRole(role.getRoleKey());
+            // 获取用户权限列表
+            List<Permission> permissionList = rolePermissionService.getPermissionsByRoleId(role.getId());
+            if(permissionList != null && !permissionList.isEmpty()){
+                List<String> permissions = permissionList.stream()
+                        .map(Permission::getPermissionKey)
+                        .collect(Collectors.toList());
+                loginUserVO.setPermissions(permissions);
+            }
+            // 设置角色列表（目前一个用户只有一个角色）
+            loginUserVO.setRoles(Collections.singletonList(role.getRoleKey()));
+        }
         return loginUserVO;
     }
 

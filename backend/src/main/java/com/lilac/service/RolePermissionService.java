@@ -1,4 +1,4 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.lilac.domain.dto.role.RoleAddPermissionsRequest;
 import com.lilac.domain.dto.role.RoleBatchAddPermissionsRequest;

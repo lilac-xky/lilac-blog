@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
@@ -12,7 +12,7 @@ import com.lilac.domain.dto.permission.PermissionUpdateRequest;
 import com.lilac.domain.entity.Permission;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
-import com.lilac.service.impl.PermissionService;
+import com.lilac.service.PermissionService;
 import com.lilac.mapper.PermissionMapper;
 import com.lilac.utils.ThrowUtils;
 import org.springframework.beans.BeanUtils;

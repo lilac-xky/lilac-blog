@@ -1,4 +1,4 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lilac.domain.dto.user.UserQueryRequest;

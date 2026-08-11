@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -12,8 +12,8 @@ import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.MessageVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.mapper.MessageMapper;
-import com.lilac.service.impl.MessageService;
-import com.lilac.service.impl.UserService;
+import com.lilac.service.MessageService;
+import com.lilac.service.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;

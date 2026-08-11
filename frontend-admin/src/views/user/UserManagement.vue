@@ -5,8 +5,8 @@
     @edit="(record: any) => openEdit(record)" @delete="(record: any) => confirmDelete(record)"
     @table-change="handleTableChange" @page-change="fetchData">
     <template #column-role="{ record }">
-      <a-tag :color="record.role === 'admin' ? 'gold' : 'blue'" class="role-tag">
-        {{ record.role === 'admin' ? '管理员' : '普通用户' }}
+      <a-tag :color="roleMap.get(String(record.roleId)) ? 'blue' : 'default'" class="role-tag">
+        {{ roleMap.get(String(record.roleId)) || '未知角色' }}
       </a-tag>
     </template>
     <!-- 行操作追加「重置密码」按钮 -->
@@ -71,10 +71,11 @@
       <div class="form-section">
         <div class="form-section-label">权限设置</div>
         <div class="form-row-2" style="margin-bottom: 0">
-          <a-form-item label="角色" name="role" style="margin-bottom: 0">
-            <a-select v-model:value="formData.role" style="width: 100%">
-              <a-select-option value="admin">管理员</a-select-option>
-              <a-select-option value="user">普通用户</a-select-option>
+          <a-form-item label="角色" name="roleId" style="margin-bottom: 0">
+            <a-select v-model:value="formData.roleId" style="width: 100%" placeholder="请选择角色">
+              <a-select-option v-for="role in roleOptions" :key="role.id" :value="role.id">
+                {{ role.name }}
+              </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item label="状态" name="status" style="margin-bottom: 0">
@@ -128,10 +129,17 @@ import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import { listUserVoByPage, updateUser, deleteUser, updateUserStatus, resetPassword } from '@/api/adminController';
 import { uploadFile } from '@/api/fileController';
 import { useUserStore } from '@/stores/user';
+import { getAllRoles, getRoleName } from '@/utils/roleHelper';
 
 const { loginUser } = useUserStore();
 
-const { loading, total, tableData, queryForm, sortOrder, fetchData, handleSearch, handleReset, handleTableChange } =
+// 角色映射表：roleId -> roleName
+const roleMap = ref<Map<string, string>>(new Map());
+
+// 角色列表（用于下拉选择）
+const roleOptions = ref<API.Role[]>([]);
+
+const { loading, total, tableData, queryForm, sortOrder, fetchData: originalFetchData, handleSearch, handleReset, handleTableChange } =
   usePaginationQuery<API.UserQueryRequest, API.UserVO>({
     initialQuery: {
       current: 1,
@@ -139,7 +147,7 @@ const { loading, total, tableData, queryForm, sortOrder, fetchData, handleSearch
       userAccount: undefined,
       username: undefined,
       email: undefined,
-      role: undefined,
+      roleId: undefined,
       status: undefined,
       sortOrder: 'descend',
     },
@@ -151,6 +159,35 @@ const { loading, total, tableData, queryForm, sortOrder, fetchData, handleSearch
       };
     },
   });
+
+/**
+ * 加载角色名映射表
+ * 根据用户列表中的 roleId 批量查询角色名
+ */
+async function loadRoleNames() {
+  const roleIds = [...new Set(tableData.value.map(u => u.roleId).filter(Boolean))];
+  for (const roleId of roleIds) {
+    if (roleId) {
+      const roleName = await getRoleName(roleId);
+      roleMap.value.set(String(roleId), roleName);
+    }
+  }
+}
+
+// 封装后的 fetchData，在获取数据后加载角色名
+async function fetchData() {
+  await originalFetchData();
+  await loadRoleNames();
+}
+
+// 加载所有角色选项（用于编辑弹窗）
+async function loadRoleOptions() {
+  try {
+    roleOptions.value = await getAllRoles();
+  } catch (err) {
+    console.error('加载角色列表失败', err);
+  }
+}
 
 // 状态切换
 const statusLoadingId = ref<any>(null);
@@ -186,7 +223,7 @@ const {
   visible: modalVisible,
   loading: modalLoading,
   formData,
-  openEdit,
+  openEdit: originalOpenEdit,
   handleOk,
 } = useModalForm<API.UserUpdateRequest, API.UserVO>({
   defaultForm: () => ({}),
@@ -197,11 +234,17 @@ const {
     username: record.username,
     email: record.email,
     avatar: record.avatar,
-    role: record.role,
+    roleId: record.roleId, // 改为绑定 roleId
     status: record.status,
   }),
   onSuccess: fetchData,
 });
+
+// 打开编辑弹窗（加载角色列表）
+async function openEdit(record: API.UserVO) {
+  await loadRoleOptions(); // 加载角色选项
+  originalOpenEdit(record);
+}
 
 async function onModalOk() {
   try {
@@ -318,7 +361,7 @@ function onResetCancel() {
 }
 
 // 搜索 schema
-const searchSchema: SearchField[] = [
+const searchSchema = computed<SearchField[]>(() => [
   { name: 'userAccount', label: '账号', type: 'input', placeholder: '账号', width: 140 },
   { name: 'username', label: '昵称', type: 'input', placeholder: '昵称', width: 140 },
   { name: 'email', label: '邮箱', type: 'input', placeholder: '邮箱', width: 180 },
@@ -327,10 +370,7 @@ const searchSchema: SearchField[] = [
     label: '角色',
     type: 'select',
     width: 120,
-    options: [
-      { label: '管理员', value: 'admin' },
-      { label: '普通用户', value: 'user' },
-    ],
+    options: roleOptions.value.map(role => ({ label: role.name || '', value: role.roleKey || '' })),
   },
   {
     name: 'status',
@@ -342,7 +382,7 @@ const searchSchema: SearchField[] = [
       { label: '异常', value: 0 },
     ],
   },
-];
+]);
 
 // 列定义
 const columns = computed<CrudColumn[]>(() => [
@@ -386,7 +426,10 @@ const columns = computed<CrudColumn[]>(() => [
   { title: '操作', key: 'action', width: 240, align: 'center' as const, fixed: 'right' as const },
 ]);
 
-onMounted(fetchData);
+onMounted(() => {
+  loadRoleOptions(); // 加载角色选项用于搜索
+  fetchData();
+});
 </script>
 
 <style scoped>

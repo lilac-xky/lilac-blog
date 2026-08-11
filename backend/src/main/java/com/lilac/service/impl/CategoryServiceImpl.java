@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
@@ -10,9 +10,9 @@ import com.lilac.domain.dto.category.CategoryQueryRequest;
 import com.lilac.domain.entity.Article;
 import com.lilac.domain.entity.Category;
 import com.lilac.enums.HttpsCodeEnum;
-import com.lilac.service.impl.ArticleService;
-import com.lilac.service.impl.CategoryService;
+import com.lilac.service.ArticleService;
 import com.lilac.mapper.CategoryMapper;
+import com.lilac.service.CategoryService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 * 分类Service实现
 */
 @Service
-public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService{
+public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
 
     @Lazy
     @Resource

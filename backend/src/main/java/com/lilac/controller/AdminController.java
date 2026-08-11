@@ -13,8 +13,8 @@ import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
-import com.lilac.manager.auth.anotation.SaAdminAuth;
-import com.lilac.service.impl.UserService;
+import com.lilac.manager.auth.anotation.SaAdminPermission;
+import com.lilac.service.UserService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -62,6 +62,7 @@ public class AdminController {
      * @return 更新结果
      */
     @PostMapping("/update")
+    @SaAdminPermission("user:update")
     public Result<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         ThrowUtils.throwIf(userUpdateRequest == null || userUpdateRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean result = userService.updateUser(userUpdateRequest);
@@ -76,6 +77,7 @@ public class AdminController {
      * @return 更新结果
      */
     @PostMapping("/updateStatus")
+    @SaAdminPermission("user:updateStatu")
     public Result<Boolean> updateUserStatus(@RequestBody UserStatusRequest userStatusRequest) {
         ThrowUtils.throwIf(userStatusRequest == null || userStatusRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean result = userService.updateUserStatus(userStatusRequest);
@@ -90,6 +92,7 @@ public class AdminController {
      * @return 重置结果
      */
     @PostMapping("/resetPassword")
+    @SaAdminPermission("user:resetPassword")
     public Result<Boolean> resetPassword(@RequestBody AdminResetPasswordRequest adminResetPasswordRequest) {
         ThrowUtils.throwIf(adminResetPasswordRequest == null || adminResetPasswordRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
         boolean result = userService.adminResetPassword(adminResetPasswordRequest.getId(), adminResetPasswordRequest.getNewPassword());
@@ -104,6 +107,7 @@ public class AdminController {
      * @return 删除结果
      */
     @PostMapping("/delete")
+    @SaAdminPermission("user:delete")
     public Result<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
         User loginUser = userService.getLoginUser();
@@ -122,6 +126,7 @@ public class AdminController {
      * @return 用户列表
      */
     @PostMapping("/list/page/vo")
+    @SaAdminPermission("user:list")
     public Result<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest){
         ThrowUtils.throwIf(userQueryRequest == null, HttpsCodeEnum.PARAMS_ERROR);
         Page<UserVO> userVOList = userService.listUserVOByPage(userQueryRequest);

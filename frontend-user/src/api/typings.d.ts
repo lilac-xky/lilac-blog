@@ -193,10 +193,16 @@ declare namespace API {
     avatar?: string;
     /** 角色(admin管理,user普通用户) */
     role?: string;
+    /** 角色id */
+    roleId?: number;
     /** 1正常，0异常 */
     status?: number;
     /** token */
     token?: string;
+    /** 权限列表 */
+    permissions?: string[];
+    /** 角色列表 */
+    roles?: string[];
   };
 
   type MessageQueryRequest = {
@@ -294,6 +300,32 @@ declare namespace API {
     countId?: string;
   };
 
+  type PagePermission = {
+    records?: Permission[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageRole = {
+    records?: Role[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
   type PageTag = {
     records?: Tag[];
     total?: number;
@@ -333,6 +365,54 @@ declare namespace API {
     countId?: string;
   };
 
+  type Permission = {
+    /** id */
+    id?: number;
+    /** 权限key */
+    permissionKey?: string;
+    /** 权限描述 */
+    name?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type PermissionAddRequest = {
+    /** 权限key */
+    permissionKey?: string;
+    /** 权限描述 */
+    name?: string;
+  };
+
+  type PermissionQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** id */
+    id?: number;
+    /** 权限key */
+    permissionKey?: string;
+    /** 权限描述 */
+    name?: string;
+  };
+
+  type PermissionUpdateRequest = {
+    /** id */
+    id?: number;
+    /** 权限key */
+    permissionKey?: string;
+    /** 权限描述 */
+    name?: string;
+  };
+
   type ResultArticleVO = {
     code?: number;
     msg?: string;
@@ -349,6 +429,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: number;
+  };
+
+  type ResultListPermission = {
+    code?: number;
+    msg?: string;
+    data?: Permission[];
   };
 
   type ResultLoginUserVO = {
@@ -387,6 +473,18 @@ declare namespace API {
     data?: PageMessageVO;
   };
 
+  type ResultPagePermission = {
+    code?: number;
+    msg?: string;
+    data?: PagePermission;
+  };
+
+  type ResultPageRole = {
+    code?: number;
+    msg?: string;
+    data?: PageRole;
+  };
+
   type ResultPageTag = {
     code?: number;
     msg?: string;
@@ -409,6 +507,101 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: UploadPictureResult;
+  };
+
+  type Role = {
+    /** id */
+    id?: number;
+    /** 角色key */
+    roleKey?: string;
+    /** 角色名 */
+    name?: string;
+    /** 登录类型 */
+    loginType?: string;
+    /** 角色描述 */
+    description?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type RoleAddPermissionsRequest = {
+    /** 角色ID */
+    roleId?: number;
+    /** 权限ID */
+    permissionId?: number;
+  };
+
+  type RoleAddRequest = {
+    /** 角色key */
+    roleKey?: string;
+    /** 角色名 */
+    name?: string;
+    /** 登录类型 */
+    loginType?: string;
+    /** 角色描述 */
+    description?: string;
+  };
+
+  type RoleBatchAddPermissionsRequest = {
+    /** 角色ID */
+    roleId?: number;
+    /** 权限ID列表 */
+    permissionIds?: number[];
+  };
+
+  type RoleBatchRemovePermissionsRequest = {
+    /** 角色ID */
+    roleId?: number;
+    /** 权限ID列表 */
+    permissionIds?: number[];
+  };
+
+  type RolePermissionQueryRequest = {
+    /** 角色ID */
+    roleId?: number;
+  };
+
+  type RoleQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** id */
+    id?: number;
+    /** 角色key */
+    roleKey?: string;
+    /** 角色名 */
+    name?: string;
+    /** 登录类型 */
+    loginType?: string;
+  };
+
+  type RoleRemovePermissionRequest = {
+    /** 角色ID */
+    roleId?: number;
+    /** 权限ID */
+    permissionId?: number;
+  };
+
+  type RoleUpdateRequest = {
+    /** id */
+    id?: number;
+    /** 角色key */
+    roleKey?: string;
+    /** 角色名 */
+    name?: string;
+    /** 登录类型 */
+    loginType?: string;
+    /** 角色描述 */
+    description?: string;
   };
 
   type sendRegisterCodeParams = {
@@ -507,8 +700,6 @@ declare namespace API {
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
     /** 1正常，0异常 */
     status?: number;
   };
@@ -535,8 +726,8 @@ declare namespace API {
     email?: string;
     /** 昵称 */
     username?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
+    /** 角色id */
+    roleId?: number;
     /** 1正常，0异常 */
     status?: number;
   };
@@ -571,8 +762,8 @@ declare namespace API {
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
+    /** 角色id */
+    roleId?: number;
     /** 1正常，0异常 */
     status?: number;
   };
@@ -587,8 +778,8 @@ declare namespace API {
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 角色(admin管理,user普通用户) */
-    role?: string;
+    /** 角色id */
+    roleId?: number;
     /** 1正常，0异常 */
     status?: number;
     /** 创建时间 */

@@ -1,4 +1,4 @@
-package com.lilac.service.impl.impl;
+package com.lilac.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
@@ -6,19 +6,17 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.UserConstant;
-import com.lilac.domain.dto.role.RoleAddPermissionsRequest;
 import com.lilac.domain.dto.role.RoleAddRequest;
 import com.lilac.domain.dto.role.RoleQueryRequest;
 import com.lilac.domain.dto.role.RoleUpdateRequest;
 import com.lilac.domain.entity.Role;
 import com.lilac.enums.HttpsCodeEnum;
 import com.lilac.exception.BusinessException;
-import com.lilac.service.impl.RoleService;
+import com.lilac.service.RoleService;
 import com.lilac.mapper.RoleMapper;
 import com.lilac.utils.ThrowUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
 * 角色服务实现类
@@ -34,8 +32,10 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
      */
     @Override
     public Long addRole(RoleAddRequest roleAddRequest) {
-        // 角色是否存在
+        ThrowUtils.throwIf(StrUtil.isBlank(roleAddRequest.getRoleKey()), HttpsCodeEnum.PARAMS_ERROR, "角色键不能为空");
+        ThrowUtils.throwIf(StrUtil.isBlank(roleAddRequest.getLoginType()), HttpsCodeEnum.PARAMS_ERROR, "登录类型不能为空");
         String roleKey = roleAddRequest.getRoleKey();
+        // 角色是否存在
         Long count = this.baseMapper.selectCount(new LambdaQueryWrapper<Role>().eq(Role::getRoleKey, roleKey));
         ThrowUtils.throwIf(count > 0, HttpsCodeEnum.PARAMS_ERROR, "角色已存在");
         // 保存角色
@@ -74,7 +74,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     public Role getRoleByName(String userDefaultRole) {
         LambdaQueryWrapper<Role> roleLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        roleLambdaQueryWrapper.eq(Role::getName, userDefaultRole);
+        roleLambdaQueryWrapper.eq(Role::getRoleKey, userDefaultRole);
         return this.baseMapper.selectOne(roleLambdaQueryWrapper);
     }
 
@@ -116,10 +116,12 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         Long id = roleQueryRequest.getId();
         String roleKey = roleQueryRequest.getRoleKey();
         String name = roleQueryRequest.getName();
+        String loginType = roleQueryRequest.getLoginType();
         // 查询
         queryWrapper.eq(ObjUtil.isNotEmpty(id), Role::getId, id);
         queryWrapper.eq(StrUtil.isNotBlank(roleKey), Role::getRoleKey, roleKey);
         queryWrapper.eq(StrUtil.isNotBlank(name), Role::getName, name);
+        queryWrapper.eq(StrUtil.isNotBlank(loginType), Role::getLoginType, loginType);
         boolean isAsc = "ascend".equalsIgnoreCase(roleQueryRequest.getSortOrder());
         queryWrapper.orderBy(true, isAsc, Role::getCreateTime);
         return queryWrapper;

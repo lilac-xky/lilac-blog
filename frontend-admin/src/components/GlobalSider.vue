@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, watch } from 'vue';
+import { h, ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
     HomeOutlined,
@@ -26,6 +26,7 @@ import {
     FileTextOutlined,
     AuditOutlined,
 } from '@ant-design/icons-vue';
+import { hasPermission, hasRole } from '@/utils/permission';
 
 const route = useRoute();
 const router = useRouter();
@@ -47,8 +48,18 @@ const handleMenuClick = ({ key }: { key: string }) => {
     }
 };
 
-// 固定菜单项
-const fixedMenuItems = [
+// 菜单项配置接口
+interface MenuItem {
+    key: string;
+    icon?: () => any;
+    label: string;
+    permission?: string; // 需要的权限标识
+    role?: string; // 需要的角色标识
+    children?: MenuItem[];
+}
+
+// 完整菜单配置（包含权限信息）
+const menuConfig: MenuItem[] = [
     {
         key: '/',
         icon: () => h(HomeOutlined),
@@ -58,6 +69,7 @@ const fixedMenuItems = [
         key: '/write-blog',
         icon: () => h(EditOutlined),
         label: '写blog',
+        permission: 'article:add', // 需要文章添加权限
     },
     {
         key: '/blog',
@@ -68,26 +80,31 @@ const fixedMenuItems = [
                 key: '/user/manage',
                 icon: () => h(TeamOutlined),
                 label: '用户管理',
+                permission: 'user:list', // 需要用户列表权限
             },
             {
                 key: '/role',
                 icon: () => h(TeamOutlined),
                 label: '角色管理',
+                permission: 'role:list', // 需要角色列表权限
             },
             {
                 key: '/permission',
                 icon: () => h(MessageOutlined),
                 label: '权限管理',
+                permission: 'permission:list', // 需要权限列表权限
             },
             {
                 key: '/blog/category',
                 icon: () => h(FolderOutlined),
                 label: '分类管理',
+                permission: 'category:list', // 需要分类列表权限
             },
             {
                 key: '/blog/tag',
                 icon: () => h(TagsOutlined),
                 label: '标签管理',
+                permission: 'tag:list', // 需要标签列表权限
             },
         ]
     },
@@ -100,11 +117,13 @@ const fixedMenuItems = [
                 key: '/article/manage',
                 icon: () => h(FileTextOutlined),
                 label: '文章管理',
+                permission: 'article:list', // 需要文章列表权限
             },
             {
                 key: '/article/review',
                 icon: () => h(AuditOutlined),
                 label: '文章审核',
+                permission: 'article:review', // 需要文章审核权限
             },
             {
                 key: '/about',
@@ -115,10 +134,53 @@ const fixedMenuItems = [
                 key: '/message',
                 icon: () => h(MessageOutlined),
                 label: '留言管理',
+                permission: 'message:list', // 需要留言列表权限
             },
         ]
     },
 ];
+
+/**
+ * 检查菜单项是否有权限访问
+ * @param item 菜单项
+ * @returns 是否有权限
+ */
+function hasMenuPermission(item: MenuItem): boolean {
+    // 没有配置权限要求的菜单项，所有人可见
+    if (!item.permission && !item.role) return true;
+
+    // 检查权限标识（包含超级管理员 '*' 权限的处理）
+    if (item.permission && !hasPermission(item.permission)) return false;
+
+    // 检查角色标识
+    if (item.role && !hasRole(item.role)) return false;
+
+    return true;
+}
+
+/**
+ * 过滤菜单项（根据权限）
+ * @param items 菜单项列表
+ * @returns 过滤后的菜单项列表
+ */
+function filterMenuByPermission(items: MenuItem[]): MenuItem[] {
+    return items
+        .filter(item => hasMenuPermission(item))
+        .map(item => {
+            // 如果有子菜单，递归过滤
+            if (item.children && item.children.length > 0) {
+                const filteredChildren = filterMenuByPermission(item.children);
+                // 如果过滤后子菜单为空，则不显示父菜单
+                if (filteredChildren.length === 0) return null;
+                return { ...item, children: filteredChildren };
+            }
+            return item;
+        })
+        .filter((item): item is MenuItem => item !== null);
+}
+
+// 根据权限过滤后的菜单项（响应式）
+const fixedMenuItems = computed(() => filterMenuByPermission(menuConfig));
 </script>
 
 <style scoped>

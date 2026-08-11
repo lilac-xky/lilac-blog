@@ -8,7 +8,7 @@ import com.lilac.domain.dto.permission.PermissionUpdateRequest;
 import com.lilac.domain.entity.Permission;
 import com.lilac.domain.result.Result;
 import com.lilac.enums.HttpsCodeEnum;
-import com.lilac.service.impl.PermissionService;
+import com.lilac.service.PermissionService;
 import com.lilac.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -24,4 +24,9 @@ public class RoleQueryRequest extends PageRequest {
      * 角色名
      */
     private String name;
+
+    /**
+     * 登录类型
+     */
+    private String loginType;
 }

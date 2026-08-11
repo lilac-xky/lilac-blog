@@ -1,7 +1,6 @@
-package com.lilac.service.impl;
+package com.lilac.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.lilac.domain.dto.role.RoleAddPermissionsRequest;
 import com.lilac.domain.dto.role.RoleAddRequest;
 import com.lilac.domain.dto.role.RoleQueryRequest;
 import com.lilac.domain.dto.role.RoleUpdateRequest;
