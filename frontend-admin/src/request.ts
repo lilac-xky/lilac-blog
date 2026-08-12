@@ -21,6 +21,7 @@ request.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// 仅将认证失效视为退出登录；403 表示权限不足，必须保留当前登录态
 const AUTH_FAIL_CODES = new Set([401, 400001]);
 
 // 处理认证失败：清除用户信息并跳转到登录页

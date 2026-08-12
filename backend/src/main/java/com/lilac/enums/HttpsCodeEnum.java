@@ -9,6 +9,7 @@ public enum HttpsCodeEnum {
 
     BAD_REQUEST(400, "无效的请求参数"),
     UNAUTHORIZED(401, "未授权"),
+    FORBIDDEN(403, "无权限"),
     NEED_LOGIN(400001, "需要登录"),
     PARAMS_ERROR(400002, "参数错误"),
     OPERATION_ERROR(400003, "操作失败"),

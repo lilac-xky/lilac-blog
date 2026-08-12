@@ -2,7 +2,7 @@
   <div class="home">
     <!-- 顶部：统计卡片 -->
     <div class="stat-row">
-      <div v-for="item in statCards" :key="item.title" class="stat-card" @click="item.onClick">
+      <div v-for="item in visibleStatCards" :key="item.title" class="stat-card" @click="item.onClick">
         <div class="stat-icon" :style="{ background: item.bg, color: item.color }">
           <component :is="item.icon" />
         </div>
@@ -31,7 +31,7 @@
           </div>
         </div>
         <div class="quick-grid">
-          <div v-for="(q, i) in quickActions" :key="i" class="quick-item" :style="{ '--c': q.color } as any"
+          <div v-for="(q, i) in visibleQuickActions" :key="i" class="quick-item" :style="{ '--c': q.color } as any"
             @click="q.onClick">
             <div class="quick-icon">
               <component :is="q.icon" />
@@ -136,6 +136,7 @@ import {
 import { listArticleByPage } from '@/api/articleController';
 import { listCategoryByPage } from '@/api/categoryController';
 import { listTagByPage } from '@/api/tagController';
+import { hasPermission } from '@/utils/permission';
 
 const router = useRouter();
 const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE;
@@ -170,6 +171,7 @@ const statCards = reactive([
     color: STAT_COLOR,
     bg: STAT_BG,
     trend: 12,
+    permission: 'article:list',
     onClick: () => router.push('/write-blog'),
   },
   {
@@ -180,6 +182,7 @@ const statCards = reactive([
     color: STAT_COLOR,
     bg: STAT_BG,
     trend: 5,
+    permission: 'category:list',
     onClick: () => router.push('/blog/category'),
   },
   {
@@ -190,6 +193,7 @@ const statCards = reactive([
     color: STAT_COLOR,
     bg: STAT_BG,
     trend: -2,
+    permission: 'tag:list',
     onClick: () => router.push('/blog/tag'),
   },
   {
@@ -200,19 +204,26 @@ const statCards = reactive([
     color: STAT_COLOR,
     bg: STAT_BG,
     trend: 18,
+    permission: undefined,
     onClick: () => { },
   },
 ]);
 
+// 按当前管理员权限过滤首页统计卡片，避免展示不可访问模块
+const visibleStatCards = computed(() => statCards.filter(item => !item.permission || hasPermission(item.permission)));
+
 // 快捷操作
 const quickActions = [
-  { label: '写文章', icon: h(EditOutlined), color: '#1890ff', onClick: () => router.push('/write-blog') },
-  { label: '分类', icon: h(FolderOutlined), color: '#52c41a', onClick: () => router.push('/blog/category') },
-  { label: '标签', icon: h(TagsOutlined), color: '#faad14', onClick: () => router.push('/blog/tag') },
-  { label: '留言', icon: h(MessageOutlined), color: '#eb2f96', onClick: () => router.push('/message') },
+  { label: '写文章', icon: h(EditOutlined), color: '#1890ff', permission: 'article:add', onClick: () => router.push('/write-blog') },
+  { label: '分类', icon: h(FolderOutlined), color: '#52c41a', permission: 'category:list', onClick: () => router.push('/blog/category') },
+  { label: '标签', icon: h(TagsOutlined), color: '#faad14', permission: 'tag:list', onClick: () => router.push('/blog/tag') },
+  { label: '留言', icon: h(MessageOutlined), color: '#eb2f96', permission: 'message:list', onClick: () => router.push('/message') },
   { label: '关于', icon: h(UserOutlined), color: '#722ed1', onClick: () => router.push('/about') },
   { label: '设置', icon: h(SettingOutlined), color: '#13c2c2', onClick: () => { } },
 ];
+
+// 按当前管理员权限过滤快捷入口，避免展示不可访问操作
+const visibleQuickActions = computed(() => quickActions.filter(item => !item.permission || hasPermission(item.permission)));
 
 // 最近文章
 const recentArticles = ref<{
@@ -248,10 +259,10 @@ function coverColor(id?: number): string { return COVER_COLORS[(id ?? 0) % COVER
 // 加载真实数据
 onMounted(async () => {
   const [artRes, catRes, tagRes, recentRes] = await Promise.allSettled([
-    listArticleByPage({ current: 1, pageSize: 1 }),
-    listCategoryByPage({ current: 1, pageSize: 1 }),
-    listTagByPage({ current: 1, pageSize: 1 }),
-    listArticleByPage({ current: 1, pageSize: 5, sortOrder: 'descend' }),
+    hasPermission('article:list') ? listArticleByPage({ current: 1, pageSize: 1 }) : Promise.resolve(null),
+    hasPermission('category:list') ? listCategoryByPage({ current: 1, pageSize: 1 }) : Promise.resolve(null),
+    hasPermission('tag:list') ? listTagByPage({ current: 1, pageSize: 1 }) : Promise.resolve(null),
+    hasPermission('article:list') ? listArticleByPage({ current: 1, pageSize: 5, sortOrder: 'descend' }) : Promise.resolve(null),
   ]);
 
   if (artRes.status === 'fulfilled') statCards[0]!.value = artRes.value?.data?.data?.total ?? 0;

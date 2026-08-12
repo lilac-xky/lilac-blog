@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotPermissionException.class)
     public Result<?> notPermissionExceptionHandler(NotPermissionException e) {
         log.error("NotPermissionException", e);
-        return Result.error(HttpsCodeEnum.UNAUTHORIZED, e.getMessage());
+        return Result.error(HttpsCodeEnum.FORBIDDEN);
     }
 
     /**

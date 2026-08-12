@@ -42,9 +42,7 @@ public class SaTokenConfigure implements WebMvcConfigurer{
     @PostConstruct
     public void rewriteSaStrategy() {
         // 重写Sa-Token的注解处理器，增加注解合并功能 
-        SaAnnotationStrategy.instance.getAnnotation = (element, annotationClass) -> {
-            return AnnotatedElementUtils.getMergedAnnotation(element, annotationClass);
-        };
+        SaAnnotationStrategy.instance.getAnnotation = AnnotatedElementUtils::getMergedAnnotation;
         // 重写权限匹配算法，支持管理员的 "*" 通配符
         SaStrategy.instance.hasElement = (list, element) -> {
             // 如果权限列表中包含 *，则代表拥有所有权限
