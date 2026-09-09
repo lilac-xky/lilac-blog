@@ -19,6 +19,7 @@ import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.ArticleVO;
 import com.lilac.domain.vo.TagVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.manager.email.MailService;
 import com.lilac.manager.redis.RedisService;
 import com.lilac.service.*;
 import com.lilac.mapper.ArticleMapper;
@@ -54,6 +55,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private MessageService messageService;
     @Resource
     private RedisService redisService;
+    @Resource
+    private MailService mailService;
+
+    private final String DEFAULT_EMAIL = "lilac-thc@qq.com";
 
     /**
      * 添加文章
@@ -77,6 +82,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
         if (!userService.isAdmin() && articleAddRequest.getStatus() != 0) {
             article.setStatus(1);
+            mailService.sendSimpleMail(DEFAULT_EMAIL, "文章投稿通知",
+                    "用户: " + loginUser.getUsername() + "投稿的文章《" + articleAddRequest.getTitle() + "》需要审核");
         }
         article.setViewCount(0);
         boolean save = this.save(article);
