@@ -68,7 +68,7 @@ onUnmounted(() => {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    filter: blur(14px) saturate(1.1) brightness(0.7);
+    filter: blur(8px) saturate(1.2) brightness(0.85);
     transform: scale(1.06);
     opacity: 0;
     transition: opacity 1.6s ease-in-out;
@@ -93,7 +93,7 @@ onUnmounted(() => {
 .bg-mask {
     position: absolute;
     inset: 0;
-    background: rgba(var(--bg-page-rgb), 0.32);
+    background: rgba(var(--bg-page-rgb), 0.18);
 }
 
 .bg-glow {

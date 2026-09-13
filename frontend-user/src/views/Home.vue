@@ -272,8 +272,24 @@ onMounted(() => {
 .profile-card.glass-card,
 .timeline.glass-card,
 .tagcloud.glass-card {
-    background: var(--bg-card-translucent) !important;
-    border-color: rgba(255, 255, 255, 0.06) !important;
+    background: linear-gradient(145deg, rgba(40, 45, 60, 0.6), rgba(20, 25, 35, 0.4)) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+:deep(.music-player.glass-card) {
+    background: linear-gradient(145deg, rgba(40, 45, 60, 0.6), rgba(20, 25, 35, 0.4)) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 搜索框增加一点高光 */
+.search-bar {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* 音乐播放器同样透一点（其 scoped 样式由本组件控制，这里通过 :deep 覆写） */
