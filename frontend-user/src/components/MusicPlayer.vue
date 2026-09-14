@@ -4,7 +4,7 @@
         <div class="player-top">
             <div class="cover-wrap" :class="{ spinning: player.playing }">
                 <div class="cover-disc" :style="{ background: player.track.accent }">
-                    <img :src="player.track.cover" alt="cover" class="cover-img" />
+                    <img :src="player.track.cover" alt="cover" class="cover-img" @error="onCoverError" />
                     <span class="cover-hole"></span>
                 </div>
                 <span class="cover-glow" :style="{ background: player.track.accent }"></span>
@@ -33,8 +33,8 @@
             </button>
             <button class="ctrl-btn play-btn" type="button" @click="player.toggle"
                 :aria-label="player.playing ? '暂停' : '播放'">
-                <PauseCircleFilled v-if="player.playing" />
-                <PlayCircleFilled v-else />
+                <PauseOutlined v-if="player.playing" />
+                <CaretRightFilled v-else />
             </button>
             <button class="ctrl-btn" type="button" @click="player.next" aria-label="下一曲">
                 <StepForwardOutlined />
@@ -49,8 +49,8 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue';
 import {
-    PlayCircleFilled,
-    PauseCircleFilled,
+    PauseOutlined,
+    CaretRightFilled,
     StepBackwardOutlined,
     StepForwardOutlined,
     SoundOutlined,
@@ -71,26 +71,24 @@ function onSeek(e: MouseEvent) {
     const rect = target.getBoundingClientRect();
     player.seek((e.clientX - rect.left) / rect.width);
 }
+
+// 封面请求失败时隐藏破损图标，保留唱片渐变作为可用的视觉兜底。
+function onCoverError(event: Event) {
+    const image = event.currentTarget as HTMLImageElement;
+    image.style.display = 'none';
+}
 </script>
 
 <style scoped>
+/* 播放器容器：纵向三段（封面信息 / 进度 / 控制）均匀撑满整张卡，避免中部大片留白 */
 .music-player {
-    padding: 40px 20px 18px;
+    padding: 24px 28px 22px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 14px;
     position: relative;
     overflow: hidden;
-}
-
-.music-player::before {
-    content: '';
-    position: absolute;
-    inset: -40% -10% auto auto;
-    width: 60%;
-    height: 60%;
-    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.18), transparent 70%);
-    pointer-events: none;
 }
 
 /* 顶部：唱片 + 歌名作者 */
@@ -98,16 +96,18 @@ function onSeek(e: MouseEvent) {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
 }
 
+/* 唱片外框：尺寸略放大以撑满播放器顶部，与右侧歌名区块高度对齐 */
 .cover-wrap {
     position: relative;
-    width: 100px;
-    height: 84px;
-    flex: 0 0 84px;
+    width: 104px;
+    height: 104px;
+    flex: 0 0 104px;
 }
 
+/* 唱片本体：黑胶圆盘 + 缓慢自转，未播放时暂停动画 */
 .cover-disc {
     width: 100%;
     height: 100%;
@@ -115,8 +115,8 @@ function onSeek(e: MouseEvent) {
     overflow: hidden;
     position: relative;
     box-shadow:
-        0 0 0 4px rgba(255, 255, 255, 0.04),
-        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 0 3px rgba(var(--accent-rgb), 0.45),
+        0 12px 40px rgba(0, 0, 0, 0.5),
         inset 0 0 24px rgba(0, 0, 0, 0.4);
     animation: spin 22s linear infinite;
     animation-play-state: paused;
@@ -139,8 +139,8 @@ function onSeek(e: MouseEvent) {
     height: 64%;
     border-radius: 50%;
     object-fit: cover;
-    mix-blend-mode: screen;
-    opacity: 0.85;
+    mix-blend-mode: normal;
+    opacity: 0.92;
     border: 2px solid rgba(255, 255, 255, 0.18);
 }
 
@@ -189,9 +189,8 @@ function onSeek(e: MouseEvent) {
     letter-spacing: 0.05em;
 }
 
-/* 进度条 */
+/* 进度行：由容器 justify-content 分配纵向位置，不再依赖 margin-top:auto */
 .progress-row {
-    margin-top: auto;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -222,15 +221,17 @@ function onSeek(e: MouseEvent) {
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* 已播放部分：宽度逐帧更新，过渡只留极短一段兜底，避免拖在真实进度后面 */
 .progress-fill {
     position: absolute;
     left: 0;
     height: 4px;
     border-radius: 999px;
     background: linear-gradient(90deg, var(--accent), var(--accent-pink));
-    transition: width 0.25s linear;
+    transition: width 0.1s linear;
 }
 
+/* 进度圆点：与填充同步逐帧移动 */
 .progress-thumb {
     position: absolute;
     width: 12px;
@@ -239,11 +240,11 @@ function onSeek(e: MouseEvent) {
     background: #fff;
     transform: translate(-50%, 0);
     box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.7);
-    transition: left 0.25s linear;
+    transition: left 0.1s linear;
 }
 
+/* 控制条：按钮居中排列，音量图标绝对定位在右端 */
 .controls {
-    margin-top: -6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -273,19 +274,21 @@ function onSeek(e: MouseEvent) {
     transform: translateY(-1px);
 }
 
+/* 播放键：实心紫罗兰圆形按钮 + 白色图标，与参考站一致，比描边图标更聚焦 */
 .ctrl-btn.play-btn {
-    width: 52px;
-    height: 52px;
-    font-size: 38px;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
     border: none;
-    color: var(--accent);
-    background: transparent;
-    box-shadow: 0 0 22px var(--accent-soft-3);
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    box-shadow: 0 8px 22px -6px rgba(var(--accent-rgb), 0.8);
 }
 
 .ctrl-btn.play-btn:hover {
-    color: var(--accent-pink);
-    box-shadow: 0 0 28px rgba(var(--accent-pink-rgb), 0.45);
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    box-shadow: 0 10px 26px -6px rgba(var(--accent-rgb), 0.95);
     transform: scale(1.06);
 }
 

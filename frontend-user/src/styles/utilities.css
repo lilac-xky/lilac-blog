@@ -4,22 +4,34 @@
  * 列表空态/加载态等样式收敛到此处，业务页只通过类名复用，避免散落复制
  */
 
-/* ---------- 玻璃拟态卡片 ---------- */
+/* ---------- 玻璃拟态卡片 ----------
+ * 统一卡片质感：半透紫灰底 + 背景模糊 + 顶部 1px 高光 + 外投影。
+ * 作用范围：全站所有 .glass-card 容器；优先级为普通类选择器，可被页面级覆写。
+ */
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
+  backdrop-filter: blur(var(--blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.15);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
 }
 
-/* 较透明变体（文章列表卡片等） */
+/* 较透明变体（文章列表卡片等）：底更淡、边框更弱，用于大量重复的列表项 */
 .glass-card-translucent {
   background: var(--bg-card-translucent);
+  backdrop-filter: blur(var(--blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-card);
+}
+
+/* 深色实底面板变体：用于歌词条这类需要“压住背景、突出文字”的窄条容器 */
+.glass-card-deep {
+  background: var(--bg-deep-panel);
   backdrop-filter: blur(var(--blur));
   -webkit-backdrop-filter: blur(var(--blur));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: var(--radius-card);
 }
 

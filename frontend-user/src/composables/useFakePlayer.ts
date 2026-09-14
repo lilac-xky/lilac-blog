@@ -159,15 +159,51 @@ export function useFakePlayer(): FakePlayerState {
     function onEnded() {
         next();
     }
+
+    /*
+     * 进度平滑：audio 的 timeupdate 事件只有大约 4 次/秒，
+     * 直接拿它驱动进度条会一跳一跳的。播放期间改用 requestAnimationFrame
+     * 每帧读取 audio.currentTime，进度条才会匀速推进。
+     */
+    let progressRaf: number | null = null;
+
+    // 停止逐帧同步（暂停、切歌、组件卸载时都要调，避免空转）
+    function stopProgressLoop() {
+        if (progressRaf !== null) {
+            cancelAnimationFrame(progressRaf);
+            progressRaf = null;
+        }
+    }
+
+    // 每帧同步一次播放进度，直到进入暂停态为止
+    function tickProgress() {
+        if (!state.playing) {
+            progressRaf = null;
+            return;
+        }
+        state.currentTime = audio.currentTime;
+        progressRaf = requestAnimationFrame(tickProgress);
+    }
+
+    // 启动逐帧同步（已在运行时不重复启动）
+    function startProgressLoop() {
+        if (progressRaf === null) {
+            progressRaf = requestAnimationFrame(tickProgress);
+        }
+    }
+
     function onPlay() {
         state.playing = true;
+        startProgressLoop();
     }
     function onPause() {
         state.playing = false;
+        stopProgressLoop();
     }
     function onError() {
         console.warn('[player] audio load failed:', track.value.url);
         state.playing = false;
+        stopProgressLoop();
     }
 
     audio.addEventListener('timeupdate', onTimeUpdate);
@@ -228,6 +264,7 @@ export function useFakePlayer(): FakePlayerState {
         audio.removeEventListener('play', onPlay);
         audio.removeEventListener('pause', onPause);
         audio.removeEventListener('error', onError);
+        stopProgressLoop();
         audio.pause();
         audio.src = '';
         if (lrcAbort) lrcAbort.abort();

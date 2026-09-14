@@ -4,49 +4,60 @@
  * 修改色彩主题只需调整此文件，其它样式均通过 var(--xxx) 引用
  */
 :root {
-  /* 背景层 */
-  --bg-page: #08070f;
-  --bg-page-rgb: 8, 7, 15;
-  --bg-page-2: #0f0e1a;
-  --bg-card: rgba(22, 18, 42, 0.72);
-  --bg-card-solid: #15122b;
-  --bg-elev: rgba(38, 32, 64, 0.78);
+  /* 背景层（整体比早期版本提亮一档，让背景图与星空粒子可辨识） */
+  --bg-page: #0a0e18;
+  --bg-page-rgb: 10, 14, 24;
+  --bg-page-2: #141926;
+  /* 卡片底：中性冷灰，比页面背景略亮，做出“磨砂玻璃浮在背景之上”的层次
+   * 刻意保持中性的蓝灰（B 略高于 R），不再用紫灰，避免整屏发紫 */
+  --bg-card: rgba(44, 50, 74, 0.42);
+  --bg-card-solid: #1b2030;
+  --bg-elev: rgba(46, 52, 72, 0.68);
 
   /* 文字 */
-  --text-primary: #f5f3ff;
-  --text-secondary: rgba(245, 243, 255, 0.65);
-  --text-muted: rgba(245, 243, 255, 0.4);
+  --text-primary: #f7f7fa;
+  --text-secondary: rgba(230, 232, 240, 0.72);
+  --text-muted: rgba(212, 216, 232, 0.5);
 
   /* 边框 */
-  --border-soft: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.22);
+  --border-soft: rgba(255, 255, 255, 0.13);
+  --border-strong: rgba(255, 255, 255, 0.24);
 
-  /* 主色（星空青） */
+  /* 主色（星空青）：沿用站点原有配色，不改紫色化 */
   --accent: #38bdf8;
   --accent-strong: #0ea5e9;
   --accent-rgb: 56, 189, 248;
   --accent-strong-rgb: 14, 165, 233;
+  /* 亮青：用于深色底上的文字/数字/图标强调，比 --accent 更醒目 */
+  --accent-light: #7dd3fc;
+  --accent-light-rgb: 125, 211, 252;
   --accent-pink: #ec4899;
   --accent-pink-rgb: 236, 72, 153;
 
   /* 主色衍生（rgba 透明度变体） */
-  --accent-soft: rgba(var(--accent-rgb), 0.1);
-  --accent-soft-2: rgba(var(--accent-rgb), 0.18);
-  --accent-soft-3: rgba(var(--accent-rgb), 0.35);
-  --accent-soft-hover: rgba(var(--accent-rgb), 0.55);
-  --border-accent: rgba(var(--accent-rgb), 0.22);
-  --border-accent-strong: rgba(var(--accent-rgb), 0.45);
+  --accent-soft: rgba(var(--accent-rgb), 0.12);
+  --accent-soft-2: rgba(var(--accent-rgb), 0.2);
+  --accent-soft-3: rgba(var(--accent-rgb), 0.38);
+  --accent-soft-hover: rgba(var(--accent-rgb), 0.58);
+  --border-accent: rgba(var(--accent-rgb), 0.26);
+  --border-accent-strong: rgba(var(--accent-rgb), 0.5);
 
-  /* 半透卡片背景（玻璃拟态浅变体） */
-  --bg-card-translucent: rgba(20, 18, 40, 0.28);
-  --bg-card-translucent-strong: rgba(20, 18, 40, 0.42);
+  /* 半透卡片背景（玻璃拟态浅变体）：同样是中性冷灰，不参与紫色染色 */
+  --bg-card-translucent: rgba(22, 26, 38, 0.32);
+  --bg-card-translucent-strong: rgba(28, 32, 46, 0.5);
+
+  /* 顶部导航玻璃幔层：比页面背景略亮，形成“轻纱压顶”而不是“黑条压顶” */
+  --bg-header-veil: rgba(255, 255, 255, 0.05);
+
+  /* 深色实底面板：歌词条等需要强对比文字的窄条容器 */
+  --bg-deep-panel: rgba(11, 14, 26, 0.72);
 
   /* 阴影 */
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.25);
-  --shadow-hover: 0 14px 40px rgba(14, 165, 233, 0.25);
+  --shadow-card: 0 12px 34px -14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  --shadow-hover: 0 16px 40px -12px rgba(var(--accent-rgb), 0.42);
 
   /* 圆角 & 模糊 */
-  --radius-card: 20px;
+  --radius-card: 18px;
   --radius-sm: 12px;
   --radius-pill: 999px;
   --blur: 22px;

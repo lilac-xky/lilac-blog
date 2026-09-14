@@ -268,34 +268,15 @@ onMounted(() => {
     gap: 22px;
 }
 
-/* ========== 透卡覆写：个人卡 / 时间轴 / 标签云（中部歌词条不变） ========== */
+/* ========== 卡片质感 ==========
+ * 首页统一使用 utilities.css 里的 .glass-card（半透冷灰底 + 顶部高光 + 投影），
+ * 不再对单张卡片做局部渐变覆写，避免出现“个人卡偏灰、播放器偏透”的不一致。
+ * 这里只补一层中性白的左上高光，不使用带色相的染色，避免卡片整体发紫。
+ */
 .profile-card.glass-card,
 .timeline.glass-card,
 .tagcloud.glass-card {
-    background: linear-gradient(145deg, rgba(40, 45, 60, 0.6), rgba(20, 25, 35, 0.4)) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-:deep(.music-player.glass-card) {
-    background: linear-gradient(145deg, rgba(40, 45, 60, 0.6), rgba(20, 25, 35, 0.4)) !important;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* 搜索框增加一点高光 */
-.search-bar {
-    background: rgba(255, 255, 255, 0.03);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-/* 音乐播放器同样透一点（其 scoped 样式由本组件控制，这里通过 :deep 覆写） */
-:deep(.music-player.glass-card) {
-    background: var(--bg-card-translucent) !important;
-    border-color: rgba(255, 255, 255, 0.06) !important;
+    background-image: radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.07), transparent 58%);
 }
 
 /* ========== 搜索条 ========== */
@@ -308,6 +289,10 @@ onMounted(() => {
     max-width: 640px;
     width: 100%;
     margin: 4px auto 6px;
+    /* 比普通玻璃卡更亮一点，让顶部搜索条成为明确的入口而不是一片虚影 */
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 6px 24px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .search-icon {
@@ -345,7 +330,7 @@ onMounted(() => {
     align-items: stretch;
 }
 
-/* ========== 个人卡 ========== */
+/* 个人卡容器：内容纵向分布，统计行用 margin-top:auto 钉底 */
 .profile-card {
     padding: 22px 24px 20px;
     display: flex;
@@ -353,16 +338,6 @@ onMounted(() => {
     min-height: 264px;
     position: relative;
     overflow: hidden;
-}
-
-.profile-card::before {
-    content: '';
-    position: absolute;
-    inset: auto auto -40% -10%;
-    width: 60%;
-    height: 60%;
-    background: radial-gradient(circle, rgba(var(--accent-pink-rgb), 0.18), transparent 70%);
-    pointer-events: none;
 }
 
 .profile-main {
@@ -377,22 +352,24 @@ onMounted(() => {
     flex: 0 0 auto;
 }
 
+/* 头像：圆角方图 + 紫罗兰描边，比纯圆形更有“卡片头像”的轮廓感 */
 .site-avatar {
-    width: 88px;
-    height: 88px;
-    border-radius: 50%;
+    width: 92px;
+    height: 92px;
+    border-radius: 20px;
     object-fit: cover;
     display: block;
-    border: 2px solid rgba(var(--accent-rgb), 0.5);
-    box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.32);
-    background: linear-gradient(135deg, #1e3a5f, #2a4a7a);
+    border: 2px solid rgba(var(--accent-rgb), 0.6);
+    box-shadow: 0 0 26px rgba(var(--accent-rgb), 0.45), 0 8px 22px -10px rgba(0, 0, 0, 0.8);
+    background: var(--gradient-card-default);
 }
 
+/* 头像外发光：跟随头像形状的紫色光晕，做呼吸动画 */
 .avatar-glow {
     position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.45), transparent 70%);
+    inset: -10px;
+    border-radius: 26px;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.5), transparent 70%);
     filter: blur(16px);
     z-index: -1;
     animation: avatar-pulse 4s ease-in-out infinite;
@@ -417,23 +394,26 @@ onMounted(() => {
     min-width: 0;
 }
 
+/* “Hi there”胶囊标签：亮紫文字 + 淡紫底，作为卡片开场的视觉引导 */
 .hello-tag {
     display: inline-block;
     padding: 3px 11px;
     border-radius: var(--radius-pill);
-    background: rgba(var(--accent-rgb), 0.12);
-    border: 1px solid rgba(var(--accent-rgb), 0.25);
-    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.16);
+    border: 1px solid rgba(var(--accent-rgb), 0.32);
+    color: var(--accent-light);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.06em;
     margin-bottom: 8px;
 }
 
+/* 昵称：接近纯白的浅青渐变，沿用站点原有的蓝青配色 */
 .profile-name {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 800;
-    background: linear-gradient(135deg, #f5f3ff, #7dd3fc 60%, #ec4899);
+    letter-spacing: 0.01em;
+    background: linear-gradient(135deg, #ffffff, #e0f2fe 55%, #7dd3fc);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -446,11 +426,10 @@ onMounted(() => {
     line-height: 1.75;
 }
 
-/* 统计行（含联系方式） */
+/* 统计行（含联系方式）：去掉虚线分隔，改用留白区分上下两组信息 */
 .stats-line {
     margin-top: auto;
-    padding-top: 14px;
-    border-top: 1px dashed var(--border-soft);
+    padding-top: 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -470,26 +449,27 @@ onMounted(() => {
     gap: 8px;
 }
 
+/* 联系方式圆钮：清晰的描边与浅底，避免旧版在深色卡片上“看不见按钮” */
 .contact-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-soft);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(232, 234, 252, 0.82);
     cursor: pointer;
     transition: all 0.25s;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .contact-btn:hover {
-    color: var(--accent);
-    border-color: rgba(var(--accent-rgb), 0.55);
-    background: rgba(var(--accent-rgb), 0.12);
-    box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.35);
+    color: #fff;
+    border-color: rgba(var(--accent-rgb), 0.7);
+    background: rgba(var(--accent-rgb), 0.28);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.45);
     transform: translateY(-2px);
 }
 
@@ -501,16 +481,18 @@ onMounted(() => {
 }
 
 .num {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 800;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
 
+/* 文章数：亮紫，深色底上比主色更醒目 */
 .num-violet {
-    color: var(--accent);
+    color: var(--accent-light);
 }
 
+/* 浏览数：品牌粉，与亮紫形成冷暖对比 */
 .num-pink {
     color: var(--accent-pink);
 }
@@ -608,24 +590,27 @@ onMounted(() => {
     position: relative;
 }
 
+/* 右列整体下移半张封面高度，做出错落的瀑布感（封面比例统一后不会显得散乱） */
 .tl-col-right {
-    margin-top: 56px;
-    /* 右列整体下移，左右不严格对齐 */
+    margin-top: 44px;
 }
 
+/* 时间轴小卡片：比外层容器略亮一档，形成“容器 > 卡片”的两级层次
+ * 注意不能加 overflow:hidden，否则会把定位在卡片外侧的时间轴圆点裁掉
+ */
 .tl-card {
     position: relative;
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.25s;
 }
 
 .tl-card:hover {
-    border-color: rgba(var(--accent-rgb), 0.5);
-    background: rgba(var(--accent-rgb), 0.08);
+    border-color: rgba(var(--accent-rgb), 0.55);
+    background: rgba(var(--accent-rgb), 0.12);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.2);
+    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.25);
 }
 
 .tl-card-link {
@@ -634,11 +619,13 @@ onMounted(() => {
     color: var(--text-primary);
 }
 
+/* 封面：按固定宽高比铺满卡片宽度，避免旧版固定 110px 高度在不同列宽下被压成细条 */
 .tl-cover {
-    height: 110px;
+    aspect-ratio: 5 / 2;
     overflow: hidden;
     border-radius: calc(var(--radius-sm) - 1px) calc(var(--radius-sm) - 1px) 0 0;
     position: relative;
+    background: var(--bg-page-2);
 }
 
 .tl-cover img {
@@ -684,9 +671,10 @@ onMounted(() => {
     box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.7);
 }
 
+/* 时间轴日期：亮紫小字，作为卡片的视觉锚点 */
 .tl-date {
     font-size: 11.5px;
-    color: var(--accent);
+    color: var(--accent-light);
     font-weight: 600;
     letter-spacing: 0.06em;
     margin-bottom: 6px;
@@ -706,7 +694,7 @@ onMounted(() => {
 }
 
 .tl-card:hover .tl-title {
-    color: var(--accent);
+    color: var(--accent-light);
 }
 
 .tl-summary {
@@ -741,13 +729,14 @@ onMounted(() => {
     justify-content: center;
 }
 
+/* 标签云单个标签：底色由页面内联样式注入颜色，这里只负责形状与悬停反馈 */
 .cloud-tag {
     display: inline-flex;
     align-items: center;
     padding: 4px 12px;
     border-radius: var(--radius-pill);
     border: 1px solid;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.06);
     line-height: 1.4;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -774,11 +763,6 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
-    .search-btn {
-        padding: 0 14px;
-        font-size: 13px;
-    }
-
     .profile-main {
         flex-direction: column;
         align-items: flex-start;

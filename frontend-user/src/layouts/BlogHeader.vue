@@ -145,14 +145,15 @@ async function handleMenu({ key }: { key: string }) {
 </script>
 
 <style scoped>
+/* 顶栏：浅色玻璃幔层，比页面背景略亮，避免旧版“黑条压顶”把首页切成两截 */
 .blog-header {
     position: sticky;
     top: 0;
     z-index: var(--z-header);
-    background: var(--bg-card-translucent);
-    backdrop-filter: blur(var(--blur));
-    -webkit-backdrop-filter: blur(var(--blur));
-    border-bottom: 1px solid var(--border-soft);
+    background: var(--bg-header-veil);
+    backdrop-filter: blur(var(--blur)) saturate(1.2);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(1.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .header-inner {
@@ -188,17 +189,18 @@ async function handleMenu({ key }: { key: string }) {
     gap: 8px;
 }
 
+/* 导航项：默认比正文稍暗，激活/悬停时提亮到接近纯白 */
 .nav-item {
     position: relative;
     padding: 8px 18px;
-    color: var(--text-secondary);
+    color: rgba(232, 234, 252, 0.72);
     font-size: 14px;
     font-weight: 500;
     transition: color 0.2s;
 }
 
 .nav-item:hover {
-    color: var(--text-primary);
+    color: #fff;
 }
 
 .nav-item .dot {

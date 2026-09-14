@@ -237,6 +237,110 @@ watch(() => route.params.id, loadArticle);
     color: var(--text-primary);
     font-size: 15px;
     line-height: 1.85;
+
+    /* ===== 借 md-editor-v3 自己的主题变量改配色，比用 !important 硬压更稳 ===== */
+    /* 表格：默认偶数行是 #0c0c0c 近黑条纹，在玻璃卡上像一块黑砖，改成极淡的白色 */
+    --md-theme-table-stripe-color: rgba(255, 255, 255, 0.03);
+    --md-theme-table-tr-bg-color: transparent;
+    --md-theme-table-td-border-color: rgba(255, 255, 255, 0.1);
+    /* 代码块：默认 #1a1a1a 是一块没有层次的纯黑，换成带蓝调的深灰，和站点冷灰体系一致 */
+    --md-theme-code-block-bg-color: rgba(32, 38, 56, 0.78);
+    --md-theme-code-before-bg-color: rgba(32, 38, 56, 0.78);
+    --md-theme-code-block-color: #c8d3e6;
+    --md-theme-code-block-radius: 12px;
+    /* 行内代码：改用站点主色的浅底 */
+    --md-theme-code-inline-color: var(--accent-light);
+    --md-theme-code-inline-bg-color: rgba(var(--accent-rgb), 0.14);
+    --md-theme-code-inline-radius: 5px;
+    /* 链接与引用线也拉回站点配色 */
+    --md-theme-link-color: var(--accent-light);
+    --md-theme-link-hover-color: var(--accent-pink);
+    --md-theme-border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ========== Markdown 表格 ==========
+ * 表头淡主色底 + 分隔线式单元格 + 圆角描边，替代默认的近黑条纹表格；
+ * 作用范围限在 .md-body 内部，优先级高于 md-editor-v3 自带的表格样式。
+ */
+.md-body :deep(.md-editor-preview table) {
+    width: 100%;
+    margin: 1.5em 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    font-size: 14px;
+}
+
+/* 表头单元格：淡主色底 + 提高字重，让首行从正文里跳出来 */
+.md-body :deep(.md-editor-preview table thead th) {
+    background: rgba(var(--accent-rgb), 0.16);
+    color: var(--text-primary);
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* 所有单元格：去掉默认四边框，只留一条极淡的下分隔线 */
+.md-body :deep(.md-editor-preview table th),
+.md-body :deep(.md-editor-preview table td) {
+    padding: 11px 15px;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    line-height: 1.75;
+    word-break: break-word;
+}
+
+/* 最后一行不再需要下分隔线 */
+.md-body :deep(.md-editor-preview table tbody tr:last-child td) {
+    border-bottom: none;
+}
+
+/* 悬停整行高亮，横向读长表格时不容易串行 */
+.md-body :deep(.md-editor-preview table tbody tr:hover) {
+    background-color: rgba(var(--accent-rgb), 0.09);
+}
+
+/* ========== Markdown 代码块 ==========
+ * 外框做成“卡片里的卡片”：圆角 + 描边 + 落影，避免整块纯黑贴在玻璃卡上。
+ */
+.md-body :deep(.md-editor-code) {
+    margin: 1.5em 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: 0 16px 32px -22px rgba(0, 0, 0, 0.95);
+}
+
+/* 顶部信息条（语言标签 + 复制按钮）：用渐变替掉纯黑底，
+ * 同时用 position/z-index 覆盖组件默认的 sticky + z-index:10000，防止它浮到站点导航栏上面
+ */
+.md-body :deep(.md-editor-code .md-editor-code-head) {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(44, 52, 74, 0.95), rgba(31, 37, 54, 0.95));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 语言标签与复制按钮：提高对比度，默认的灰色在深底上太糊 */
+.md-body :deep(.md-editor-code .md-editor-code-lang),
+.md-body :deep(.md-editor-code .md-editor-copy-button) {
+    color: rgba(226, 232, 244, 0.72);
+}
+
+/* 代码正文：加大内边距与行高，并补一道自上而下的极淡高光，
+ * 让整块代码看起来是一块“有厚度的面板”而不是一摊纯黑
+ */
+.md-body :deep(.md-editor-code pre code) {
+    padding: 18px 20px;
+    line-height: 1.75;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 140px);
+}
+
+/* 行内代码：统一等宽字体，避免中英文混排时字重跳变 */
+.md-body :deep(.md-editor-preview code) {
+    font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 /* 让目录跳转时标题不被顶部 sticky 导航栏（68px）遮挡 */
