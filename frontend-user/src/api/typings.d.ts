@@ -181,6 +181,11 @@ declare namespace API {
     id?: number;
   };
 
+  type getSparkParams = {
+    /** 灵感id */
+    id?: number;
+  };
+
   type LoginUserVO = {
     id?: number;
     /** 用户名 */
@@ -315,6 +320,32 @@ declare namespace API {
 
   type PageRole = {
     records?: Role[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageSpark = {
+    records?: Spark[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageSparkVO = {
+    records?: SparkVO[];
     total?: number;
     size?: number;
     current?: number;
@@ -485,6 +516,18 @@ declare namespace API {
     data?: PageRole;
   };
 
+  type ResultPageSpark = {
+    code?: number;
+    msg?: string;
+    data?: PageSpark;
+  };
+
+  type ResultPageSparkVO = {
+    code?: number;
+    msg?: string;
+    data?: PageSparkVO;
+  };
+
   type ResultPageTag = {
     code?: number;
     msg?: string;
@@ -501,6 +544,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: PageUserVO;
+  };
+
+  type ResultSparkVO = {
+    code?: number;
+    msg?: string;
+    data?: SparkVO;
   };
 
   type ResultUploadPictureResult = {
@@ -612,6 +661,81 @@ declare namespace API {
   type sendResetCodeParams = {
     /** 邮箱 */
     email: string;
+  };
+
+  type Spark = {
+    /** id */
+    id?: number;
+    /** 创建人id(灵感归属人，private 时只有本人可查看) */
+    userId?: number;
+    /** 灵感内容 */
+    content?: string;
+    /** 灵感状态(默认spark) */
+    status?: string;
+    /** 灵感是否公开(默认private) */
+    visibility?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type SparkAddRequest = {
+    /** 灵感内容 */
+    content?: string;
+    /** 灵感状态(默认spark) */
+    status?: string;
+    /** 灵感是否公开(默认private) */
+    visibility?: string;
+  };
+
+  type SparkQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** 灵感id */
+    id?: number;
+    /** 灵感内容(模糊查询) */
+    content?: string;
+    /** 灵感状态(默认spark) */
+    status?: string;
+    /** 灵感是否公开(默认private，后台可用，前台会被服务端忽略) */
+    visibility?: string;
+    /** 创建人id(后台按归属人筛选) */
+    userId?: number;
+  };
+
+  type SparkUpdateRequest = {
+    /** 灵感id */
+    id?: number;
+    /** 灵感内容 */
+    content?: string;
+    /** 灵感状态(默认spark) */
+    status?: string;
+    /** 灵感是否公开(默认private) */
+    visibility?: string;
+  };
+
+  type SparkVO = {
+    /** id */
+    id?: number;
+    /** 灵感内容 */
+    content?: string;
+    /** 灵感状态(默认spark) */
+    status?: string;
+    /** 灵感是否公开(默认private) */
+    visibility?: string;
+    /** 创建人id(灵感归属人) */
+    userId?: number;
+    /** 创建时间 */
+    createTime?: string;
   };
 
   type Tag = {

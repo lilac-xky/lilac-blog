@@ -103,6 +103,7 @@ const router = useRouter();
 const navItems = [
     { label: '首页', path: '/' },
     { label: '归档', path: '/archive' },
+    { label: '拾灵集', path: '/spark' },
 ];
 
 const currentPath = computed(() => route.path);
