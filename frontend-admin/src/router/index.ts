@@ -51,6 +51,12 @@ const router = createRouter({
           meta: { permission: 'article:add' }, // 需要文章添加权限
         },
         {
+          path: 'spark/manage',
+          name: 'sparkManage',
+          component: () => import('@/views/spark/SparkManagement.vue'),
+          meta: { permission: 'spark:list' }, // 需要灵感列表权限
+        },
+        {
           path: 'blog/category',
           name: 'categoryManage',
           component: () => import('@/views/category/CategoryManagement.vue'),

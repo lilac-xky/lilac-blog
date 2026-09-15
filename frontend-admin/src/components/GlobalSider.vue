@@ -25,6 +25,7 @@ import {
     TeamOutlined,
     FileTextOutlined,
     AuditOutlined,
+    BulbOutlined,
 } from '@ant-design/icons-vue';
 import { hasPermission, hasRole } from '@/utils/permission';
 
@@ -124,6 +125,12 @@ const menuConfig: MenuItem[] = [
                 icon: () => h(AuditOutlined),
                 label: '文章审核',
                 permission: 'article:review', // 需要文章审核权限
+            },
+            {
+                key: '/spark/manage',
+                icon: () => h(BulbOutlined),
+                label: '灵感管理',
+                permission: 'spark:list', // 需要灵感列表权限
             },
             {
                 key: '/about',
