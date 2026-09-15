@@ -8,6 +8,7 @@ import * as articleController from "./articleController";
 import * as tagController from "./tagController";
 import * as categoryController from "./categoryController";
 import * as messageController from "./messageController";
+import * as sparkController from "./sparkController";
 export default {
   userController,
   fileController,
@@ -15,4 +16,5 @@ export default {
   tagController,
   categoryController,
   messageController,
+  sparkController,
 };

@@ -11,6 +11,7 @@ import * as categoryController from "./categoryController";
 import * as messageController from "./messageController";
 import * as roleController from "./roleController";
 import * as permissionController from "./permissionController";
+import * as sparkController from "./sparkController";
 export default {
   userController,
   adminController,
@@ -21,4 +22,5 @@ export default {
   messageController,
   roleController,
   permissionController,
+  sparkController,
 };

@@ -6,6 +6,7 @@ import Archive from '@/views/article/Archive.vue'
 import Login from '@/views/login/Login.vue'
 import Register from '@/views/login/Register.vue'
 import ForgotPassword from '@/views/login/ForgotPassword.vue'
+import Spark from '@/views/spark/SparkCollection.vue'
 import { useUserStore } from '@/stores/user'
 import { message } from 'ant-design-vue'
 
@@ -35,6 +36,7 @@ const router = createRouter({
         { path: '', name: 'home', component: Home },
         { path: 'archive', name: 'archive', component: Archive },
         { path: 'article/:id', name: 'article-detail', component: ArticleDetail },
+        { path: 'spark', name: 'spark', component: Spark },
         // 用户中心（需登录）
         {
           path: 'user',
