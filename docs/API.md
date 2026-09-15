@@ -360,6 +360,108 @@ Token 在登录接口返回的 `LoginUserVO.token` 字段中获取。Sa-Token �
 
 ---
 
+## 灵感模块（`/spark`）
+
+灵感按 `visibility` 区分可见性，服务端强制校验，请求体中的 `visibility` 无法越权：
+
+- `public`：任何人可查
+- `private`（默认）：只有创建者本人可查，他人查询详情返回「资源不存在」
+
+### 添加灵感
+
+- **URL**：`POST /api/spark/add`
+- **鉴权**：需要 `admin-token`
+- **权限**：`spark:add`
+
+**请求体**
+
+| 字段       | 类型   | 必填 | 说明                                                |
+| ---------- | ------ | ---- | --------------------------------------------------- |
+| content    | string | 是   | 灵感内容                                            |
+| status     | string | 否   | 默认 `spark`，可选 `brewing` / `doing` / `done` / `paused` / `dropped` |
+| visibility | string | 否   | 默认 `private`，可选 `public` / `private`           |
+
+创建人 `userId` 由服务端写入当前登录用户，请求体传入无效。
+
+**响应**
+
+```json
+{ "code": 200, "data": 9001, "message": "ok" }
+```
+
+### 修改灵感
+
+- **URL**：`POST /api/spark/update`
+- **鉴权**：需要 `admin-token`
+- **权限**：`spark:update`
+- **请求体**：`{ "id": 9001, "content": "...", "status": "doing", "visibility": "public" }`
+
+### 删除灵感
+
+- **URL**：`POST /api/spark/delete`
+- **鉴权**：需要 `admin-token`
+- **权限**：`spark:delete`
+- **请求体**：`{ "id": 9001 }`
+
+### 后台分页列表
+
+- **URL**：`POST /api/spark/list/page`
+- **鉴权**：需要 `admin-token`
+- **权限**：`spark:list`
+- **可见范围**：公开 + 私有全部可见
+
+**请求体**（继承 `PageRequest`）
+
+| 字段       | 类型   | 必填 | 说明                 |
+| ---------- | ------ | ---- | -------------------- |
+| id         | long   | 否   | 灵感 id              |
+| content    | string | 否   | 内容模糊匹配         |
+| status     | string | 否   | 灵感状态             |
+| visibility | string | 否   | `public` / `private` |
+| userId     | long   | 否   | 创建人 id            |
+
+返回 `Page<Spark>`（实体分页，字段含 `userId`、`createTime`、`isDeleted`）。
+
+### 前台分页列表
+
+- **URL**：`POST /api/spark/list/page/vo`
+- **鉴权**：否（携带 `user-token` 时可额外看到自己的私有灵感）
+- **限制**：`pageSize` ≤ 20
+
+**可见范围**：所有 `public` 灵感 + 当前登录用户自己的 `private` 灵感；请求体中的 `visibility` 会被服务端忽略。
+
+请求字段同上一接口（`visibility`、`userId` 过滤对前台不生效）。
+
+### 灵感详情
+
+- **URL**：`GET /api/spark/get?id=<id>`
+- **鉴权**：否（携带 `user-token` 时才能取到自己的私有灵感）
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "id": 9001,
+    "content": "...",
+    "status": "spark",
+    "visibility": "public",
+    "userId": 1024,
+    "createTime": "2026-05-01T12:00:00"
+  },
+  "message": "ok"
+}
+```
+
+`private` 灵感非本人请求时返回查不到：
+
+```json
+{ "code": 400006, "data": null, "message": "灵感不存在" }
+```
+
+---
+
 ## 分类模块（`/category`）
 
 ### 添加分类

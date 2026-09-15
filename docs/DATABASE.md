@@ -16,6 +16,7 @@
 | category     | 文章分类                          |
 | tag          | 文章标签                          |
 | article_tag  | 文章 ↔ 标签 多对多关联表          |
+| spark        | 灵感（公开 / 私有）               |
 
 ---
 
@@ -185,6 +186,36 @@ CREATE TABLE `article_tag` (
   KEY `idx_tag` (`tagId`),
   UNIQUE KEY `uk_article_tag` (`articleId`, `tagId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章-标签关联';
+```
+
+---
+
+## spark 表
+
+灵感表，记录「一闪而过」的想法。`visibility` 决定可见范围：
+
+- `public`：所有人（含未登录）都可查询
+- `private`（默认）：只有创建者本人（`userId`）可以查看，其他人查询一律按「不存在」处理
+
+| 字段名       | 类型         | 约束                          | 说明                                                            |
+| ------------ | ------------ | ----------------------------- | --------------------------------------------------------------- |
+| `id`         | BIGINT       | PK                            | 主键（雪花 ID）                                                 |
+| `content`    | TEXT         | NOT NULL                      | 灵感内容                                                        |
+| `status`     | VARCHAR(20)  | DEFAULT 'spark'               | `spark` / `brewing` / `doing` / `done` / `paused` / `dropped`   |
+| `visibility` | VARCHAR(20)  | DEFAULT 'private'             | `public` 公开 / `private` 私有                                  |
+| `userId`     | BIGINT       |                               | 创建人 ID（`private` 归属判断依据，来自 `user.id`）             |
+| `createTime` | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP     | 创建时间                                                        |
+| `updateTime` | TIMESTAMP    | ON UPDATE CURRENT_TIMESTAMP   | 更新时间                                                        |
+| `editTime`   | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP     | 业务侧编辑时间                                                  |
+| `isDeleted`  | TINYINT      | DEFAULT 0                     | 逻辑删除                                                        |
+
+已存在 `spark` 表时需补充归属人字段（**查询的私有校验依赖该字段，必须执行**；若字段已存在则跳过）：
+
+```sql
+ALTER TABLE `spark`
+  ADD COLUMN `userId` BIGINT DEFAULT NULL COMMENT '创建人 ID（private 仅本人可见）' AFTER `visibility`,
+  ADD KEY `idx_spark_user` (`userId`),
+  ADD KEY `idx_spark_visibility` (`visibility`);
 ```
 
 ---
