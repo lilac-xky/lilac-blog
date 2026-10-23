@@ -135,8 +135,8 @@
         </a-modal>
 
         <!-- 修改邮箱弹窗：两步流程，先验证身份拿到凭证，再绑定新邮箱 -->
-        <a-modal v-model:open="emailModalOpen" title="修改邮箱" :confirm-loading="emailLoading" width="540px"
-            :footer="null" @cancel="resetEmailForm">
+        <a-modal v-model:open="emailModalOpen" title="修改邮箱" width="540px" :footer="null"
+            @cancel="closeEmailModal">
             <!-- 步骤指示：让用户清楚当前处于哪一步 -->
             <a-steps :current="emailStep" size="small" class="email-steps">
                 <a-step title="验证身份" />
@@ -188,7 +188,7 @@
 
                 <!-- 第一步底部操作 -->
                 <div class="modal-footer">
-                    <a-button @click="resetEmailForm">取消</a-button>
+                    <a-button @click="closeEmailModal">取消</a-button>
                     <a-button type="primary" :loading="identityLoading" @click="handleVerifyIdentity">
                         下一步
                     </a-button>
@@ -534,7 +534,11 @@ const emailRules: Record<string, Rule[]> = {
     ],
 };
 
-// 重置整个修改邮箱流程：回到第一步并清空所有状态与凭证
+/**
+ * 重置修改邮箱流程的内部状态
+ * 输出：步骤回到第一步、凭证清空、两套表单与校验提示清空
+ * 副作用：不改变弹窗开关，由调用方决定是否关闭
+ */
 function resetEmailForm() {
     emailStep.value = 0;
     emailTicket.value = '';
@@ -545,6 +549,16 @@ function resetEmailForm() {
     emailForm.code = '';
     identityFormRef.value?.clearValidate();
     emailFormRef.value?.clearValidate();
+}
+
+/**
+ * 关闭「修改邮箱」弹窗
+ * 输出：无
+ * 副作用：先重置流程状态再关闭，避免下次打开残留上一次的步骤与凭证
+ */
+function closeEmailModal() {
+    resetEmailForm();
+    emailModalOpen.value = false;
 }
 
 // 打开「修改邮箱」弹窗（先重置流程，避免残留上一次的状态）
@@ -706,8 +720,7 @@ async function handleUpdateEmail() {
             // 后端已刷新会话，这里同步本地 store 让资料卡邮箱立即更新
             userStore.setLoginUser({ ...loginUser, email: newEmail });
             message.success('邮箱修改成功');
-            emailModalOpen.value = false;
-            resetEmailForm();
+            closeEmailModal();
         }
     } catch {
         // 错误提示已由请求拦截器统一处理
