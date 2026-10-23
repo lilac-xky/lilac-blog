@@ -594,11 +594,48 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
         }
+        // 参数验证
+        if (StrUtil.isBlank(email)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱不能为空");
+        }
+        if (!Validator.isEmail(email)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱格式不正确");
+        }
+        if (email.length() > 100) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱长度超过限制");
+        }
+        // 查询邮箱是否被其他用户占用
+        long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>()
+                .eq(User::getEmail, email)
+                .ne(User::getId, id));
+        if (count > 0) {
+            throw new BusinessException(HttpsCodeEnum.USER_EXIST, "邮箱已存在");
+        }
+        // 更新邮箱
         user.setEmail(email);
         boolean result = this.updateById(user);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         refreshUserSession(id);
         return true;
+    }
+
+    /**
+     * 检查用户是否为当前用户
+     *
+     * @param id 用户 ID
+     * @return 用户 ID
+     */
+    @Override
+    public Long checkSelf(Long id) {
+        // 登录态可能因会话过期而缺失，统一走 getLoginUser 判空，避免直接空指针
+        LoginUserVO vo = null;
+        if (StpKit.USER.isLogin()) {
+            vo = (LoginUserVO) StpKit.USER.getSession().get(UserConstant.USER_LOGIN_STATE);
+        }
+        ThrowUtils.throwIf(vo == null || vo.getId() == null, HttpsCodeEnum.NEED_LOGIN);
+        ThrowUtils.throwIf(vo == null || vo.getId() == null, HttpsCodeEnum.NEED_LOGIN);
+        ThrowUtils.throwIf(!vo.getId().equals(id), HttpsCodeEnum.FORBIDDEN, "只能操作自己");
+        return vo.getId();
     }
 
     /**
