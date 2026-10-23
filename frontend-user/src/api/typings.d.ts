@@ -552,6 +552,12 @@ declare namespace API {
     data?: SparkVO;
   };
 
+  type ResultString = {
+    code?: number;
+    msg?: string;
+    data?: string;
+  };
+
   type ResultUploadPictureResult = {
     code?: number;
     msg?: string;
@@ -651,6 +657,11 @@ declare namespace API {
     loginType?: string;
     /** 角色描述 */
     description?: string;
+  };
+
+  type sendOriginalEmailCodeParams = {
+    /** 当前登录用户 id */
+    id: number;
   };
 
   type sendRegisterCodeParams = {
@@ -785,6 +796,22 @@ declare namespace API {
     tagName?: string;
   };
 
+  type updateEmailCodeParams = {
+    /** 新邮箱 */
+    email: string;
+  };
+
+  type UpdateEmailMethodRequest = {
+    /** id */
+    id?: number;
+    /** 身份验证通过后发放的一次性凭证 */
+    ticket?: string;
+    /** 邮箱 */
+    email?: string;
+    /** 邮箱验证码 */
+    code?: string;
+  };
+
   type UpdatePasswordRequest = {
     /** 旧密码 */
     oldPassword?: string;
@@ -816,8 +843,6 @@ declare namespace API {
   type UserEditRequest = {
     /** id */
     id?: number;
-    /** 邮箱 */
-    email?: string;
     /** 昵称 */
     username?: string;
     /** 头像 */
@@ -871,6 +896,13 @@ declare namespace API {
     status?: number;
   };
 
+  type UserUpdateEmailRequest = {
+    /** 用d */
+    id?: number;
+    /** 邮箱 */
+    email?: string;
+  };
+
   type UserUpdateRequest = {
     /** id */
     id?: number;
@@ -904,5 +936,16 @@ declare namespace API {
     status?: number;
     /** 创建时间 */
     createTime?: string;
+  };
+
+  type VerifyEmailIdentityRequest = {
+    /** 用户 id */
+    id?: number;
+    /** 身份验证方式：email 表示原邮箱验证码，password 表示当前密码 */
+    method?: string;
+    /** 原邮箱验证码，method 为 email 时必填 */
+    originalCode?: string;
+    /** 当前密码，method 为 password 时必填 */
+    password?: string;
   };
 }

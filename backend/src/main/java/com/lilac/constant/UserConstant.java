@@ -59,4 +59,59 @@ public interface UserConstant {
      * 用户重置密码错误次数缓存key
      */
     String USER_RESET_CODE_ERROR_KEY = "user:reset:error:";
+
+    /**
+     * 用户修改邮箱限制缓存key
+     */
+    String USER_CHANGE_EMAIL_LIMIT_KEY = "user:change:email:limit:";
+
+    /**
+     * 用户修改邮箱验证码缓存key
+     */
+    String USER_CHANGE_EMAIL_CODE_KEY = "user:change:email:code:";
+
+    /**
+     * 用户修改邮箱验证码缓存时间
+     */
+    long USER_CHANGE_EMAIL_CODE_TTL = 5L;
+
+    /**
+     * 用户修改邮箱错误次数缓存key
+     */
+    String USER_CHANGE_EMAIL_CODE_ERROR_KEY = "user:change:email:error:";
+
+    /**
+     * 用户修改邮箱错误次数缓存时间
+     */
+    long USER_CHANGE_EMAIL_CODE_ERROR_TTL = 5L;
+
+    /**
+     * 用户修改邮箱-原邮箱验证码缓存key
+     */
+    String USER_CHANGE_EMAIL_OLD_CODE_KEY = "user:change:email:old:code:";
+
+    /**
+     * 用户修改邮箱-原邮箱验证码错误次数缓存key
+     */
+    String USER_CHANGE_EMAIL_OLD_CODE_ERROR_KEY = "user:change:email:old:error:";
+
+    /**
+     * 用户修改邮箱-原邮箱验证码发送限流缓存key
+     */
+    String USER_CHANGE_EMAIL_OLD_LIMIT_KEY = "user:change:email:old:limit:";
+
+    /**
+     * 用户修改邮箱-原邮箱验证码缓存时间
+     */
+    long USER_CHANGE_EMAIL_OLD_CODE_TTL = 5L;
+
+    /**
+     * 用户修改邮箱-身份验证通过凭证缓存key
+     */
+    String USER_CHANGE_EMAIL_TICKET_KEY = "user:change:email:ticket:";
+
+    /**
+     * 用户修改邮箱-身份验证通过凭证有效期（分钟）
+     */
+    long USER_CHANGE_EMAIL_TICKET_TTL = 5L;
 }

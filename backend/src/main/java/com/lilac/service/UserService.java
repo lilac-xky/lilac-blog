@@ -1,13 +1,16 @@
 package com.lilac.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lilac.domain.dto.user.UpdateEmailMethodRequest;
 import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
+import com.lilac.domain.dto.user.VerifyEmailIdentityRequest;
 import com.lilac.domain.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
+import com.lilac.enums.SendCodeSceneEnum;
 
 /**
  * 用户服务
@@ -60,20 +63,6 @@ public interface UserService extends IService<User> {
      * @return 修改结果
      */
     boolean updatePassword(String oldPassword, String newPassword, String checkPassword);
-
-    /**
-     * 发送注册验证码
-     *
-     * @param email 邮箱
-     */
-    void sendRegisterCode(String email);
-
-    /**
-     * 发送重置密码验证码
-     *
-     * @param email 邮箱
-     */
-    void sendResetCode(String email);
 
     /**
      * 通过邮箱验证码重置密码
@@ -140,19 +129,42 @@ public interface UserService extends IService<User> {
     boolean isAdmin();
 
     /**
-     * 更新用户邮箱
-     *
-     * @param id 用户 ID
-     * @param email 邮箱
-     * @return 更新结果
-     */
-    boolean updateUserEmail(Long id, String email);
-
-    /**
      * 校验用户是否为当前登录用户
      *
      * @param id 待校验的用户 id
      * @return 当前登录用户 id
      */
     Long checkSelf(Long id);
+
+    /**
+     * 发送验证码
+     *
+     * @param sendCodeSceneEnum 发送验证码场景
+     * @param email 邮箱
+     */
+    void sendCode(SendCodeSceneEnum sendCodeSceneEnum, String email);
+
+    /**
+     * 发送原邮箱验证码
+     * 用于修改邮箱时的身份验证，验证码发往当前账号已绑定的邮箱
+     *
+     * @param id 当前登录用户 id
+     */
+    void sendOriginalEmailCode(Long id);
+
+    /**
+     * 验证邮箱身份
+     *
+     * @param verifyEmailIdentityRequest 身份验证请求
+     * @return 一次性凭证
+     */
+    String verifyEmailIdentity(VerifyEmailIdentityRequest verifyEmailIdentityRequest);
+
+    /**
+     * 更新邮箱方法
+     *
+     * @param updateEmailMethodRequest 更新邮箱请求参数
+     * @return 更新结果
+     */
+    boolean updateEmailMethod(UpdateEmailMethodRequest updateEmailMethodRequest);
 }
