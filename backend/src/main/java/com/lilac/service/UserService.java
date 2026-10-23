@@ -147,4 +147,12 @@ public interface UserService extends IService<User> {
      * @return 更新结果
      */
     boolean updateUserEmail(Long id, String email);
+
+    /**
+     * 校验用户是否为当前登录用户
+     *
+     * @param id 待校验的用户 id
+     * @return 当前登录用户 id
+     */
+    Long checkSelf(Long id);
 }

@@ -2,18 +2,11 @@ package com.lilac.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.lilac.common.DeleteRequest;
-import com.lilac.constant.UserConstant;
-import com.lilac.domain.dto.user.ForgotPasswordRequest;
-import com.lilac.domain.dto.user.UpdatePasswordRequest;
-import com.lilac.domain.dto.user.UserEditRequest;
-import com.lilac.domain.dto.user.UserLoginRequest;
-import com.lilac.domain.dto.user.UserRegisterRequest;
+import com.lilac.domain.dto.user.*;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.enums.HttpsCodeEnum;
-import com.lilac.exception.BusinessException;
-import com.lilac.manager.auth.StpKit;
 import com.lilac.manager.auth.anotation.SaUserCheckLogin;
 import com.lilac.service.UserService;
 import com.lilac.utils.ThrowUtils;
@@ -141,25 +134,32 @@ public class UserController {
      */
     @PostMapping("/update")
     public Result<Boolean> updateUser(@RequestBody UserEditRequest userEditRequest) {
-        ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() == null
+                || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        // 只有本人才能修改，同时取回服务端认定的用户 id
+        Long loginUserId = userService.checkSelf(userEditRequest.getId());
         User user = new User();
         BeanUtils.copyProperties(userEditRequest, user);
+        user.setId(loginUserId);
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
-        userService.refreshUserSession(userEditRequest.getId());
+        userService.refreshUserSession(loginUserId);
         return Result.success(true);
     }
 
     /**
      * 更新用户邮箱
      *
-     * @param userEditRequest 用户更新请求
+     * @param userUpdateEmailRequest 用户更新请求
      * @return 更新结果
      */
     @PostMapping("/updateEmail")
-    public Result<Boolean> updateUserEmail(@RequestBody UserEditRequest userEditRequest) {
-        ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
-        boolean result = userService.updateUserEmail(userEditRequest.getId(), userEditRequest.getEmail());
+    public Result<Boolean> updateUserEmail(@RequestBody UserUpdateEmailRequest userUpdateEmailRequest) {
+        ThrowUtils.throwIf(userUpdateEmailRequest == null || userUpdateEmailRequest.getId() == null
+                || userUpdateEmailRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        // 只有本人才能修改
+        Long loginUserId = userService.checkSelf(userUpdateEmailRequest.getId());
+        boolean result = userService.updateUserEmail(loginUserId, userUpdateEmailRequest.getEmail());
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }
@@ -173,12 +173,9 @@ public class UserController {
     @PostMapping("/delete")
     public Result<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null, HttpsCodeEnum.PARAMS_ERROR);
-        LoginUserVO loginUser = (LoginUserVO) StpKit.USER.getSession().get(UserConstant.USER_LOGIN_STATE);
         // todo 注销功能待完善
-        if(!loginUser.getId().equals(deleteRequest.getId())){
-            throw new BusinessException(HttpsCodeEnum.OPERATION_ERROR, "只能删除自己");
-        }
-        boolean result = userService.removeById(deleteRequest.getId());
+        Long loginUserId = userService.checkSelf(deleteRequest.getId());
+        boolean result = userService.removeById(loginUserId);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }
