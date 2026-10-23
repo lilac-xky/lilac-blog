@@ -582,6 +582,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
+     * 更新用户邮箱
+     *
+     * @param id 用户 ID
+     * @param email 邮箱
+     * @return 更新结果
+     */
+    @Override
+    public boolean updateUserEmail(Long id, String email) {
+        User user = this.getById(id);
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
+        }
+        user.setEmail(email);
+        boolean result = this.updateById(user);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        refreshUserSession(id);
+        return true;
+    }
+
+    /**
      * 刷新指定用户的 Sa-Token session 缓存（用户信息更新后调用）
      *
      * @param stpLogic       Sa-Token 逻辑

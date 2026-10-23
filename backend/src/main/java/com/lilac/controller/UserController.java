@@ -142,12 +142,25 @@ public class UserController {
     @PostMapping("/update")
     public Result<Boolean> updateUser(@RequestBody UserEditRequest userEditRequest) {
         ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
-        // todo 带开发前台系统时增加修改用户名和邮箱次数限制，并且保证邮箱正确，需要验证码校验
         User user = new User();
         BeanUtils.copyProperties(userEditRequest, user);
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         userService.refreshUserSession(userEditRequest.getId());
+        return Result.success(true);
+    }
+
+    /**
+     * 更新用户邮箱
+     *
+     * @param userEditRequest 用户更新请求
+     * @return 更新结果
+     */
+    @PostMapping("/updateEmail")
+    public Result<Boolean> updateUserEmail(@RequestBody UserEditRequest userEditRequest) {
+        ThrowUtils.throwIf(userEditRequest == null || userEditRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        boolean result = userService.updateUserEmail(userEditRequest.getId(), userEditRequest.getEmail());
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }
 

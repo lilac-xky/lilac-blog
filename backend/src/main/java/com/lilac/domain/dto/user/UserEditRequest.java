@@ -18,11 +18,6 @@ public class UserEditRequest implements Serializable {
     private Long id;
 
     /**
-     * 用户名
-     */
-    private String userAccount;
-
-    /**
      * 邮箱
      */
     private String email;
@@ -36,9 +31,4 @@ public class UserEditRequest implements Serializable {
      * 头像
      */
     private String avatar;
-
-    /**
-     * 1正常，0异常
-     */
-    private Integer status;
 }

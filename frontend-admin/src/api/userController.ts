@@ -115,6 +115,21 @@ export async function updateUser(
   });
 }
 
+/** 更新用户邮箱 POST /api/user/updateEmail */
+export async function updateUserEmail(
+  body: API.UserEditRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/user/updateEmail", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 已登录用户修改密码 POST /api/user/updatePassword */
 export async function updatePassword(
   body: API.UpdatePasswordRequest,
