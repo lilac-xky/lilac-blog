@@ -89,8 +89,8 @@
   - 已发布文章不可在前台编辑，需联系管理员（点击查看跳详情页）
 -->
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, watch } from 'vue';
+import { useRoute, useRouter, type LocationQueryValue } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import {
     EditOutlined,
@@ -108,11 +108,28 @@ import { useListPagination } from '@/composables/useListPagination';
 import { useDateFormat } from '@/composables/useDateFormat';
 
 const router = useRouter();
+const route = useRoute();
 const { formatDate } = useDateFormat();
+
+// 合法状态 Tab：0 草稿 / 1 待审核 / 2 已发布，其余（含 all）一律归到「全部」
+const VALID_TAB_KEYS = ['0', '1', '2'];
+
+/**
+ * 将地址栏中的 tab 参数归一化成合法的 Tab key
+ * 输入：route.query.tab 的原始值（可能是字符串数组、undefined 或非法值）
+ * 副作用：无
+ * 返回：'0' | '1' | '2' | 'all'
+ */
+function normalizeTab(raw: LocationQueryValue | LocationQueryValue[] | undefined): string {
+    const tab = Array.isArray(raw) ? raw[0] : raw;
+    return typeof tab === 'string' && VALID_TAB_KEYS.includes(tab) ? tab : 'all';
+}
 
 const { records, total, current, pageSize, loading, activeTab, fetchList, onTabChange } =
     useListPagination<API.ArticleVO, API.ArticleQueryRequest>({
         pageSize: 10,
+        // 用户中心统计卡会带 ?tab=0/1/2 跳转过来，这里读取以定位到对应状态
+        initialTab: normalizeTab(route.query.tab),
         buildQuery: ({ tab, current, pageSize }) => ({
             current,
             pageSize,
@@ -125,6 +142,30 @@ const { records, total, current, pageSize, loading, activeTab, fetchList, onTabC
             return { records: data?.records ?? [], total: Number(data?.total ?? 0) };
         },
     });
+
+// Tab 变化后同步回地址栏，保证刷新或分享链接时仍停留在当前状态
+watch(activeTab, (tab) => {
+    router.replace({ path: '/user/articles', query: tab === 'all' ? {} : { tab } });
+});
+
+/**
+ * 响应浏览器前进/后退带来的 query.tab 变化
+ * 输入：新的 tab 原始值（由 watch 注入）
+ * 副作用：修改 activeTab、重置页码并重新拉取列表
+ */
+watch(
+    () => route.query.tab,
+    (raw) => {
+        const next = normalizeTab(raw);
+        // 与当前 Tab 相同则不重复请求，避免与 activeTab 的 replace 形成回环
+        if (next === activeTab.value) {
+            return;
+        }
+        activeTab.value = next;
+        current.value = 1;
+        fetchList();
+    },
+);
 
 const activeTabLabel = computed(() => {
     if (activeTab.value === '0') return '草稿';

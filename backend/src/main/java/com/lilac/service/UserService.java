@@ -138,4 +138,13 @@ public interface UserService extends IService<User> {
      * @return 是否为管理员
      */
     boolean isAdmin();
+
+    /**
+     * 更新用户邮箱
+     *
+     * @param id 用户 ID
+     * @param email 邮箱
+     * @return 更新结果
+     */
+    boolean updateUserEmail(Long id, String email);
 }

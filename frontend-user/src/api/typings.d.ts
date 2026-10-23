@@ -816,16 +816,12 @@ declare namespace API {
   type UserEditRequest = {
     /** id */
     id?: number;
-    /** 用户名 */
-    userAccount?: string;
     /** 邮箱 */
     email?: string;
     /** 昵称 */
     username?: string;
     /** 头像 */
     avatar?: string;
-    /** 1正常，0异常 */
-    status?: number;
   };
 
   type UserLoginRequest = {
