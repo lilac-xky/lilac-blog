@@ -134,23 +134,102 @@
             </a-form>
         </a-modal>
 
-        <!-- 修改邮箱弹窗 -->
-        <a-modal v-model:open="emailModalOpen" title="修改邮箱" :confirm-loading="emailLoading" ok-text="确认修改"
-            cancel-text="取消" @ok="handleUpdateEmail" @cancel="resetEmailForm">
-            <a-form ref="emailFormRef" :model="emailForm" :rules="emailRules" layout="vertical">
+        <!-- 修改邮箱弹窗：两步流程，先验证身份拿到凭证，再绑定新邮箱 -->
+        <a-modal v-model:open="emailModalOpen" title="修改邮箱" :confirm-loading="emailLoading" width="540px"
+            :footer="null" @cancel="resetEmailForm">
+            <!-- 步骤指示：让用户清楚当前处于哪一步 -->
+            <a-steps :current="emailStep" size="small" class="email-steps">
+                <a-step title="验证身份" />
+                <a-step title="绑定新邮箱" />
+            </a-steps>
+
+            <!-- 第一步：身份验证，原邮箱验证码或当前密码二选一 -->
+            <a-form v-if="emailStep === 0" ref="identityFormRef" :model="identityForm" :rules="identityRules"
+                layout="vertical">
                 <a-form-item label="当前邮箱">
                     <a-input :value="userStore.loginUser?.email || '未绑定'" disabled />
                 </a-form-item>
+
+                <a-form-item label="验证方式">
+                    <a-radio-group v-model:value="identityForm.method" class="verify-switch"
+                        @change="onVerifyMethodChange">
+                        <a-radio-button value="email">原邮箱验证码</a-radio-button>
+                        <a-radio-button value="password">当前密码</a-radio-button>
+                    </a-radio-group>
+                </a-form-item>
+
+                <!-- 原邮箱验证码：验证码只发往账号已绑定的邮箱，前端不传目标地址 -->
+                <template v-if="identityForm.method === 'email'">
+                    <div class="verify-hint">
+                        验证码将发送至当前邮箱 {{ userStore.loginUser?.email || '（未绑定）' }}，5 分钟内有效。
+                    </div>
+                    <a-form-item label="原邮箱验证码" name="originalCode">
+                        <div class="code-row">
+                            <a-input v-model:value="identityForm.originalCode" placeholder="请输入原邮箱收到的验证码"
+                                allow-clear class="code-input" :maxlength="6" />
+                            <a-button class="code-btn" :disabled="oldCodeCountdown > 0 || oldCodeSending"
+                                :loading="oldCodeSending" @click="handleSendOriginalCode">
+                                {{ oldCodeCountdown > 0 ? `${oldCodeCountdown}s 后重试` : '发送验证码' }}
+                            </a-button>
+                        </div>
+                    </a-form-item>
+                </template>
+
+                <!-- 当前密码：原邮箱不可用时的兜底通道 -->
+                <template v-else>
+                    <div class="verify-hint">
+                        原邮箱已停用时，可改用当前登录密码验证身份。
+                    </div>
+                    <a-form-item label="当前密码" name="password">
+                        <a-input-password v-model:value="identityForm.password" placeholder="请输入当前登录密码"
+                            allow-clear />
+                    </a-form-item>
+                </template>
+
+                <!-- 第一步底部操作 -->
+                <div class="modal-footer">
+                    <a-button @click="resetEmailForm">取消</a-button>
+                    <a-button type="primary" :loading="identityLoading" @click="handleVerifyIdentity">
+                        下一步
+                    </a-button>
+                </div>
+            </a-form>
+
+            <!-- 第二步：身份已验证，填写并验证新邮箱 -->
+            <a-form v-else ref="emailFormRef" :model="emailForm" :rules="emailRules" layout="vertical">
+                <!-- 身份验证通过提示：让用户明确这一步不再需要重复验证 -->
+                <a-alert type="success" show-icon class="verified-alert"
+                    message="身份验证已通过" :description="`凭证有效期 5 分钟，请尽快完成新邮箱绑定。`" />
+
                 <a-form-item label="新邮箱" name="email">
                     <a-input v-model:value="emailForm.email" placeholder="请输入新的邮箱地址" allow-clear />
                 </a-form-item>
+
+                <a-form-item label="新邮箱验证码" name="code">
+                    <div class="code-row">
+                        <a-input v-model:value="emailForm.code" placeholder="请输入新邮箱收到的验证码" allow-clear
+                            class="code-input" :maxlength="6" />
+                        <a-button class="code-btn" :disabled="newCodeCountdown > 0 || newCodeSending"
+                            :loading="newCodeSending" @click="handleSendNewEmailCode">
+                            {{ newCodeCountdown > 0 ? `${newCodeCountdown}s 后重试` : '发送验证码' }}
+                        </a-button>
+                    </div>
+                </a-form-item>
+
+                <!-- 第二步底部操作：可返回上一步重新验证 -->
+                <div class="modal-footer">
+                    <a-button @click="backToIdentityStep">上一步</a-button>
+                    <a-button type="primary" :loading="emailLoading" @click="handleUpdateEmail">
+                        确认修改
+                    </a-button>
+                </div>
             </a-form>
         </a-modal>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, h } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, h } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance, Rule } from 'ant-design-vue/es/form';
 import {
@@ -170,7 +249,14 @@ import {
 import { useUserStore } from '@/stores/user';
 import { listMyArticles } from '@/api/articleController';
 import { getUnreadCount } from '@/api/messageController';
-import { updatePassword, updateUser, updateUserEmail } from '@/api/userController';
+import {
+    updatePassword,
+    updateUser,
+    updateEmailCode,
+    updateEmailMethod,
+    sendOriginalEmailCode,
+    verifyEmailIdentity,
+} from '@/api/userController';
 import { uploadFile } from '@/api/fileController';
 
 const userStore = useUserStore();
@@ -178,6 +264,9 @@ const userStore = useUserStore();
 // 头像上传相关：隐藏 input 的引用与上传中状态
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const avatarUploading = ref(false);
+
+// 邮箱格式校验：与注册/找回密码页保持同一套简单规则
+const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 // 修改密码弹窗状态
 const passwordModalOpen = ref(false);
@@ -266,50 +355,30 @@ const profileRules: Record<string, Rule[]> = {
     ],
 };
 
-/**
- * 重置个人信息表单为当前登录用户的数据
- * 输入：无（读取 userStore.loginUser）
- * 副作用：清空表单校验状态
- */
+// 重置个人信息表单并清空校验提示
 function resetProfileForm() {
     profileForm.username = userStore.loginUser?.username || '';
     profileForm.avatar = userStore.loginUser?.avatar || '';
     profileFormRef.value?.clearValidate();
 }
 
-/**
- * 打开「修改个人信息」弹窗，并在打开前用最新的登录态回填表单
- * 输入：无
- * 副作用：打开弹窗，重置表单
- */
+// 打开「修改个人信息」弹窗（先重置表单，避免残留脏数据）
 function openProfileModal() {
     resetProfileForm();
     profileModalOpen.value = true;
 }
 
-/**
- * 将头像恢复为默认（清空头像地址），保存时即把 avatar 置空写回后端
- * 输入：无
- * 副作用：修改表单中的 avatar 字段
- */
+// 清空头像表单字段，恢复默认头像
 function clearAvatar() {
     profileForm.avatar = '';
 }
 
-/**
- * 触发隐藏的 file input 点击，打开系统文件选择框
- * 输入：无
- * 副作用：有副作用，弹出文件选择器
- */
+// 触发头像文件选择
 function triggerAvatarUpload() {
     avatarInputRef.value?.click();
 }
 
-/**
- * 处理头像文件选择：校验大小与类型后上传，成功后写入表单预览
- * 输入：change 事件（从中取第一个文件）
- * 副作用：调用上传接口，修改 profileForm.avatar
- */
+// 头像选择后触发
 async function onAvatarChange(e: Event) {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -338,11 +407,7 @@ async function onAvatarChange(e: Event) {
     }
 }
 
-/**
- * 提交个人信息（昵称 + 头像）
- * 输入：表单中的 username、avatar
- * 副作用：调用 /user/update，成功后把最新资料写回本地登录态
- */
+// 提交修改个人信息
 async function handleUpdateProfile() {
     try {
         await profileFormRef.value?.validate();
@@ -378,27 +443,63 @@ async function handleUpdateProfile() {
     }
 }
 
-// ---------- 修改邮箱 ----------
-// 弹窗开关、提交中状态与表单实例
+// ---------- 修改邮箱（两步流程） ----------
+// 弹窗开关与当前步骤：0 身份验证，1 绑定新邮箱
 const emailModalOpen = ref(false);
+const emailStep = ref(0);
 const emailLoading = ref(false);
+const identityLoading = ref(false);
 const emailFormRef = ref<FormInstance>();
-const emailForm = reactive({
-    email: '',
+const identityFormRef = ref<FormInstance>();
+
+// 第一步身份验证通过后由后端签发的一次性凭证，第二步提交时带回
+const emailTicket = ref('');
+
+// 新邮箱验证码与原邮箱验证码各自独立的发送状态与重发倒计时
+const newCodeSending = ref(false);
+const newCodeCountdown = ref(0);
+const oldCodeSending = ref(false);
+const oldCodeCountdown = ref(0);
+let newCodeTimer: ReturnType<typeof setInterval> | null = null;
+let oldCodeTimer: ReturnType<typeof setInterval> | null = null;
+
+// 第一步表单：验证方式与原邮箱验证码 / 当前密码
+const identityForm = reactive({
+    method: 'email' as 'email' | 'password',
+    originalCode: '',
+    password: '',
 });
 
-// 新邮箱校验：必填 + 格式（沿用注册页的 type: 'email'）+ 不能与当前邮箱相同
-const emailRules: Record<string, Rule[]> = {
-    email: [
-        { required: true, message: '请输入新邮箱', trigger: 'blur' },
-        { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' },
+// 第二步表单：新邮箱与新邮箱验证码
+const emailForm = reactive({
+    email: '',
+    code: '',
+});
+
+// 第一步校验：按当前验证方式要求对应字段必填
+const identityRules: Record<string, Rule[]> = {
+    originalCode: [
         {
             validator: async (_rule: Rule, value: string) => {
-                // 空值交给 required 与 type 规则处理，这里只拦截「填了但没变」的情况
-                if (!value || value === userStore.loginUser?.email) {
-                    return value
-                        ? Promise.reject('新邮箱不能与当前邮箱相同')
-                        : Promise.resolve();
+                if (identityForm.method !== 'email') {
+                    return Promise.resolve();
+                }
+                if (!value) {
+                    return Promise.reject('请输入原邮箱验证码');
+                }
+                return Promise.resolve();
+            },
+            trigger: 'blur',
+        },
+    ],
+    password: [
+        {
+            validator: async (_rule: Rule, value: string) => {
+                if (identityForm.method !== 'password') {
+                    return Promise.resolve();
+                }
+                if (!value) {
+                    return Promise.reject('请输入当前密码');
                 }
                 return Promise.resolve();
             },
@@ -407,31 +508,175 @@ const emailRules: Record<string, Rule[]> = {
     ],
 };
 
-/**
- * 重置邮箱表单并清空校验提示
- * 输入：无
- * 副作用：清空表单字段与校验状态
- */
+// 第二步校验：新邮箱必填 + 格式正确 + 不能与当前邮箱相同（忽略大小写差异）
+const emailRules: Record<string, Rule[]> = {
+    email: [
+        { required: true, message: '请输入新邮箱', trigger: 'blur' },
+        {
+            validator: async (_rule: Rule, value: string) => {
+                if (!value) {
+                    return Promise.resolve();
+                }
+                if (!EMAIL_PATTERN.test(value)) {
+                    return Promise.reject('邮箱格式不正确');
+                }
+                if (value.trim().toLowerCase() === (userStore.loginUser?.email || '').toLowerCase()) {
+                    return Promise.reject('新邮箱不能与当前邮箱相同');
+                }
+                return Promise.resolve();
+            },
+            trigger: 'blur',
+        },
+    ],
+    code: [
+        { required: true, message: '请输入新邮箱验证码', trigger: 'blur' },
+        { len: 6, message: '验证码为 6 位数字', trigger: 'blur' },
+    ],
+};
+
+// 重置整个修改邮箱流程：回到第一步并清空所有状态与凭证
 function resetEmailForm() {
+    emailStep.value = 0;
+    emailTicket.value = '';
+    identityForm.method = 'email';
+    identityForm.originalCode = '';
+    identityForm.password = '';
     emailForm.email = '';
+    emailForm.code = '';
+    identityFormRef.value?.clearValidate();
     emailFormRef.value?.clearValidate();
 }
 
-/**
- * 打开「修改邮箱」弹窗（先清空上次输入，避免残留脏数据）
- * 输入：无
- * 副作用：打开弹窗，重置表单
- */
+// 打开「修改邮箱」弹窗（先重置流程，避免残留上一次的状态）
 function openEmailModal() {
     resetEmailForm();
     emailModalOpen.value = true;
 }
 
+// 切换验证方式后，清掉另一种方式已填的值与校验提示，避免脏数据被一起提交
+function onVerifyMethodChange() {
+    if (identityForm.method === 'email') {
+        identityForm.password = '';
+    } else {
+        identityForm.originalCode = '';
+    }
+    identityFormRef.value?.clearValidate(['originalCode', 'password']);
+}
+
 /**
- * 提交邮箱修改
- * 输入：表单中的 email
- * 副作用：调用 /user/updateEmail，成功后同步本地登录态
+ * 启动重发倒计时
+ * 输入：目标 ref 与定时器持有者，便于两路验证码复用同一套逻辑
+ * 副作用：每秒递减，归零后自动清理定时器
  */
+function startCountdown(target: { value: number }, setTimer: (t: ReturnType<typeof setInterval> | null) => void) {
+    target.value = 60;
+    const timer = setInterval(() => {
+        target.value -= 1;
+        if (target.value <= 0) {
+            clearInterval(timer);
+            setTimer(null);
+        }
+    }, 1000);
+    setTimer(timer);
+}
+
+// 发送原邮箱验证码：只传登录用户 id，目标邮箱由后端按库中记录决定
+async function handleSendOriginalCode() {
+    const loginUser = userStore.loginUser;
+    if (!loginUser?.id) {
+        message.warning('登录状态已失效，请重新登录');
+        return;
+    }
+    if (!loginUser.email) {
+        message.warning('当前账号未绑定邮箱，请改用密码验证');
+        return;
+    }
+    oldCodeSending.value = true;
+    try {
+        const res = await sendOriginalEmailCode({ id: loginUser.id });
+        if (res.data?.data) {
+            message.success('验证码已发送至当前邮箱，请查收');
+            startCountdown(oldCodeCountdown, (t) => {
+                oldCodeTimer = t;
+            });
+        }
+    } catch {
+        // 错误提示已由请求拦截器统一处理
+    } finally {
+        oldCodeSending.value = false;
+    }
+}
+
+// 第一步提交：身份验证通过后拿到凭证，进入第二步
+async function handleVerifyIdentity() {
+    try {
+        await identityFormRef.value?.validate();
+    } catch {
+        return;
+    }
+    const loginUser = userStore.loginUser;
+    if (!loginUser?.id) {
+        message.warning('登录状态已失效，请重新登录');
+        return;
+    }
+    identityLoading.value = true;
+    try {
+        const res = await verifyEmailIdentity({
+            id: loginUser.id,
+            method: identityForm.method,
+            originalCode: identityForm.method === 'email' ? identityForm.originalCode.trim() : undefined,
+            password: identityForm.method === 'password' ? identityForm.password : undefined,
+        });
+        const ticket = res.data?.data;
+        if (ticket) {
+            emailTicket.value = ticket;
+            message.success('身份验证通过，请填写新邮箱');
+            emailStep.value = 1;
+        }
+    } catch {
+        // 错误提示已由请求拦截器统一处理
+    } finally {
+        identityLoading.value = false;
+    }
+}
+
+// 返回第一步重新验证：同时作废已取得的凭证，避免旧凭证继续被使用
+function backToIdentityStep() {
+    emailTicket.value = '';
+    emailForm.email = '';
+    emailForm.code = '';
+    emailFormRef.value?.clearValidate();
+    emailStep.value = 0;
+}
+
+// 发送新邮箱验证码：目标地址取自「新邮箱」输入框
+async function handleSendNewEmailCode() {
+    const email = emailForm.email?.trim();
+    if (!email) {
+        message.warning('请先输入新邮箱');
+        return;
+    }
+    if (!EMAIL_PATTERN.test(email)) {
+        message.warning('邮箱格式不正确');
+        return;
+    }
+    newCodeSending.value = true;
+    try {
+        const res = await updateEmailCode({ email });
+        if (res.data?.data) {
+            message.success('验证码已发送至新邮箱，请查收');
+            startCountdown(newCodeCountdown, (t) => {
+                newCodeTimer = t;
+            });
+        }
+    } catch {
+        // 错误提示已由请求拦截器统一处理
+    } finally {
+        newCodeSending.value = false;
+    }
+}
+
+// 第二步提交：凭凭证完成新邮箱绑定
 async function handleUpdateEmail() {
     try {
         await emailFormRef.value?.validate();
@@ -443,14 +688,23 @@ async function handleUpdateEmail() {
         message.warning('登录状态已失效，请重新登录');
         return;
     }
+    if (!emailTicket.value) {
+        message.warning('身份验证已失效，请返回上一步重新验证');
+        emailStep.value = 0;
+        return;
+    }
     emailLoading.value = true;
     try {
-        const res = await updateUserEmail({
+        const newEmail = emailForm.email.trim();
+        const res = await updateEmailMethod({
             id: loginUser.id,
-            email: emailForm.email,
+            ticket: emailTicket.value,
+            email: newEmail,
+            code: emailForm.code.trim(),
         });
         if (res.data?.data) {
-            userStore.setLoginUser({ ...loginUser, email: emailForm.email });
+            // 后端已刷新会话，这里同步本地 store 让资料卡邮箱立即更新
+            userStore.setLoginUser({ ...loginUser, email: newEmail });
             message.success('邮箱修改成功');
             emailModalOpen.value = false;
             resetEmailForm();
@@ -461,6 +715,12 @@ async function handleUpdateEmail() {
         emailLoading.value = false;
     }
 }
+
+// 离开页面时清理两个倒计时定时器，避免内存泄漏
+onUnmounted(() => {
+    if (newCodeTimer) clearInterval(newCodeTimer);
+    if (oldCodeTimer) clearInterval(oldCodeTimer);
+});
 
 const draftCount = ref(0);
 const auditCount = ref(0);
@@ -689,6 +949,58 @@ const stats = computed(() => [
 /* 隐藏原生 file input：仅通过「上传头像」按钮触发，不占布局 */
 .avatar-file-input {
     display: none;
+}
+
+/* ---------- 修改邮箱弹窗 ---------- */
+/* 步骤条：与下方表单保持呼吸感，不作为主要内容抢注意力 */
+.email-steps {
+    margin-bottom: 24px;
+}
+
+/* 验证码行：输入框占满剩余宽度，发送按钮固定宽度不换行 */
+.code-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 验证码输入框：撑满剩余空间，避免按钮被挤出弹窗 */
+.code-input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 验证码发送按钮：固定最小宽度，倒计时文案变化时不抖动 */
+.code-btn {
+    flex-shrink: 0;
+    min-width: 108px;
+}
+
+/* 身份验证方式切换：占满整行，两个选项等分 */
+.verify-switch {
+    display: flex;
+    width: 100%;
+}
+
+/* 验证方式说明文案：弱化层级，提示当前方式的作用范围 */
+.verify-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+/* 身份验证通过提示：进入第二步时给明确的正向反馈 */
+.verified-alert {
+    margin-bottom: 20px;
+}
+
+/* 弹窗底部操作区：右对齐，取消/上一步在左，主操作在右 */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
 }
 
 /* 窄屏适配：统计卡纵向排列，资料卡居中 */

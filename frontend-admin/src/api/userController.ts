@@ -85,6 +85,21 @@ export async function sendRegisterCode(
   });
 }
 
+/** 发送原邮箱验证码 用于修改邮箱时的身份验证；原邮箱已不可用时，前端改为让用户填写当前密码 POST /api/user/sendOriginalEmailCode */
+export async function sendOriginalEmailCode(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.sendOriginalEmailCodeParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/user/sendOriginalEmailCode", {
+    method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 发送重置密码验证码 GET /api/user/sendResetCode */
 export async function sendResetCode(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -117,10 +132,40 @@ export async function updateUser(
 
 /** 更新用户邮箱 POST /api/user/updateEmail */
 export async function updateUserEmail(
-  body: API.UserEditRequest,
+  body: API.UserUpdateEmailRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.ResultBoolean>("/api/user/updateEmail", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 发送新邮箱验证码 仅登录用户可调用，验证码发往新邮箱，用于证明对新邮箱的所有权 POST /api/user/updateEmailCode */
+export async function updateEmailCode(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.updateEmailCodeParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/user/updateEmailCode", {
+    method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 更新用户邮箱 身份验证二选一：原邮箱验证码或当前密码；新邮箱验证码必填 POST /api/user/updateEmailMethod */
+export async function updateEmailMethod(
+  body: API.UpdateEmailMethodRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultBoolean>("/api/user/updateEmailMethod", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -136,6 +181,21 @@ export async function updatePassword(
   options?: { [key: string]: any }
 ) {
   return request<API.ResultBoolean>("/api/user/updatePassword", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 验证邮箱所有权 POST /api/user/verifyEmailIdentity */
+export async function verifyEmailIdentity(
+  body: API.VerifyEmailIdentityRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultString>("/api/user/verifyEmailIdentity", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

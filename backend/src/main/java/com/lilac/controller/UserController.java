@@ -7,6 +7,7 @@ import com.lilac.domain.entity.User;
 import com.lilac.domain.result.Result;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.enums.SendCodeSceneEnum;
 import com.lilac.manager.auth.anotation.SaUserCheckLogin;
 import com.lilac.service.UserService;
 import com.lilac.utils.ThrowUtils;
@@ -77,7 +78,7 @@ public class UserController {
     @GetMapping("/sendCode")
     public Result<Boolean> sendRegisterCode(@RequestParam String email) {
         ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
-        userService.sendRegisterCode(email);
+        userService.sendCode(SendCodeSceneEnum.REGISTER,email);
         return Result.success(true);
     }
 
@@ -90,7 +91,7 @@ public class UserController {
     @GetMapping("/sendResetCode")
     public Result<Boolean> sendResetCode(@RequestParam String email) {
         ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
-        userService.sendResetCode(email);
+        userService.sendCode(SendCodeSceneEnum.RESET_PASSWORD,email);
         return Result.success(true);
     }
 
@@ -148,18 +149,58 @@ public class UserController {
     }
 
     /**
+     * 发送新邮箱验证码
+     * 仅登录用户可调用，验证码发往新邮箱，用于证明对新邮箱的所有权
+     *
+     * @param email 新邮箱
+     * @return 发送结果
+     */
+    @PostMapping("/updateEmailCode")
+    public Result<Boolean> updateEmailCode(@RequestParam String email) {
+        ThrowUtils.throwIf(StrUtil.isBlank(email), HttpsCodeEnum.PARAMS_ERROR);
+        userService.sendCode(SendCodeSceneEnum.UPDATE_EMAIL, email.trim().toLowerCase());
+        return Result.success(true);
+    }
+
+    /**
+     * 发送原邮箱验证码
+     * 用于修改邮箱时的身份验证；原邮箱已不可用时，前端改为让用户填写当前密码
+     *
+     * @param id 当前登录用户 id
+     * @return 发送结果
+     */
+    @PostMapping("/sendOriginalEmailCode")
+    public Result<Boolean> sendOriginalEmailCode(@RequestParam Long id) {
+        ThrowUtils.throwIf(id == null || id <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        userService.sendOriginalEmailCode(id);
+        return Result.success(true);
+    }
+
+    /**
+     * 验证邮箱所有权
+     *
+     * @param verifyEmailIdentityRequest 身份验证请求
+     * @return 一次性凭证
+     */
+    @PostMapping("/verifyEmailIdentity")
+    public Result<String> verifyEmailIdentity(@RequestBody VerifyEmailIdentityRequest verifyEmailIdentityRequest) {
+        ThrowUtils.throwIf(verifyEmailIdentityRequest == null || verifyEmailIdentityRequest.getId() == null
+                || verifyEmailIdentityRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        String ticket = userService.verifyEmailIdentity(verifyEmailIdentityRequest);
+        return Result.success(ticket);
+    }
+
+    /**
      * 更新用户邮箱
      *
-     * @param userUpdateEmailRequest 用户更新请求
+     * @param updateEmailMethodRequest 更新邮箱请求
      * @return 更新结果
      */
-    @PostMapping("/updateEmail")
-    public Result<Boolean> updateUserEmail(@RequestBody UserUpdateEmailRequest userUpdateEmailRequest) {
-        ThrowUtils.throwIf(userUpdateEmailRequest == null || userUpdateEmailRequest.getId() == null
-                || userUpdateEmailRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
-        // 只有本人才能修改
-        Long loginUserId = userService.checkSelf(userUpdateEmailRequest.getId());
-        boolean result = userService.updateUserEmail(loginUserId, userUpdateEmailRequest.getEmail());
+    @PostMapping("/updateEmailMethod")
+    public Result<Boolean> updateEmailMethod(@RequestBody UpdateEmailMethodRequest updateEmailMethodRequest) {
+        ThrowUtils.throwIf(updateEmailMethodRequest == null || updateEmailMethodRequest.getId() == null
+                || updateEmailMethodRequest.getId() <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        boolean result = userService.updateEmailMethod(updateEmailMethodRequest);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
         return Result.success(true);
     }

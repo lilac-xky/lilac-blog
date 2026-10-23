@@ -10,22 +10,25 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lilac.constant.UserConstant;
+import com.lilac.domain.dto.user.UpdateEmailMethodRequest;
 import com.lilac.domain.dto.user.UserQueryRequest;
 import com.lilac.domain.dto.user.UserStatusRequest;
 import com.lilac.domain.dto.user.UserUpdateRequest;
+import com.lilac.domain.dto.user.VerifyEmailIdentityRequest;
 import com.lilac.domain.entity.Permission;
 import com.lilac.domain.entity.Role;
 import com.lilac.domain.entity.User;
 import com.lilac.domain.vo.LoginUserVO;
 import com.lilac.domain.vo.UserVO;
 import com.lilac.enums.HttpsCodeEnum;
+import com.lilac.enums.SendCodeSceneEnum;
 import com.lilac.exception.BusinessException;
 import com.lilac.manager.auth.StpKit;
-import com.lilac.manager.email.MailService;
 import com.lilac.service.RolePermissionService;
 import com.lilac.service.RoleService;
 import com.lilac.service.UserService;
 import com.lilac.mapper.UserMapper;
+import com.lilac.service.VerificationCodeService;
 import com.lilac.utils.ThrowUtils;
 import cn.dev33.satoken.session.SaSession;
 import jakarta.annotation.Resource;
@@ -48,13 +51,13 @@ import java.util.stream.Collectors;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Resource
-    private MailService mailService;
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-    @Resource
     private RoleService roleService;
     @Resource
     private RolePermissionService rolePermissionService;
+    @Resource
+    private VerificationCodeService verificationCodeService;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 用户注册
@@ -80,32 +83,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!password.equals(chekPassword)) {
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码不一致");
         }
-        // 尝试获取验证码
-        String redisKey = UserConstant.USER_REGISTER_CODE_KEY + email;
-        String errorCountKey = UserConstant.USER_REGISTER_CODE_ERROR_KEY + email;
-        String captcha = stringRedisTemplate.opsForValue().get(redisKey);
-        if (captcha == null) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码已过期或未发送");
-        }
-        // 防暴力破解：检查错误次数
-        String errorCountStr = stringRedisTemplate.opsForValue().get(errorCountKey);
-        int errorCount = errorCountStr == null ? 0 : Integer.parseInt(errorCountStr);
-        if (errorCount >= 5) {
-            // 错误太多，直接作废验证码
-            stringRedisTemplate.delete(redisKey);
-            stringRedisTemplate.delete(errorCountKey);
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码错误次数过多，请重新获取");
-        }
-        // 验证码校验
-        if (!captcha.equals(code)) {
-            stringRedisTemplate.opsForValue().increment(errorCountKey);
-            // 错误计数器跟验证码有效期一致
-            stringRedisTemplate.expire(errorCountKey, UserConstant.USER_REGISTER_CODE_TTL, TimeUnit.MINUTES);
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码错误");
-        }
-        // 校验通过，清理错误计数
-        stringRedisTemplate.delete(errorCountKey);
-        // 检查数据库是否有重复的用户
+        // 先做数据库重复性检查，避免用户名或邮箱占用时白白消耗验证码
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount)
                 .or()
@@ -114,6 +92,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (count > 0) {
             throw new BusinessException(HttpsCodeEnum.USER_EXIST, "用户名或邮箱已存在");
         }
+        // 校验通过后验证码立即被消费，注册失败需重新获取
+        verificationCodeService.verify(SendCodeSceneEnum.REGISTER, email, code);
         // 密码加密
         String encodedPassword = getEncodedPassword(password);
         User user = new User();
@@ -128,8 +108,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         try {
             boolean save = this.save(user);
             ThrowUtils.throwIf(!save, HttpsCodeEnum.SYSTEM_ERROR, "注册失败");
-            // 删除验证码
-            stringRedisTemplate.delete(redisKey);
         } catch (Exception e) {
             log.error("用户注册失败：{}", e.getMessage());
             throw new BusinessException(HttpsCodeEnum.SYSTEM_ERROR, "注册失败");
@@ -263,89 +241,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 发送注册验证码
-     *
-     * @param email 邮箱
-     */
-    @Override
-    public void sendRegisterCode(String email) {
-        // 基本校验
-        if (StrUtil.isBlank(email)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱不能为空");
-        }
-        // 邮箱格式校验
-        if (!Validator.isEmail(email)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱格式不正确");
-        }
-        // 邮箱长度校验
-        if (email.length() > 100) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱长度超过限制");
-        }
-        // 邮箱是否注册
-        long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, email));
-        if (count > 0) {
-            throw new BusinessException(HttpsCodeEnum.USER_EXIST, "该邮箱已注册");
-        }
-        // 防刷校验：检查是否发送过于频繁（1分钟内不准重复发送）
-        String limitKey = UserConstant.USER_REGISTER_LIMIT_KEY + email;
-        if (stringRedisTemplate.hasKey(limitKey)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "发送过于频繁，请稍后再试");
-        }
-        // 生成6位随机验证码
-        String code = RandomUtil.randomNumbers(6);
-        // 存入 Redis 并设置过期时间 (5分钟)
-        String codeKey = UserConstant.USER_REGISTER_CODE_KEY + email;
-        stringRedisTemplate.opsForValue().set(codeKey, code, UserConstant.USER_REGISTER_CODE_TTL, TimeUnit.MINUTES);
-        // 设置限流标识 (60秒过期)
-        stringRedisTemplate.opsForValue().set(limitKey, "1", 1, TimeUnit.MINUTES);
-        // 调用异步邮件服务
-        String subject = "【Lilac】注册验证码";
-        String content = "您的注册验证码为：" + code + "，有效期5分钟。";
-        mailService.sendSimpleMail(email, subject, content);
-        log.info("发送验证码请求已提交，邮箱: {}", email);
-    }
-
-    /**
-     * 发送重置密码验证码
-     *
-     * @param email 邮箱
-     */
-    @Override
-    public void sendResetCode(String email) {
-        // 参数验证
-        if (StrUtil.isBlank(email)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱不能为空");
-        }
-        if (!Validator.isEmail(email)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱格式不正确");
-        }
-        if (email.length() > 100) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱长度超过限制");
-        }
-        // 与注册相反：邮箱必须已注册才能重置
-        long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, email));
-        if (count == 0) {
-            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "该邮箱未注册");
-        }
-        // 防刷校验：检查是否发送过于频繁（1分钟内不准重复发送）
-        String limitKey = UserConstant.USER_RESET_LIMIT_KEY + email;
-        if (stringRedisTemplate.hasKey(limitKey)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "发送过于频繁，请稍后再试");
-        }
-        // 随机生成6位验证码
-        String code = RandomUtil.randomNumbers(6);
-        String codeKey = UserConstant.USER_RESET_CODE_KEY + email;
-        // 存入 Redis 并设置过期时间 (5分钟)
-        stringRedisTemplate.opsForValue().set(codeKey, code, UserConstant.USER_RESET_CODE_TTL, TimeUnit.MINUTES);
-        // 设置限流标识 (60秒过期)
-        stringRedisTemplate.opsForValue().set(limitKey, "1", 1, TimeUnit.MINUTES);
-        String subject = "【Lilac】重置密码验证码";
-        String content = "您正在重置密码，验证码为：" + code + "，有效期5分钟。如非本人操作请忽略。";
-        mailService.sendSimpleMail(email, subject, content);
-        log.info("发送重置密码验证码请求已提交，邮箱: {}", email);
-    }
-
-    /**
      * 通过邮箱验证码重置密码
      *
      * @param email 邮箱
@@ -366,30 +261,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!newPassword.equals(checkPassword)) {
             throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码不一致");
         }
-        // 验证码验证
-        String redisKey = UserConstant.USER_RESET_CODE_KEY + email;
-        String errorCountKey = UserConstant.USER_RESET_CODE_ERROR_KEY + email;
-        String captcha = stringRedisTemplate.opsForValue().get(redisKey);
-        if (captcha == null) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码已过期或未发送");
-        }
-        // 验证码错误次数限制
-        String errorCountStr = stringRedisTemplate.opsForValue().get(errorCountKey);
-        int errorCount = errorCountStr == null ? 0 : Integer.parseInt(errorCountStr);
-        if (errorCount >= 5) {
-            stringRedisTemplate.delete(redisKey);
-            stringRedisTemplate.delete(errorCountKey);
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码错误次数过多，请重新获取");
-        }
-        // 验证码校验
-        if (!captcha.equals(code)) {
-            stringRedisTemplate.opsForValue().increment(errorCountKey);
-            // 设置错误次数标识 (5分钟后过期)
-            stringRedisTemplate.expire(errorCountKey, UserConstant.USER_RESET_CODE_TTL, TimeUnit.MINUTES);
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证码错误");
-        }
-        // 验证码正确
-        stringRedisTemplate.delete(errorCountKey);
+        // 验证码验证：校验通过即被一次性消费，后续失败需重新获取
+        verificationCodeService.verify(SendCodeSceneEnum.RESET_PASSWORD, email, code);
         User user = this.baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getEmail, email));
         if (user == null) {
             throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "该邮箱未注册");
@@ -400,7 +273,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         update.setPassword(getEncodedPassword(newPassword));
         boolean result = this.updateById(update);
         ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
-        stringRedisTemplate.delete(redisKey);
         return true;
     }
 
@@ -582,44 +454,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 更新用户邮箱
-     *
-     * @param id 用户 ID
-     * @param email 邮箱
-     * @return 更新结果
-     */
-    @Override
-    public boolean updateUserEmail(Long id, String email) {
-        User user = this.getById(id);
-        if (user == null) {
-            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
-        }
-        // 参数验证
-        if (StrUtil.isBlank(email)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱不能为空");
-        }
-        if (!Validator.isEmail(email)) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱格式不正确");
-        }
-        if (email.length() > 100) {
-            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱长度超过限制");
-        }
-        // 查询邮箱是否被其他用户占用
-        long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getEmail, email)
-                .ne(User::getId, id));
-        if (count > 0) {
-            throw new BusinessException(HttpsCodeEnum.USER_EXIST, "邮箱已存在");
-        }
-        // 更新邮箱
-        user.setEmail(email);
-        boolean result = this.updateById(user);
-        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
-        refreshUserSession(id);
-        return true;
-    }
-
-    /**
      * 检查用户是否为当前用户
      *
      * @param id 用户 ID
@@ -633,9 +467,148 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             vo = (LoginUserVO) StpKit.USER.getSession().get(UserConstant.USER_LOGIN_STATE);
         }
         ThrowUtils.throwIf(vo == null || vo.getId() == null, HttpsCodeEnum.NEED_LOGIN);
-        ThrowUtils.throwIf(vo == null || vo.getId() == null, HttpsCodeEnum.NEED_LOGIN);
-        ThrowUtils.throwIf(!vo.getId().equals(id), HttpsCodeEnum.FORBIDDEN, "只能操作自己");
+        ThrowUtils.throwIf(id == null || !vo.getId().equals(id), HttpsCodeEnum.FORBIDDEN, "只能操作自己");
         return vo.getId();
+    }
+
+    /**
+     * 发送验证码
+     *
+     * @param sendCodeSceneEnum 发送验证码场景
+     * @param email 邮箱
+     */
+    @Override
+    public void sendCode(SendCodeSceneEnum sendCodeSceneEnum, String email) {
+        verificationCodeService.send(sendCodeSceneEnum, email);
+    }
+
+    /**
+     * 发送原邮箱验证码
+     *
+     * @param id 当前登录用户 id
+     */
+    @Override
+    public void sendOriginalEmailCode(Long id) {
+        // 先确认是本人操作，避免被用来给任意账号的邮箱发骚扰信
+        checkSelf(id);
+        User user = this.getById(id);
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
+        }
+        if (StrUtil.isBlank(user.getEmail())) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "当前账号未绑定邮箱，请使用密码验证");
+        }
+        // 目标邮箱以库中记录为准，不接受前端传入，防止被改发到其他地址
+        verificationCodeService.send(SendCodeSceneEnum.UPDATE_EMAIL_OLD, user.getEmail());
+    }
+
+    /**
+     * 校验邮箱身份并签发一次性凭证
+     *
+     * @param request 身份验证请求
+     * @return 一次性凭证
+     */
+    @Override
+    public String verifyEmailIdentity(VerifyEmailIdentityRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        Long id = request.getId();
+        ThrowUtils.throwIf(id == null || id <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        // 验证方式必须显式指定，避免"两个都不传"时静默放行
+        String method = StrUtil.trimToEmpty(request.getMethod()).toLowerCase();
+        if (!"email".equals(method) && !"password".equals(method)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "验证方式不正确");
+        }
+        // 确认是本人操作
+        checkSelf(id);
+        User user = this.getById(id);
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
+        }
+        if ("email".equals(method)) {
+            if (StrUtil.isBlank(request.getOriginalCode())) {
+                throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "请输入原邮箱验证码");
+            }
+            if (StrUtil.isBlank(user.getEmail())) {
+                throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "当前账号未绑定邮箱，请使用密码验证");
+            }
+            // 原邮箱以库中记录为准，防止用他人的码来通过验证
+            verificationCodeService.verify(SendCodeSceneEnum.UPDATE_EMAIL_OLD, user.getEmail(), request.getOriginalCode());
+        } else {
+            if (StrUtil.isBlank(request.getPassword())) {
+                throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "请输入当前密码");
+            }
+            // 密码错误统一提示，不暴露具体校验细节
+            if (!user.getPassword().equals(getEncodedPassword(request.getPassword()))) {
+                throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "密码错误或验证码错误");
+            }
+        }
+        // 签发一次性凭证：随机串绑定用户 id，第二步凭它换绑邮箱
+        String ticket = RandomUtil.randomString(32);
+        stringRedisTemplate.opsForValue().set(UserConstant.USER_CHANGE_EMAIL_TICKET_KEY + ticket,
+                String.valueOf(id), UserConstant.USER_CHANGE_EMAIL_TICKET_TTL, TimeUnit.MINUTES);
+        log.info("用户 {} 修改邮箱身份验证通过，已签发凭证", id);
+        return ticket;
+    }
+
+    /**
+     * 更新邮箱
+     *
+     * @param request 更新邮箱请求参数
+     * @return 更新结果
+     */
+    @Override
+    public boolean updateEmailMethod(UpdateEmailMethodRequest request) {
+        ThrowUtils.throwIf(request == null, HttpsCodeEnum.PARAMS_ERROR);
+        Long id = request.getId();
+        ThrowUtils.throwIf(id == null || id <= 0, HttpsCodeEnum.PARAMS_ERROR);
+        // 新邮箱与新邮箱验证码是第二步的必填项
+        if (StrUtil.isBlank(request.getEmail()) || StrUtil.isBlank(request.getCode())) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "新邮箱和验证码不能为空");
+        }
+        if (StrUtil.isBlank(request.getTicket())) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "身份验证已失效，请重新验证");
+        }
+        // 确认是本人操作
+        checkSelf(id);
+        // 凭证必须存在且归属于当前用户，否则说明未完成第一步验证
+        String ticketKey = UserConstant.USER_CHANGE_EMAIL_TICKET_KEY + request.getTicket().trim();
+        String ticketOwner = stringRedisTemplate.opsForValue().get(ticketKey);
+        if (ticketOwner == null || !ticketOwner.equals(String.valueOf(id))) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "身份验证已失效，请重新验证");
+        }
+        User user = this.getById(id);
+        if (user == null) {
+            throw new BusinessException(HttpsCodeEnum.NOT_FOUND_ERROR, "用户不存在");
+        }
+        // 邮箱统一转小写去空格，保证查重与验证码 key 和发码时一致
+        String email = request.getEmail().trim().toLowerCase();
+        if (email.equals(user.getEmail())) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "新邮箱不能与当前邮箱相同");
+        }
+        if (!Validator.isEmail(email)) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱格式不正确");
+        }
+        if (email.length() > 100) {
+            throw new BusinessException(HttpsCodeEnum.PARAMS_ERROR, "邮箱长度超过限制");
+        }
+        long count = this.baseMapper.selectCount(new LambdaQueryWrapper<User>()
+                .eq(User::getEmail, email)
+                .ne(User::getId, id));
+        if (count > 0) {
+            throw new BusinessException(HttpsCodeEnum.USER_EXIST, "邮箱已存在");
+        }
+        // 校验新邮箱验证码，通过即一次性消费
+        verificationCodeService.verify(SendCodeSceneEnum.UPDATE_EMAIL, email, request.getCode());
+        // 更新邮箱并刷新会话，让顶栏等已缓存的用户信息同步
+        User update = new User();
+        update.setId(id);
+        update.setEmail(email);
+        boolean result = this.updateById(update);
+        ThrowUtils.throwIf(!result, HttpsCodeEnum.OPERATION_ERROR);
+        refreshUserSession(id);
+        // 换绑成功后凭证立即失效，防止同一凭证重复使用
+        stringRedisTemplate.delete(ticketKey);
+        return true;
     }
 
     /**
