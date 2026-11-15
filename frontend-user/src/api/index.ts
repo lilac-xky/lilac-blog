@@ -9,6 +9,7 @@ import * as tagController from "./tagController";
 import * as categoryController from "./categoryController";
 import * as messageController from "./messageController";
 import * as sparkController from "./sparkController";
+import * as announcementController from "./announcementController";
 export default {
   userController,
   fileController,
@@ -17,4 +18,5 @@ export default {
   categoryController,
   messageController,
   sparkController,
+  announcementController,
 };

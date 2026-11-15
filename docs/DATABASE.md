@@ -17,6 +17,8 @@
 | tag          | 文章标签                          |
 | article_tag  | 文章 ↔ 标签 多对多关联表          |
 | spark        | 灵感（公开 / 私有）               |
+| announcement | 系统公告（草稿 / 已发布 / 已下线） |
+| announcement_read | 登录用户的公告已读记录       |
 
 ---
 
@@ -217,6 +219,70 @@ ALTER TABLE `spark`
   ADD KEY `idx_spark_user` (`userId`),
   ADD KEY `idx_spark_visibility` (`visibility`);
 ```
+
+---
+
+## announcement 表
+
+系统公告表，后台维护，支持草稿、已发布、已下线三种状态。公告正文为 Markdown，前台弹窗渲染。
+
+| 字段名        | 类型         | 约束                          | 说明                              |
+| ------------- | ------------ | ----------------------------- | --------------------------------- |
+| `id`          | BIGINT       | PK                            | 主键（雪花 ID）                   |
+| `title`       | VARCHAR(150) | NOT NULL                      | 公告标题                          |
+| `content`     | LONGTEXT     | NOT NULL                      | 公告正文（Markdown）              |
+| `status`      | TINYINT      | DEFAULT 0                     | `0` 草稿 / `1` 已发布 / `2` 已下线 |
+| `publishTime` | DATETIME     |                               | 发布时间                          |
+| `createTime`  | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP     | 创建时间                          |
+| `updateTime`  | TIMESTAMP    | ON UPDATE CURRENT_TIMESTAMP   | 更新时间                          |
+| `editTime`    | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP     | 业务侧编辑时间                    |
+| `isDeleted`   | TINYINT      | DEFAULT 0                     | 逻辑删除                          |
+
+```sql
+CREATE TABLE `announcement` (
+  `id`          BIGINT       NOT NULL,
+  `title`       VARCHAR(150) NOT NULL COMMENT '公告标题',
+  `content`     LONGTEXT     NOT NULL COMMENT '公告正文（Markdown）',
+  `status`      TINYINT      NOT NULL DEFAULT 0 COMMENT '0草稿 1已发布 2已下线',
+  `publishTime` DATETIME     DEFAULT NULL COMMENT '发布时间',
+  `createTime`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updateTime`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `editTime`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted`   TINYINT      NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_status_publish` (`status`, `publishTime`),
+  KEY `idx_create_time` (`createTime`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统公告';
+```
+
+---
+
+## announcement_read 表
+
+公告已读记录表，登录用户每读一条公告写入一条记录；游客不落库，由前端 `localStorage` 记录已读。
+
+**该表不做逻辑删除**，因为 `(announcementId, userId)` 唯一键需要长期保证「同一用户同一条公告只记录一次」。
+
+| 字段名           | 类型     | 约束                     | 说明       |
+| ---------------- | -------- | ------------------------ | ---------- |
+| `id`             | BIGINT   | PK                       | 主键       |
+| `announcementId` | BIGINT   | NOT NULL                 | 公告 ID    |
+| `userId`         | BIGINT   | NOT NULL                 | 用户 ID    |
+| `readTime`       | DATETIME | DEFAULT CURRENT_TIMESTAMP | 已读时间   |
+
+```sql
+CREATE TABLE `announcement_read` (
+  `id`             BIGINT   NOT NULL,
+  `announcementId` BIGINT   NOT NULL COMMENT '公告ID',
+  `userId`         BIGINT   NOT NULL COMMENT '用户ID',
+  `readTime`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '已读时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_announcement_user` (`announcementId`, `userId`),
+  KEY `idx_user_announcement` (`userId`, `announcementId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告已读记录';
+```
+
+完整建表及公告管理权限点脚本见 `docs/sql/announcement.sql`。
 
 ---
 

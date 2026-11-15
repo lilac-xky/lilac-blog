@@ -17,6 +17,9 @@
         <!-- 页脚 -->
         <BlogFooter />
 
+        <!-- 系统公告弹窗：游客与登录用户都会弹，已读后不再弹 -->
+        <AnnouncementPopup />
+
         <!-- 首页使用完整播放器，其余主站页面使用悬浮播放器 -->
         <FloatingMusicPlayer v-if="!isHome" />
     </div>
@@ -26,6 +29,7 @@
   BasicLayout：前台主布局壳
   星空背景 + 顶部 Header + 主内容 + 页脚，router-view 渲染各页面。
   Header/Footer 单独拆出便于其它无 Header 场景（如登录页）单独引用。
+  AnnouncementPopup 挂在布局层，主站任意页面首次进入都会统一触发公告弹窗。
 -->
 <script setup lang="ts">
 import { computed, provide } from 'vue';
@@ -33,6 +37,7 @@ import { useRoute } from 'vue-router';
 import StarrySky from '@/components/StarrySky.vue';
 import ClickRipple from '@/components/ClickRipple.vue';
 import FloatingMusicPlayer from '@/components/FloatingMusicPlayer.vue';
+import AnnouncementPopup from '@/components/AnnouncementPopup.vue';
 import { FakePlayerKey, useFakePlayer } from '@/composables/useFakePlayer';
 import BlogHeader from './BlogHeader.vue';
 import BlogFooter from './BlogFooter.vue';

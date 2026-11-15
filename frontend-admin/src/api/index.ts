@@ -12,6 +12,7 @@ import * as messageController from "./messageController";
 import * as roleController from "./roleController";
 import * as permissionController from "./permissionController";
 import * as sparkController from "./sparkController";
+import * as announcementController from "./announcementController";
 export default {
   userController,
   adminController,
@@ -23,4 +24,5 @@ export default {
   roleController,
   permissionController,
   sparkController,
+  announcementController,
 };

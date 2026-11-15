@@ -19,6 +19,12 @@
 
             <!-- 登录态：已登录显示头像下拉，未登录显示登录/注册按钮 -->
             <div class="auth-area">
+                <!-- 公告入口：游客与登录用户都能打开公告中心，把公告读完也能随时回看 -->
+                <a-tooltip title="公告" placement="bottom">
+                    <button class="notice-entry" type="button" @click="openAnnouncementCenter">
+                        <BellOutlined />
+                    </button>
+                </a-tooltip>
                 <template v-if="userStore.loginUser?.token">
                     <!-- 写文章快捷入口 -->
                     <router-link to="/user/write" class="write-shortcut" title="写文章">
@@ -76,7 +82,8 @@
 
 <!--
   BlogHeader：前台顶部导航栏
-  - 站点 Logo / 主导航 / 登录态区域三段
+  - 站点 Logo / 主导航 / 公告入口 + 登录态区域四段
+  - 公告入口对游客与登录用户都可见，点开后进入公告中心，可反复回看已读公告
   - 已登录展示头像下拉菜单与未读消息红点
   - 写文章入口直接走快捷按钮，避免「点头像 → 写文章」两次点击
 -->
@@ -84,6 +91,7 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
+    BellOutlined,
     LogoutOutlined,
     UserOutlined,
     EditOutlined,
@@ -94,10 +102,14 @@ import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import { logout } from '@/api/userController';
 import { usePollUnreadCount } from '@/composables/usePollUnreadCount';
+import { useAnnouncementCenter } from '@/composables/useAnnouncementCenter';
 
 const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
+
+// 公告中心控制器：与布局层弹窗共享同一份开关状态
+const { openAll: openAnnouncementCenter } = useAnnouncementCenter();
 
 // 顶部导航项
 const navItems = [
@@ -303,6 +315,29 @@ async function handleMenu({ key }: { key: string }) {
     font-size: 13px;
     color: var(--text-primary);
     font-weight: 500;
+}
+
+/* 公告入口按钮：与写文章快捷按钮同尺寸的圆形图标按钮，游客也可见 */
+.notice-entry {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* 公告入口悬停态：主色描边提亮，提示可点击打开公告中心 */
+.notice-entry:hover {
+    border-color: var(--border-accent-strong);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
 }
 
 @media (max-width: 720px) {

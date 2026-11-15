@@ -130,21 +130,6 @@ export async function updateUser(
   });
 }
 
-/** 更新用户邮箱 POST /api/user/updateEmail */
-export async function updateUserEmail(
-  body: API.UserUpdateEmailRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.ResultBoolean>("/api/user/updateEmail", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
 /** 发送新邮箱验证码 仅登录用户可调用，验证码发往新邮箱，用于证明对新邮箱的所有权 POST /api/user/updateEmailCode */
 export async function updateEmailCode(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
