@@ -194,6 +194,38 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
     }
 
     /**
+     * 查询全部已发布公告（公告中心回看用）
+     * 已登录用户填充 isRead，游客不填充（前端按 localStorage 判断）
+     *
+     * @return 已发布公告列表，按发布时间倒序
+     */
+    @Override
+    public List<AnnouncementVO> listPublishedAnnouncements() {
+        List<Announcement> announcements = this.list(new LambdaQueryWrapper<Announcement>()
+                .eq(Announcement::getStatus, AnnouncementConstant.STATUS_PUBLISHED)
+                .isNotNull(Announcement::getPublishTime)
+                .le(Announcement::getPublishTime, new Date())
+                .orderByDesc(Announcement::getPublishTime)
+                .orderByDesc(Announcement::getId)
+                .last("LIMIT " + AnnouncementConstant.PUBLISHED_LIMIT));
+        List<AnnouncementVO> voList = announcements.stream().map(AnnouncementVO::objToVo).toList();
+        Long userId = getCurrentUserId();
+        if (userId == null || voList.isEmpty()) {
+            return voList;
+        }
+        // 已登录用户一次性查出已读集合，避免逐条查库
+        List<Long> announcementIds = announcements.stream().map(Announcement::getId).toList();
+        Set<Long> readIds = announcementReadMapper.selectList(new LambdaQueryWrapper<AnnouncementRead>()
+                        .eq(AnnouncementRead::getUserId, userId)
+                        .in(AnnouncementRead::getAnnouncementId, announcementIds))
+                .stream()
+                .map(AnnouncementRead::getAnnouncementId)
+                .collect(Collectors.toSet());
+        voList.forEach(vo -> vo.setIsRead(readIds.contains(vo.getId())));
+        return voList;
+    }
+
+    /**
      * 批量标记公告已读，重复标记幂等
      *
      * @param request 已读参数

@@ -125,6 +125,17 @@ public class AnnouncementController {
     }
 
     /**
+     * 查询全部已发布公告（公告中心回看）
+     * 已登录用户填充 isRead；游客不填充，由前端 localStorage 判断
+     *
+     * @return 已发布公告列表
+     */
+    @GetMapping("/published")
+    public Result<List<AnnouncementVO>> listPublishedAnnouncements() {
+        return Result.success(announcementService.listPublishedAnnouncements());
+    }
+
+    /**
      * 批量标记公告已读（仅登录用户）
      *
      * @param request 已读参数

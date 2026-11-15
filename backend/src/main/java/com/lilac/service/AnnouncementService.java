@@ -73,6 +73,14 @@ public interface AnnouncementService extends IService<Announcement> {
     List<AnnouncementVO> listPendingAnnouncements();
 
     /**
+     * 查询全部已发布公告（公告中心回看用，已读已下线不返回）
+     * 已登录用户会填充 isRead，游客恒为 null（前台按 localStorage 判断）
+     *
+     * @return 已发布公告列表，按发布时间倒序
+     */
+    List<AnnouncementVO> listPublishedAnnouncements();
+
+    /**
      * 批量标记公告已读（登录用户）
      *
      * @param request 已读参数

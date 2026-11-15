@@ -39,6 +39,11 @@ public class AnnouncementVO implements Serializable {
     private Date createTime;
 
     /**
+     * 当前用户是否已读（仅公告中心回看接口填充；待读列表里恒为 null）
+     */
+    private Boolean isRead;
+
+    /**
      * 公告实体转 VO
      *
      * @param announcement 公告实体
