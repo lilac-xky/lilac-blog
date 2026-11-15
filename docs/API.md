@@ -462,6 +462,179 @@ Token 在登录接口返回的 `LoginUserVO.token` 字段中获取。Sa-Token �
 
 ---
 
+## 公告模块（`/announcement`）
+
+系统公告正文使用 **Markdown**。管理端负责新增、编辑、删除、发布/下线和分页查询；用户端负责待读列表与批量已读。
+
+已读规则：
+
+- 登录用户：服务端根据 `announcement_read` 过滤已读公告；
+- 游客：`pending` 返回已发布公告，前端用 `localStorage` 记录已读；
+- 关闭弹窗即视为已读；同一公告不会重复弹，管理员发布新公告后会再次进入待读列表。
+
+### 后台新增公告
+
+- **URL**：`POST /api/announcement/add`
+- **鉴权**：需要 `admin-token`
+- **权限**：`announcement:add`
+- **说明**：新增后状态为草稿（`status=0`），需再调用发布接口
+
+**请求体**
+
+| 字段    | 类型   | 必填 | 说明               |
+| ------- | ------ | ---- | ------------------ |
+| title   | string | 是   | 公告标题，≤150 字符 |
+| content | string | 是   | Markdown 正文      |
+
+**响应**
+
+```json
+{ "code": 200, "data": 2121878085048479745, "message": "ok" }
+```
+
+`data` 为公告 ID。
+
+### 后台编辑公告
+
+- **URL**：`POST /api/announcement/update`
+- **鉴权**：需要 `admin-token`
+- **权限**：`announcement:update`
+- **说明**：编辑已发布公告不会重置已读记录
+
+**请求体**
+
+```json
+{ "id": 2121878085048479745, "title": "公告标题", "content": "## Markdown 正文" }
+```
+
+### 后台删除公告
+
+- **URL**：`POST /api/announcement/delete`
+- **鉴权**：需要 `admin-token`
+- **权限**：`announcement:delete`
+- **请求体**：`{ "id": 2121878085048479745 }`
+- **说明**：逻辑删除，已读记录保留
+
+### 后台发布/下线公告
+
+- **URL**：`POST /api/announcement/publish`
+- **鉴权**：需要 `admin-token`
+- **权限**：`announcement:publish`
+
+**请求体**
+
+| 字段    | 类型    | 必填 | 说明                    |
+| ------- | ------- | ---- | ----------------------- |
+| id      | long    | 是   | 公告 ID                 |
+| publish | boolean | 是   | `true` 发布 / `false` 下线 |
+
+首次发布或下线后重新发布会刷新 `publishTime`，公告按发布时间倒序展示。
+
+### 后台分页列表
+
+- **URL**：`POST /api/announcement/list/page`
+- **鉴权**：需要 `admin-token`
+- **权限**：`announcement:list`
+
+**请求体**（继承 `PageRequest`）
+
+| 字段    | 类型   | 必填 | 说明                          |
+| ------- | ------ | ---- | ----------------------------- |
+| id      | long   | 否   | 公告 ID                       |
+| title   | string | 否   | 标题模糊匹配                  |
+| status  | int    | 否   | `0` 草稿 / `1` 已发布 / `2` 已下线 |
+
+返回 `Page<Announcement>`，记录含 `id`、`title`、`content`、`status`、`publishTime`、`createTime` 等字段。
+
+### 后台公告详情
+
+- **URL**：`GET /api/announcement/get?id=<id>`
+- **鉴权**：需要 `admin-token`
+- **权限**：`announcement:list`
+- **说明**：草稿、已发布、已下线均可查询
+
+### 前台待读公告
+
+- **URL**：`GET /api/announcement/pending`
+- **鉴权**：否；携带 `user-token` 时按登录用户过滤已读
+- **说明**：返回最多 20 条，按 `publishTime` 倒序；游客返回已发布公告，由前端按 `localStorage` 过滤
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": [
+    {
+      "id": "2121878181890764801",
+      "title": "公告标题",
+      "content": "## Markdown 正文",
+      "publishTime": "2026-11-15T08:09:09.000+00:00",
+      "createTime": "2026-11-15T08:08:52.000+00:00"
+    }
+  ],
+  "message": "ok"
+}
+```
+
+没有待读公告时 `data` 为 `[]`。
+
+### 前台公告中心（全部已发布公告）
+
+- **URL**：`GET /api/announcement/published`
+- **鉴权**：否；携带 `user-token` 时会填充 `isRead`
+- **说明**：用于「公告弹窗读完后再回看」的场景，返回最多 50 条已发布公告，按 `publishTime` 倒序
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": [
+    {
+      "id": "2121891094118658049",
+      "title": "公告标题",
+      "content": "## Markdown 正文",
+      "publishTime": "2026-11-15T09:00:35.000+00:00",
+      "createTime": "2026-11-15T09:00:34.000+00:00",
+      "isRead": true
+    }
+  ],
+  "message": "ok"
+}
+```
+
+`isRead` 说明：
+
+- 登录用户：`true` / `false`，表示该用户是否读过；
+- 游客：`null`，游客端按 `localStorage` 自行判断。
+
+### 批量标记公告已读
+
+- **URL**：`POST /api/announcement/read`
+- **鉴权**：需要 `user-token`
+- **说明**：仅登录用户；游客由前端写 `localStorage`，不调用此接口
+
+**请求体**
+
+| 字段             | 类型     | 必填 | 说明                       |
+| ---------------- | -------- | ---- | -------------------------- |
+| announcementIds  | long[]   | 是   | 公告 ID 列表，最多 100 条  |
+
+```json
+{ "announcementIds": ["2121878181890764801", "2121878181760741377"] }
+```
+
+**响应**
+
+```json
+{ "code": 200, "data": 2, "message": "ok" }
+```
+
+`data` 为本次新增的已读记录数；重复标记返回 `0`，不报错。
+
+---
+
 ## 分类模块（`/category`）
 
 ### 添加分类

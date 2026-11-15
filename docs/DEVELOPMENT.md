@@ -47,6 +47,11 @@ CREATE DATABASE `lilac-blog` DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 - `category`
 - `tag`
 - `article_tag`
+- `spark`
+- `announcement`
+- `announcement_read`
+
+公告模块的建表及权限点脚本见 `docs/sql/announcement.sql`。
 
 ### 3. 初始化管理员
 
