@@ -8,8 +8,8 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
-* 角色权限表
-*/
+ * 角色权限表
+ */
 public interface RolePermissionMapper extends BaseMapper<RolePermission> {
 
     /**
@@ -20,7 +20,3 @@ public interface RolePermissionMapper extends BaseMapper<RolePermission> {
      */
     List<Permission> selectPermissionsByRoleId(@Param("roleId") Long roleId);
 }
-
-
-
-

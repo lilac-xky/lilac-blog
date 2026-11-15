@@ -36,6 +36,11 @@ public class SaTokenConfigure implements WebMvcConfigurer{
                     .notMatch("/user/login", "/user/register", "/user/sendCode", "/user/sendResetCode", "/user/resetPassword")
                     .notMatch("file/upload")
                     .check(r -> StpKit.USER.checkLogin());
+            // 对于 /note/** 路径，碎片全部私有，任何接口都要求 user 登录；
+            // 后台的 /note/list/page/admin 走 admin 会话，由 @SaAdminPermission 注解自行校验，这里排除
+            SaRouter.match("/note/**")
+                    .notMatch("/note/list/page/admin")
+                    .check(r -> StpKit.USER.checkLogin());
         })).addPathPatterns("/**");
     }
 
