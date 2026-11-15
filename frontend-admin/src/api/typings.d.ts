@@ -265,9 +265,23 @@ declare namespace API {
     id?: number;
   };
 
+  type getNoteParams = {
+    /** 碎片id */
+    id?: number;
+  };
+
   type getSparkParams = {
     /** 灵感id */
     id?: number;
+  };
+
+  type Item = {
+    /** 标签id；未挂主题的碎片为 null */
+    tagId?: number;
+    /** 标签名；未挂主题时为「杂项」 */
+    tagName?: string;
+    /** 该主题下未整理的碎片数 */
+    count?: number;
   };
 
   type LoginUserVO = {
@@ -332,6 +346,122 @@ declare namespace API {
     createTime?: string;
   };
 
+  type NoteAddRequest = {
+    /** 知识点正文 */
+    content?: string;
+    /** 我的一句话理解（可选） */
+    insight?: string;
+    /** 来源：书名 / 链接 / 课程（可选） */
+    source?: string;
+    /** 主题标签id列表，第一个作为整理时的分组依据 */
+    tagIds?: number[];
+  };
+
+  type NoteAggregateRequest = {
+    /** 方式一：指定要整理的碎片id列表，优先于时间区间 */
+    noteIds?: number[];
+    /** 方式二：按创建时间区间筛选，起始时间（含） */
+    fromTime?: string;
+    /** 方式二：按创建时间区间筛选，结束时间（含） */
+    toTime?: string;
+    /** 可选：只整理这些主题下的碎片；为空表示不限主题 */
+    tagIds?: number[];
+    /** 可选：自定义标题；为空时由服务端按规则生成 */
+    title?: string;
+    /** 可选：是否在小节之间插入过渡提示注释，默认 true */
+    insertHints?: boolean;
+  };
+
+  type NoteAggregateVO = {
+    /** 建议的文章标题（请求里传了标题则以请求为准） */
+    title?: string;
+    /** 生成好的 Markdown 骨架，尚未落库 */
+    markdown?: string;
+    /** 参与整理的碎片条数 */
+    noteCount?: number;
+    /** 其中未挂主题、被归入「杂项」的条数 */
+    untaggedCount?: number;
+    /** 主题分布，按组内碎片数降序 */
+    topics?: TopicItem[];
+    /** 本次整理涉及的主题标签id（生成草稿时会写入文章标签） */
+    tagIds?: number[];
+    /** 参与整理的碎片id，便于前端高亮或二次确认 */
+    noteIds?: number[];
+  };
+
+  type NoteComposeVO = {
+    /** 生成的文章id，前端据此跳转到现有编辑器 */
+    articleId?: number;
+    /** 文章标题 */
+    title?: string;
+    /** 本次归档的碎片条数 */
+    noteCount?: number;
+  };
+
+  type NoteQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** 碎片id */
+    id?: number;
+    /** 知识点正文（模糊查询） */
+    content?: string;
+    /** 0未整理，1已归档；为空表示不限 */
+    status?: number;
+    /** 主题标签id列表；命中任意一个即返回 */
+    tagIds?: number[];
+    /** 归属用户id；用户端会被服务端强制改写为当前登录用户，传入无效 */
+    userId?: number;
+    /** 归档到的文章id */
+    articleId?: number;
+  };
+
+  type NoteTopicStatVO = {
+    /** 未整理的碎片总数 */
+    rawTotal?: number;
+    /** 已归档的碎片总数 */
+    archivedTotal?: number;
+    /** 各主题下未整理的碎片数，按数量降序 */
+    topics?: Item[];
+  };
+
+  type NoteUpdateRequest = {
+    /** 碎片id */
+    id?: number;
+    /** 知识点正文 */
+    content?: string;
+    /** 我的一句话理解（可选） */
+    insight?: string;
+    /** 来源：书名 / 链接 / 课程（可选） */
+    source?: string;
+    /** 主题标签id列表；传 null 表示不改动标签，传空列表表示清空标签 */
+    tagIds?: number[];
+  };
+
+  type NoteVO = {
+    /** 碎片id */
+    id?: number;
+    /** 归属用户id */
+    userId?: number;
+    /** 知识点正文 */
+    content?: string;
+    /** 我的一句话理解 */
+    insight?: string;
+    /** 来源：书名 / 链接 / 课程 */
+    source?: string;
+    /** 0未整理，1已归档进文章 */
+    status?: number;
+    /** 归档到的文章id */
+    articleId?: number;
+    /** 创建时间 */
+    createTime?: string;
+    /** 主题标签列表，顺序与写入时一致，第一个即整理时的分组依据 */
+    tags?: TagVO[];
+  };
+
   type OrderItem = {
     column?: string;
     asc?: boolean;
@@ -391,6 +521,19 @@ declare namespace API {
 
   type PageMessageVO = {
     records?: MessageVO[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+  };
+
+  type PageNoteVO = {
+    records?: NoteVO[];
     total?: number;
     size?: number;
     current?: number;
@@ -591,6 +734,30 @@ declare namespace API {
     data?: number;
   };
 
+  type ResultNoteAggregateVO = {
+    code?: number;
+    msg?: string;
+    data?: NoteAggregateVO;
+  };
+
+  type ResultNoteComposeVO = {
+    code?: number;
+    msg?: string;
+    data?: NoteComposeVO;
+  };
+
+  type ResultNoteTopicStatVO = {
+    code?: number;
+    msg?: string;
+    data?: NoteTopicStatVO;
+  };
+
+  type ResultNoteVO = {
+    code?: number;
+    msg?: string;
+    data?: NoteVO;
+  };
+
   type ResultPageAnnouncement = {
     code?: number;
     msg?: string;
@@ -619,6 +786,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: PageMessageVO;
+  };
+
+  type ResultPageNoteVO = {
+    code?: number;
+    msg?: string;
+    data?: PageNoteVO;
   };
 
   type ResultPagePermission = {
@@ -912,6 +1085,15 @@ declare namespace API {
     id?: number;
     /** 标签名称 */
     tagName?: string;
+  };
+
+  type TopicItem = {
+    /** 标签id；未挂主题的「杂项」为 null */
+    tagId?: number;
+    /** 标签名；未挂主题时为「杂项」 */
+    tagName?: string;
+    /** 该主题下的碎片条数 */
+    count?: number;
   };
 
   type updateEmailCodeParams = {

@@ -13,6 +13,7 @@ import * as roleController from "./roleController";
 import * as permissionController from "./permissionController";
 import * as sparkController from "./sparkController";
 import * as announcementController from "./announcementController";
+import * as noteController from "./noteController";
 export default {
   userController,
   adminController,
@@ -25,4 +26,5 @@ export default {
   permissionController,
   sparkController,
   announcementController,
+  noteController,
 };

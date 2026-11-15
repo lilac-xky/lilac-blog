@@ -57,6 +57,12 @@ const router = createRouter({
           meta: { permission: 'spark:list' }, // 需要灵感列表权限
         },
         {
+          path: 'note/manage',
+          name: 'noteManage',
+          component: () => import('@/views/note/NoteManagement.vue'),
+          meta: { permission: 'note:list:admin' }, // 需要碎知后台查看权限
+        },
+        {
           path: 'announcement/manage',
           name: 'announcementManage',
           component: () => import('@/views/announcement/AnnouncementManagement.vue'),

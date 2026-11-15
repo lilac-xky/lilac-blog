@@ -57,6 +57,18 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'user/notes',
+          name: 'note-list',
+          component: () => import('@/views/note/NoteList.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'user/notes/compose',
+          name: 'note-compose',
+          component: () => import('@/views/note/NoteCompose.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'user/messages',
           name: 'message-center',
           component: () => import('@/views/user/MessageCenter.vue'),

@@ -26,6 +26,12 @@
                     </button>
                 </a-tooltip>
                 <template v-if="userStore.loginUser?.token">
+                    <!-- 记一笔快捷入口：打开碎知随手记弹层，不跳页 -->
+                    <a-tooltip title="记一笔" placement="bottom">
+                        <button class="note-shortcut" type="button" @click="quickNoteOpen = true">
+                            <BulbOutlined />
+                        </button>
+                    </a-tooltip>
                     <!-- 写文章快捷入口 -->
                     <router-link to="/user/write" class="write-shortcut" title="写文章">
                         <EditOutlined />
@@ -54,6 +60,9 @@
                                 <a-menu-item key="articles">
                                     <FileTextOutlined /> 我的文章
                                 </a-menu-item>
+                                <a-menu-item key="notes">
+                                    <BulbOutlined /> 碎知
+                                </a-menu-item>
                                 <a-menu-item key="messages">
                                     <a-badge :count="unreadCount" :offset="[8, 0]" :overflow-count="99" dot
                                         v-if="unreadCount > 0">
@@ -78,6 +87,10 @@
             </div>
         </div>
     </header>
+
+    <!-- 随手记弹层：必须放在 header 之外，否则会被 header 的 sticky 层叠上下文限制住，
+         从而被 z-index 更高的悬浮播放器遮挡 -->
+    <QuickNote v-model:open="quickNoteOpen" />
 </template>
 
 <!--
@@ -85,10 +98,11 @@
   - 站点 Logo / 主导航 / 公告入口 + 登录态区域四段
   - 公告入口对游客与登录用户都可见，点开后进入公告中心，可反复回看已读公告
   - 已登录展示头像下拉菜单与未读消息红点
-  - 写文章入口直接走快捷按钮，避免「点头像 → 写文章」两次点击
+  - 写文章与记一笔均为快捷按钮，避免「点头像 → 二级菜单」两次点击
+  - 随手记弹层刻意放在 <header> 之外，避开 sticky 造成的层叠上下文
 -->
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
     BellOutlined,
@@ -97,12 +111,14 @@ import {
     EditOutlined,
     FileTextOutlined,
     MessageOutlined,
+    BulbOutlined,
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import { logout } from '@/api/userController';
 import { usePollUnreadCount } from '@/composables/usePollUnreadCount';
 import { useAnnouncementCenter } from '@/composables/useAnnouncementCenter';
+import QuickNote from '@/components/QuickNote.vue';
 
 const userStore = useUserStore();
 const route = useRoute();
@@ -110,6 +126,9 @@ const router = useRouter();
 
 // 公告中心控制器：与布局层弹窗共享同一份开关状态
 const { openAll: openAnnouncementCenter } = useAnnouncementCenter();
+
+// 随手记弹层开关：顶栏「记一笔」按钮直接打开，不跳页不打断当前浏览
+const quickNoteOpen = ref(false);
 
 // 顶部导航项
 const navItems = [
@@ -151,6 +170,8 @@ async function handleMenu({ key }: { key: string }) {
         router.push('/user/write');
     } else if (key === 'articles') {
         router.push('/user/articles');
+    } else if (key === 'notes') {
+        router.push('/user/notes');
     } else if (key === 'messages') {
         router.push('/user/messages');
     }
@@ -305,6 +326,29 @@ async function handleMenu({ key }: { key: string }) {
     background: var(--accent);
     color: #fff !important;
     box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.5);
+}
+
+/* 记一笔按钮：与写文章按钮同尺寸的圆形图标按钮，用于打开碎知随手记弹层 */
+.note-shortcut {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* 记一笔悬停：主色描边提亮，提示可点击记录知识点 */
+.note-shortcut:hover {
+    border-color: var(--border-accent-strong);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
 }
 
 .user-chip:hover {

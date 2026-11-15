@@ -46,6 +46,14 @@
                     <div class="entry-desc">查看草稿、待审核与已发布的文章</div>
                 </div>
             </router-link>
+            <!-- 碎知：碎片记录与整理入口，独立于文章投稿流程 -->
+            <router-link to="/user/notes" class="entry-card glass-card">
+                <BulbOutlined class="entry-icon" />
+                <div>
+                    <div class="entry-title">碎知</div>
+                    <div class="entry-desc">记下零散知识点，定期整理成一篇博客</div>
+                </div>
+            </router-link>
             <router-link to="/user/messages" class="entry-card glass-card">
                 <a-badge :count="unreadCount" :offset="[-4, 4]">
                     <MessageOutlined class="entry-icon" />
@@ -245,6 +253,7 @@ import {
     IdcardOutlined,
     UploadOutlined,
     RightOutlined,
+    BulbOutlined,
 } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { listMyArticles } from '@/api/articleController';
