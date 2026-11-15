@@ -87,6 +87,16 @@ export async function publishAnnouncement(
   });
 }
 
+/** 查询全部已发布公告（公告中心回看） 已登录用户填充 isRead；游客不填充，由前端 localStorage 判断 GET /api/announcement/published */
+export async function listPublishedAnnouncements(options?: {
+  [key: string]: any;
+}) {
+  return request<API.ResultListAnnouncementVO>("/api/announcement/published", {
+    method: "GET",
+    ...(options || {}),
+  });
+}
+
 /** 批量标记公告已读（仅登录用户） POST /api/announcement/read */
 export async function markRead(
   body: API.AnnouncementReadRequest,

@@ -6,6 +6,85 @@ declare namespace API {
     newPassword?: string;
   };
 
+  type Announcement = {
+    /** 公告id */
+    id?: number;
+    /** 公告标题 */
+    title?: string;
+    /** 公告正文（Markdown） */
+    content?: string;
+    /** 状态：0草稿 1已发布 2已下线 */
+    status?: number;
+    /** 发布时间 */
+    publishTime?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 修改时间 */
+    updateTime?: string;
+    /** 业务侧编辑时间 */
+    editTime?: string;
+    /** 0正常，1删除 */
+    isDeleted?: number;
+  };
+
+  type AnnouncementAddRequest = {
+    /** 公告标题 */
+    title?: string;
+    /** 公告正文（Markdown） */
+    content?: string;
+  };
+
+  type AnnouncementPublishRequest = {
+    /** 公告id */
+    id?: number;
+    /** true 发布，false 下线 */
+    publish?: boolean;
+  };
+
+  type AnnouncementQueryRequest = {
+    /** 当前页 */
+    current?: number;
+    /** 页面大小 */
+    pageSize?: number;
+    /** 排序顺序（默认：升序） */
+    sortOrder?: string;
+    /** 公告id */
+    id?: number;
+    /** 公告标题（模糊查询） */
+    title?: string;
+    /** 状态：0草稿 1已发布 2已下线 */
+    status?: number;
+  };
+
+  type AnnouncementReadRequest = {
+    /** 需要标记已读的公告id列表 */
+    announcementIds?: number[];
+  };
+
+  type AnnouncementUpdateRequest = {
+    /** 公告id */
+    id?: number;
+    /** 公告标题 */
+    title?: string;
+    /** 公告正文（Markdown） */
+    content?: string;
+  };
+
+  type AnnouncementVO = {
+    /** 公告id */
+    id?: number;
+    /** 公告标题 */
+    title?: string;
+    /** 公告正文（Markdown） */
+    content?: string;
+    /** 发布时间 */
+    publishTime?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 当前用户是否已读（仅公告中心回看接口填充；待读列表里恒为 null） */
+    isRead?: boolean;
+  };
+
   type ArticleAddRequest = {
     /** 标题 */
     title?: string;
@@ -176,6 +255,11 @@ declare namespace API {
     checkPassword?: string;
   };
 
+  type getAnnouncementParams = {
+    /** 公告id */
+    id: number;
+  };
+
   type getArticleParams = {
     /** 文章id */
     id?: number;
@@ -251,6 +335,19 @@ declare namespace API {
   type OrderItem = {
     column?: string;
     asc?: boolean;
+  };
+
+  type PageAnnouncement = {
+    records?: Announcement[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: boolean;
+    searchCount?: boolean;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
   };
 
   type PageArticleVO = {
@@ -444,9 +541,17 @@ declare namespace API {
     name?: string;
   };
 
+  type ResultAnnouncement = {
+    code?: number;
+    msg?: string;
+    /** 系统公告 */
+    data?: Announcement;
+  };
+
   type ResultArticleVO = {
     code?: number;
     msg?: string;
+    /** 文章VO */
     data?: ArticleVO;
   };
 
@@ -460,6 +565,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: number;
+  };
+
+  type ResultListAnnouncementVO = {
+    code?: number;
+    msg?: string;
+    data?: AnnouncementVO[];
   };
 
   type ResultListPermission = {
@@ -478,6 +589,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: number;
+  };
+
+  type ResultPageAnnouncement = {
+    code?: number;
+    msg?: string;
+    data?: PageAnnouncement;
   };
 
   type ResultPageArticleVO = {
@@ -549,6 +666,7 @@ declare namespace API {
   type ResultSparkVO = {
     code?: number;
     msg?: string;
+    /** 灵感VO */
     data?: SparkVO;
   };
 
@@ -894,13 +1012,6 @@ declare namespace API {
     id?: number;
     /** 1正常，0异常 */
     status?: number;
-  };
-
-  type UserUpdateEmailRequest = {
-    /** 用d */
-    id?: number;
-    /** 邮箱 */
-    email?: string;
   };
 
   type UserUpdateRequest = {
