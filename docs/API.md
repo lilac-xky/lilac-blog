@@ -462,6 +462,227 @@ Token 在登录接口返回的 `LoginUserVO.token` 字段中获取。Sa-Token �
 
 ---
 
+## 碎知模块（`/note`）
+
+碎片全部**私有**，所有接口都以当前登录用户为边界，请求体里的 `userId` 一律不可信、由服务端强制改写。
+他人碎片统一按「资源不存在」处理，不泄露内容。
+
+鉴权约定：
+
+- 除后台接口外，`/note/**` 均要求 `user-token`；
+- 权限点见 `docs/sql/note.sql`；
+- 后台接口 `/note/list/page/admin` 要求 `admin-token`，不受上述用户登录拦截约束。
+
+### 添加碎片（随手记）
+
+- **URL**：`POST /api/note/add`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:add`
+
+**请求体**
+
+| 字段    | 类型     | 必填 | 说明                                       |
+| ------- | -------- | ---- | ------------------------------------------ |
+| content | string   | 是   | 知识点正文，≤ 10000 字符                   |
+| insight | string   | 否   | 我的一句话理解，≤ 500 字符                 |
+| source  | string   | 否   | 来源：书名 / 链接 / 课程，≤ 255 字符       |
+| tagIds  | long[]   | 否   | 主题标签 ID 列表，**第一个即整理时的分组依据** |
+
+归属人 `userId` 由服务端写入当前登录用户，请求体传入无效。
+
+**响应**
+
+```json
+{ "code": 200, "data": "1001", "message": "ok" }
+```
+
+> 主键为雪花 ID，后端已配置 `Long → String` 序列化，前端始终按字符串处理。
+
+### 修改碎片
+
+- **URL**：`POST /api/note/update`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:update`
+
+**请求体**
+
+| 字段    | 类型   | 必填 | 说明                                                     |
+| ------- | ------ | ---- | -------------------------------------------------------- |
+| id      | long   | 是   | 碎片 ID                                                  |
+| content | string | 否   | 传则更新                                                 |
+| insight | string | 否   | 传空串表示清空                                           |
+| source  | string | 否   | 传空串表示清空                                           |
+| tagIds  | long[] | 否   | **传 null 表示不改动标签；传空数组表示清空标签**         |
+
+### 删除碎片
+
+- **URL**：`POST /api/note/delete`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:delete`
+- **请求体**：`{ "id": 1001 }`
+- **副作用**：逻辑删除 `note`，物理清理 `note_tag` 关联
+
+### 碎片详情
+
+- **URL**：`GET /api/note/get?id=<id>`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:list`
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "id": "1001",
+    "userId": "1024",
+    "content": "过期时间不是「到点删除」，而是惰性删除 + 定期删除兜底",
+    "insight": null,
+    "source": "《Redis 设计与实现》第 8 章",
+    "status": 0,
+    "articleId": null,
+    "createTime": "2026-11-08T10:20:00",
+    "tags": [{ "id": "10", "tagName": "Redis" }]
+  },
+  "message": "ok"
+}
+```
+
+他人碎片返回：
+
+```json
+{ "code": 400006, "data": null, "message": "碎片不存在" }
+```
+
+### 我的碎片分页列表
+
+- **URL**：`POST /api/note/list/page`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:list`
+- **限制**：`pageSize` ≤ 50
+
+**请求体**（继承 `PageRequest`）
+
+| 字段      | 类型   | 必填 | 说明                             |
+| --------- | ------ | ---- | -------------------------------- |
+| content   | string | 否   | 正文模糊匹配                     |
+| status    | int    | 否   | `0` 未整理 / `1` 已归档          |
+| tagIds    | long[] | 否   | 命中任意一个主题即返回           |
+| articleId | long   | 否   | 归档到的文章 ID                  |
+
+`userId` 由服务端强制写入当前登录用户，请求传入无效。
+
+### 整理预览
+
+把一批碎片渲染成 Markdown 骨架，**不落库**，用于前端预览与人工调整。
+
+- **URL**：`POST /api/note/aggregate`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:compose`
+
+**请求体**
+
+| 字段        | 类型   | 必填 | 说明                                                     |
+| ----------- | ------ | ---- | -------------------------------------------------------- |
+| noteIds     | long[] | 否   | 指定要整理的碎片，**优先于时间区间**                     |
+| fromTime    | date   | 否   | 按创建时间区间筛选，起始（含）                           |
+| toTime      | date   | 否   | 按创建时间区间筛选，结束（含）                           |
+| tagIds      | long[] | 否   | 只整理这些主题下的碎片，为空表示不限                     |
+| title       | string | 否   | 自定义标题，为空则按规则生成                             |
+| insertHints | bool   | 否   | 是否插入过渡提示注释，**默认 true**                      |
+
+选取规则：`noteIds` 非空时优先使用；否则用时间区间；两者都没有则取全部未整理碎片。
+参与整理的碎片**强制限定为当前用户 + `status=0` 未整理**，单次上限 200 条。
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "title": "学习速记 · 2026-11",
+    "markdown": "## Redis\n\n- 过期时间不是「到点删除」，而是惰性删除 + 定期删除兜底。\n  `2026-11-08` `《Redis 设计与实现》第 8 章`\n\n## MySQL\n\n- 联合索引遵循最左前缀，跳过最左列就用不上索引。\n  `2026-11-10` `极客时间《MySQL 实战》`",
+    "noteCount": 2,
+    "untaggedCount": 0,
+    "topics": [
+      { "tagId": "10", "tagName": "Redis", "count": 1 },
+      { "tagId": "11", "tagName": "MySQL", "count": 1 }
+    ],
+    "tagIds": ["10", "11"],
+    "noteIds": ["1001", "1002"]
+  },
+  "message": "ok"
+}
+```
+
+**生成规则**（确定性，同一份输入永远产出同一份输出）：
+
+1. **分组**：按每条碎片关联的**第一个标签**归组；无标签的归入「杂项」。
+2. **排序**：组间按组内碎片数**降序**，「杂项」恒排最后；组内按 `createTime` **升序**。
+3. **渲染**：每个主题一个 `## 小节`，碎片渲染为 `- 正文` + 缩进的日期/来源行内代码 + `> 理解` 引用块。
+4. **过渡提示**：相邻小节之间插入 `<!-- 写一句过渡：... -->` 注释，编辑器可见、渲染时隐藏。
+5. **标题**：单主题 → `{主题} 学习笔记`；多主题 → `学习速记 · {YYYY-MM}`（跨月时为 `{起} ~ {止}`）。
+
+### 确认整理（生成草稿）
+
+- **URL**：`POST /api/note/compose`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:compose`
+- **请求体**：同 `/note/aggregate`
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": { "articleId": "2001", "title": "学习速记 · 2026-11", "noteCount": 2 },
+  "message": "ok"
+}
+```
+
+**副作用**：
+
+1. 新建 `article`，`status=0`（草稿），正文为生成的 Markdown；
+2. 本次涉及的主题标签自动写入 `article_tag`；
+3. 参与整理的碎片回写 `status=1`、`articleId=<新文章 ID>`。
+
+前端拿到 `articleId` 后直接跳转 `/user/write?id=<articleId>`，**复用现有编辑器**润色，如需发布再走原有审核流程。
+
+### 主题分布统计
+
+- **URL**：`GET /api/note/topic/stat`
+- **鉴权**：需要 `user-token`
+- **权限**：`note:list`
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "rawTotal": 12,
+    "archivedTotal": 30,
+    "topics": [
+      { "tagId": "10", "tagName": "Redis", "count": 5 },
+      { "tagId": "11", "tagName": "MySQL", "count": 3 },
+      { "tagId": null, "tagName": "杂项", "count": 4 }
+    ]
+  },
+  "message": "ok"
+}
+```
+
+`rawTotal` / `archivedTotal` 为精确计数；`topics` 只统计最近 2000 条未整理碎片，个人博客场景足够。
+
+### 后台碎片分页列表
+
+- **URL**：`POST /api/note/list/page/admin`
+- **鉴权**：需要 `admin-token`
+- **权限**：`note:list:admin`
+- **说明**：跨用户查询全部碎片，请求体同「我的碎片分页列表」，此时 `userId` 作为**筛选条件**生效
+
+---
+
 ## 公告模块（`/announcement`）
 
 系统公告正文使用 **Markdown**。管理端负责新增、编辑、删除、发布/下线和分页查询；用户端负责待读列表与批量已读。

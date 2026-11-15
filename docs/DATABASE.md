@@ -17,6 +17,8 @@
 | tag          | 文章标签                          |
 | article_tag  | 文章 ↔ 标签 多对多关联表          |
 | spark        | 灵感（公开 / 私有）               |
+| note         | 知识碎片（碎知，仅本人可见）      |
+| note_tag     | 碎片 ↔ 标签 多对多关联表          |
 | announcement | 系统公告（草稿 / 已发布 / 已下线） |
 | announcement_read | 登录用户的公告已读记录       |
 
@@ -219,6 +221,82 @@ ALTER TABLE `spark`
   ADD KEY `idx_spark_user` (`userId`),
   ADD KEY `idx_spark_visibility` (`visibility`);
 ```
+
+---
+
+## note 表（碎知）
+
+知识碎片表，记录平时学习时零散记下的知识点。**全部私有**，所有读写一律按 `userId` 隔离，仅本人可见。
+
+碎片的「主题」不新建独立表，**直接复用 `tag` 表**：`Redis` 既是文章标签也是知识主题，共用一套管理页；
+整理成文章时按「该碎片关联的第一个标签」分组，其余标签作为副标签保留。
+
+| 字段名       | 类型         | 约束                          | 说明                                     |
+| ------------ | ------------ | ----------------------------- | ---------------------------------------- |
+| `id`         | BIGINT       | PK                            | 主键（雪花 ID）                          |
+| `userId`     | BIGINT       | NOT NULL                      | 归属用户 ID，查询一律按此字段隔离        |
+| `content`    | TEXT         | NOT NULL                      | 知识点正文                               |
+| `insight`    | VARCHAR(500) |                               | 我的一句话理解（可选）                   |
+| `source`     | VARCHAR(255) |                               | 来源：书名 / 链接 / 课程（可选）         |
+| `status`     | TINYINT      | DEFAULT 0                     | `0` 未整理 / `1` 已归档进文章            |
+| `articleId`  | BIGINT       |                               | 归档到的文章 ID（`status=1` 时有值）     |
+| `createTime` | DATETIME     | DEFAULT CURRENT_TIMESTAMP     | 创建时间，同时是整理时的排序依据         |
+| `updateTime` | DATETIME     | ON UPDATE CURRENT_TIMESTAMP   | 更新时间                                 |
+| `editTime`   | DATETIME     | DEFAULT CURRENT_TIMESTAMP     | 业务侧编辑时间                           |
+| `isDeleted`  | TINYINT      | DEFAULT 0                     | 逻辑删除                                 |
+
+`status` / `articleId` 的作用是**防止同一条碎片被反复整理进不同文章**：归档后默认从「待整理」列表消失，
+需要时可手动翻出已归档碎片。
+
+```sql
+CREATE TABLE `note` (
+  `id`         BIGINT       NOT NULL COMMENT '主键（雪花ID）',
+  `userId`     BIGINT       NOT NULL COMMENT '归属用户ID，查询一律按此字段隔离',
+  `content`    TEXT         NOT NULL COMMENT '知识点正文',
+  `insight`    VARCHAR(500) DEFAULT NULL COMMENT '我的一句话理解（可选）',
+  `source`     VARCHAR(255) DEFAULT NULL COMMENT '来源：书名 / 链接 / 课程',
+  `status`     TINYINT      NOT NULL DEFAULT 0 COMMENT '0未整理 1已归档进文章',
+  `articleId`  BIGINT       DEFAULT NULL COMMENT '归档到的文章ID',
+  `createTime` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updateTime` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `editTime`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted`  TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除：0正常 1已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_note_user_status` (`userId`, `status`),
+  KEY `idx_note_article` (`articleId`),
+  KEY `idx_note_create` (`createTime`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='知识碎片表';
+```
+
+---
+
+## note_tag 表
+
+碎片 ↔ 标签 多对多关联，结构与 `article_tag` 一致。
+
+**该表不参与逻辑删除**，删除碎片或删除标签时直接物理清理对应记录。
+
+`id` 为自增主键，**写入顺序即主键顺序**，服务层据此还原「第一个标签 = 主主题」的语义。
+
+| 字段名   | 类型                      | 说明                       |
+| -------- | ------------------------- | -------------------------- |
+| `id`     | BIGINT, PK, AUTO_INCREMENT | 主键                      |
+| `noteId` | BIGINT                    | 碎片 ID                    |
+| `tagId`  | BIGINT                    | 标签 ID（碎片的主题）      |
+
+```sql
+CREATE TABLE `note_tag` (
+  `id`     BIGINT NOT NULL AUTO_INCREMENT,
+  `noteId` BIGINT NOT NULL,
+  `tagId`  BIGINT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_note_tag` (`noteId`, `tagId`),
+  KEY `idx_note_tag_note` (`noteId`),
+  KEY `idx_note_tag_tag` (`tagId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='碎片-标签关联';
+```
+
+完整建表及权限点初始化脚本见 `docs/sql/note.sql`。
 
 ---
 
