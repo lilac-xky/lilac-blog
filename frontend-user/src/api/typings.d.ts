@@ -186,6 +186,26 @@ declare namespace API {
     id?: number;
   };
 
+  type AnnouncementReadRequest = {
+    /** 需要标记已读的公告id列表 */
+    announcementIds?: (number | string)[];
+  };
+
+  type AnnouncementVO = {
+    /** 公告id */
+    id?: number | string;
+    /** 公告标题 */
+    title?: string;
+    /** 公告正文（Markdown） */
+    content?: string;
+    /** 发布时间 */
+    publishTime?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 当前用户是否已读（仅公告中心回看接口填充） */
+    isRead?: boolean;
+  };
+
   type LoginUserVO = {
     id?: number;
     /** 用户名 */
@@ -460,6 +480,12 @@ declare namespace API {
     code?: number;
     msg?: string;
     data?: number;
+  };
+
+  type ResultListAnnouncementVO = {
+    code?: number;
+    msg?: string;
+    data?: AnnouncementVO[];
   };
 
   type ResultListPermission = {
