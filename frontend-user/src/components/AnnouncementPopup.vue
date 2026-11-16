@@ -98,9 +98,24 @@ import { useUserStore } from '@/stores/user';
 const previewId = 'announcement-md';
 
 const { formatDate } = useDateFormat();
-const { isRead, markLocalRead } = useAnnouncementRead();
-const { visible, mode, autoShown, openPending } = useAnnouncementCenter();
+const { readIds, isRead, markLocalRead, switchScope } = useAnnouncementRead();
+const { visible, mode, autoShown } = useAnnouncementCenter();
 const userStore = useUserStore();
+
+// 已经成功同步到服务端的本地已读 id，避免每次打开页面都重复推送同一批
+// 换账号或登出时要清空，否则会把上一个账号的已读记到新账号名下
+let syncedReadIds = new Set<string>();
+
+// 监听登录态：切换本地已读存储桶，并清空同步标记
+// 先切桶再同步，保证推给服务端的是「这个账号自己」的本地记录
+watch(
+    () => userStore.loginUser?.id,
+    (userId) => {
+        switchScope(userId);
+        syncedReadIds = new Set<string>();
+    },
+    { immediate: true },
+);
 
 // 本次展示的公告队列，按发布时间倒序（后端已排序）
 const queue = ref<API.AnnouncementVO[]>([]);
@@ -128,6 +143,27 @@ const footerHint = computed(() => {
 });
 
 /**
+ * 把本地已读记录同步到服务端
+ * 背景：游客的已读只存在 localStorage，登录用户的已读记在服务端，这是两套独立的账本。
+ * 游客关掉公告后再登录，服务端并不知道他读过，于是又会弹一次。
+ * 所以在登录态下、拉取未读列表之前，先把本地已读 id 推给服务端，让两套账本合流。
+ * 副作用：可能发起一次 /announcement/read 请求；已同步过的 id 会被标记，避免重复推送
+ */
+async function syncLocalReadToServer() {
+    if (!userStore.loginUser?.token) return;
+    // 只推还没同步过的 id，避免每次打开页面都重复请求
+    const pending = readIds.value.filter((id) => !syncedReadIds.has(id));
+    if (pending.length === 0) return;
+    try {
+        await markRead({ announcementIds: pending as unknown as number[] }, { silentError: true });
+        // 成功后才记账，失败时留待下次重试
+        pending.forEach((id) => syncedReadIds.add(id));
+    } catch {
+        // 同步失败不阻塞公告展示，下次进入再试
+    }
+}
+
+/**
  * 拉取公告数据
  * - pending 模式只取未读，并按本地已读兜底过滤
  * - all 模式取全部已发布公告，用于回看
@@ -141,6 +177,8 @@ async function loadAnnouncements(): Promise<number> {
             const res = await listPublishedAnnouncements({ silentError: true });
             queue.value = res.data?.data ?? [];
         } else {
+            // 先把游客期间攒下的本地已读推给服务端，避免登录后又弹一遍
+            await syncLocalReadToServer();
             const res = await listPendingAnnouncements({ silentError: true });
             const list = res.data?.data ?? [];
             // 游客只有 localStorage 一份已读记录，登录用户服务端已过滤，这里再兜一层避免重复弹
@@ -214,10 +252,18 @@ function handleClose() {
     visible.value = false;
 }
 
+// 自动弹窗流程已经预加载过数据，标记一下让 watch 跳过重复请求
+let preloaded = false;
+
 // 弹窗每次打开、或模式切换时都重新拉一次数据，保证刚发布的公告能立刻看到
 // 用数组监听 visible 与 mode：openAll 先改 mode 再开 visible，只会触发一次有效加载
 watch([visible, mode], async () => {
     if (!visible.value) return;
+    // 自动弹窗已在 onMounted 里预加载并判断过条数，这里直接用结果，避免重复请求
+    if (preloaded) {
+        preloaded = false;
+        return;
+    }
     const count = await loadAnnouncements();
     // 未读模式下没有可展示内容就立刻关闭，避免闪出一个空弹窗
     if (!count && mode.value === 'pending') {
@@ -225,13 +271,25 @@ watch([visible, mode], async () => {
     }
 });
 
-onMounted(() => {
-    // 延迟请求，等首屏渲染和背景动画先跑起来；autoShown 保证整个会话只自动弹一次
-    window.setTimeout(() => {
-        if (autoShown.value) return;
+onMounted(async () => {
+    // 同一次布局生命周期内只自动弹一次；autoShown 只做内存标记，
+    // 不写持久化存储，保证「刷新页面」仍会重新检查未读公告
+    if (autoShown.value) return;
+
+    // 延迟请求，等首屏渲染和背景动画先跑起来
+    window.setTimeout(async () => {
+        // 定时器期间用户可能已经手动打开公告中心，此时不再自动弹
+        if (autoShown.value || visible.value) return;
+
+        // 关键：先把数据拉回来，确认确实有未读公告再打开弹窗，
+        // 否则 visible 置 true 的瞬间 current 仍为 null，会先渲染一个空壳再填充，造成闪烁
+        mode.value = 'pending';
+        const count = await loadAnnouncements();
         autoShown.value = true;
-        // 首次进入固定走未读模式，数据加载由上面的 watch 统一处理
-        openPending();
+        if (count > 0) {
+            preloaded = true;
+            visible.value = true;
+        }
     }, 600);
 });
 </script>
